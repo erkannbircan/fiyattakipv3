@@ -345,14 +345,14 @@
     // =========================================================================================
     // YENİ FIREBASE PROJE BİLGİLERİNİZ
     // =========================================================================================
-   const firebaseConfig = {
-  apiKey: "AIzaSyA3flTu3Jz9E1D1U_DympYE7B4I4FDxj88",
-  authDomain: "fiyattakipv3.firebaseapp.com",
-  projectId: "fiyattakipv3",
-  storageBucket: "fiyattakipv3.firebasestorage.app",
-  messagingSenderId: "440839843277",
-  appId: "1:440839843277:web:2c9c15e4a103e8b2f2e884"
-};
+    const firebaseConfig = {
+        apiKey: "AIzaSyA3flTu3Jz9E1D1U_DympYE7B4I4FDxj88",
+        authDomain: "fiyattakipv3.firebaseapp.com",
+        projectId: "fiyattakipv3",
+        storageBucket: "fiyattakipv3.appspot.com",
+        messagingSenderId: "440839843277",
+        appId: "1:440839843277:web:2c9c15e4a103e8b2f2e884"
+    };
 
     // Firebase'i Başlatma
     firebase.initializeApp(firebaseConfig);
@@ -371,21 +371,10 @@
     const modalOverlay = document.getElementById('modalOverlay');
 
     const AVAILABLE_INDICATORS = {
-        ema: "EMA", sma: "SMA", rsi: "RSI", macd: "MACD",
-        bollinger: "Bollinger Bands", stochRsi: "Stochastic RSI",
-        volume: "Hacim (24s)", atr: "ATR", ichimoku: "Ichimoku Cloud", fibonacci: "Fibonacci"
+        ema: "EMA", sma: "SMA", rsi: "RSI", macd: "MACD"
     };
 
-    const geminiIconSVG = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-            <linearGradient id="geminiGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style="stop-color:#4285F4;stop-opacity:1" />
-                <stop offset="100%" style="stop-color:#9B72CB;stop-opacity:1" />
-            </linearGradient>
-        </defs>
-        <path d="M12 2.25C6.07 2.25 2.25 6.07 2.25 12C2.25 17.93 6.07 21.75 12 21.75C17.93 21.75 21.75 17.93 21.75 12C21.75 6.07 17.93 2.25 12 2.25Z" stroke="url(#geminiGradient)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M15.38 12.38L12 10.5L8.62 12.38L9.75 8.62L6.75 6.38L10.62 6.38L12 2.62L13.38 6.38L17.25 6.38L14.25 8.62L15.38 12.38Z" stroke="url(#geminiGradient)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>`;
+    const geminiIconSVG = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="geminiGradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#4285F4;stop-opacity:1" /><stop offset="100%" style="stop-color:#9B72CB;stop-opacity:1" /></linearGradient></defs><path d="M12 2.25C6.07 2.25 2.25 6.07 2.25 12C2.25 17.93 6.07 21.75 12 21.75C17.93 21.75 21.75 17.93 21.75 12C21.75 6.07 17.93 2.25 12 2.25Z" stroke="url(#geminiGradient)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.38 12.38L12 10.5L8.62 12.38L9.75 8.62L6.75 6.38L10.62 6.38L12 2.62L13.38 6.38L17.25 6.38L14.25 8.62L15.38 12.38Z" stroke="url(#geminiGradient)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
     const translations = {
         tr: {
@@ -404,28 +393,24 @@
     };
 
     function getDefaultSettings() {
-        const defaultSettings = {
+        return {
             lang: 'tr', autoRefresh: false, refreshInterval: 300,
-            columns: { 1: { name: '1G', days: 1, threshold: 2 }, 2: { name: '7G', days: 7, threshold: 5 }, 3: { name: '30G', days: 30, threshold: 10 } },
+            columns: { 1: { name: '1G', days: 1, threshold: 2 }, 2: { name: '7G', days: 7, threshold: 5 }, 3: { name: '365G', days: 365, threshold: 10 } },
             colors: { high: '#26a69a', low: '#f59e0b' },
+            cryptoPivotFilter: 'all',
+            cryptoAnalysisInterval: '4h',
+            cryptoAnalysisIndicators: { ema: true, sma: true, rsi: true, macd: true }
         };
-        ['crypto'].forEach(type => {
-            defaultSettings[`${type}PivotFilter`] = 'all';
-            defaultSettings[`${type}AnalysisInterval`] = '4h';
-            defaultSettings[`${type}AnalysisIndicators`] = {
-                ema: true, rsi: true, macd: true, bollinger: true, volume: true,
-                sma: false, stochRsi: false, atr: false, ichimoku: false, fibonacci: false
-            };
-        });
-        return defaultSettings;
     }
 
+    // --- HELPER FUNCTIONS ---
     function translatePage(lang) { document.querySelectorAll('[data-lang]').forEach(el => { const key = el.getAttribute('data-lang'); if (translations[lang]?.[key] && typeof translations[lang][key] === 'string') el.textContent = translations[lang][key]; }); }
     function showPage(pageId) { loginPage.style.display = (pageId === 'login-page') ? 'flex' : 'none'; trackerPage.style.display = (pageId === 'tracker-page') ? 'flex' : 'none'; }
     function showPanel(panelId) { document.getElementById(panelId).classList.add('show'); modalOverlay.classList.add('show'); document.body.classList.add('modal-open'); }
     function closeAllPanels() { document.querySelectorAll('.panel.show').forEach(p => p.classList.remove('show')); modalOverlay.classList.remove('show'); document.body.classList.remove('modal-open'); }
     function showNotification(message, isSuccess = true) { notification.textContent = message; notification.style.backgroundColor = isSuccess ? 'var(--accent-green)' : 'var(--accent-red)'; notification.classList.add('show'); setTimeout(() => notification.classList.remove('show'), 3000); }
 
+    // --- AUTHENTICATION ---
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             userDocRef = db.collection('users').doc(user.uid);
@@ -433,10 +418,8 @@
                 const doc = await userDocRef.get();
                 let userData = doc.data();
                 if (!doc.exists) {
-                    console.log("Yeni kullanıcı için Firestore'da kayıt oluşturuluyor...");
                     userData = {
-                        email: user.email,
-                        role: 'new_user',
+                        email: user.email, role: 'new_user',
                         coins: ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
                         settings: getDefaultSettings()
                     };
@@ -453,8 +436,7 @@
             }
         } else {
             showPage('login-page');
-            pageInitialized = false;
-            userDocRef = null;
+            pageInitialized = false; userDocRef = null;
             if(autoRefreshTimer) clearInterval(autoRefreshTimer);
         }
     });
@@ -466,19 +448,12 @@
         document.getElementById('userEmail').textContent = auth.currentUser.email;
     }
 
-    document.getElementById('loginBtn').addEventListener('click', () => auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).catch(err => document.getElementById("error-message").textContent = err.message));
-    document.getElementById('signupBtn').addEventListener('click', () => auth.createUserWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).catch(err => document.getElementById("error-message").textContent = err.message));
-
+    // --- MAIN INITIALIZATION ---
     async function initializeTrackerPage(userData) {
         pageInitialized = true;
         cryptoPairs = userData.coins || ["BTCUSDT", "ETHUSDT", "SOLUSDT"];
 
-        const saveCryptoPairsToFirestore = () => {
-            if (userDocRef) {
-                userDocRef.update({ coins: cryptoPairs }).catch(error => console.error("Firebase kaydetme hatası:", error));
-            }
-        };
-
+        // --- DATA HELPERS ---
         const formatPrice = (price) => {
             const num = parseFloat(price);
             if (isNaN(num)) return 'N/A';
@@ -486,15 +461,15 @@
             if (num < 10) return num.toFixed(4);
             return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         };
+        const saveCryptoPairsToFirestore = () => { if (userDocRef) userDocRef.update({ coins: cryptoPairs }).catch(err => console.error(err)); };
 
+        // --- SETTINGS MANAGEMENT ---
         function loadSettings(userData) {
             const defaultSettings = getDefaultSettings();
             settings = { ...defaultSettings, ...userData.settings };
             settings.columns = { ...defaultSettings.columns, ...(userData.settings?.columns || {}) };
             settings.colors = { ...defaultSettings.colors, ...(userData.settings?.colors || {}) };
-            ['crypto'].forEach(type => {
-                settings[`${type}AnalysisIndicators`] = { ...defaultSettings[`${type}AnalysisIndicators`], ...(userData.settings?.[`${type}AnalysisIndicators`] || {}) };
-            });
+            settings.cryptoAnalysisIndicators = { ...defaultSettings.cryptoAnalysisIndicators, ...(userData.settings?.cryptoAnalysisIndicators || {}) };
             applySettings();
         }
 
@@ -515,11 +490,10 @@
 
             if (userDocRef) {
                 userDocRef.update({ settings: settings }).then(() => {
-                    applySettings();
-                    closeAllPanels();
+                    applySettings(); closeAllPanels();
                     showNotification(translations[settings.lang].saved, true);
                     fetchAllDataAndRender();
-                }).catch(error => console.error("Firebase ayar kaydetme hatası:", error));
+                }).catch(err => console.error(err));
             }
         }
 
@@ -541,10 +515,8 @@
             document.getElementById('high_color_preview').style.backgroundColor = settings.colors.high;
             document.getElementById('low_color_preview').style.backgroundColor = settings.colors.low;
 
-            document.querySelectorAll('#cryptoPivotFilters .active').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#cryptoPivotFilters .active, #cryptoIntervalFilters .active').forEach(b => b.classList.remove('active'));
             document.querySelector(`#cryptoPivotFilters button[data-filter="${settings.cryptoPivotFilter}"]`)?.classList.add('active');
-            
-            document.querySelectorAll('#cryptoIntervalFilters .active').forEach(b => b.classList.remove('active'));
             document.querySelector(`#cryptoIntervalFilters button[data-interval="${settings.cryptoAnalysisInterval}"]`)?.classList.add('active');
 
             Object.keys(AVAILABLE_INDICATORS).forEach(key => {
@@ -559,19 +531,27 @@
 
         function toggleAutoRefresh() { if(autoRefreshTimer) clearInterval(autoRefreshTimer); if(settings.autoRefresh) autoRefreshTimer = setInterval(fetchAllDataAndRender, settings.refreshInterval * 1000); }
 
+        // --- DATA FETCHING & CALCULATIONS ---
+        const calculateSMA = (data, period) => { if (data.length < period) return null; return data.slice(-period).reduce((s, v) => s + v, 0) / period; };
+        const calculateEMA = (data, period) => { if (data.length < period) return null; const k = 2 / (period + 1); let ema = calculateSMA(data.slice(0, period), period); for (let i = period; i < data.length; i++) { ema = (data[i] * k) + (ema * (1 - k)); } return ema; };
+        const calculateRSI = (data, period = 14) => { if (data.length <= period) return null; let gains = 0, losses = 0; let avgGain, avgLoss; for (let i = 1; i <= period; i++) { const diff = data[i] - data[i - 1]; if (diff > 0) gains += diff; else losses -= diff; } avgGain = gains / period; avgLoss = losses / period; for (let i = period + 1; i < data.length; i++) { const diff = data[i] - data[i - 1]; let currentGain = diff > 0 ? diff : 0; let currentLoss = diff < 0 ? -diff : 0; avgGain = (avgGain * (period - 1) + currentGain) / period; avgLoss = (avgLoss * (period - 1) + currentLoss) / period; } if (avgLoss === 0) return 100; const rs = avgGain / avgLoss; return 100 - (100 / (1 + rs)); };
+        const calculateMACD = (data, fast = 12, slow = 26, signal = 9) => { if (data.length < slow + signal) return null; const emaFast = calculateEMA(data, fast); const emaSlow = calculateEMA(data, slow); const macdLine = emaFast - emaSlow; const macdLineData = []; for(let i=slow; i<data.length; i++) { macdLineData.push(calculateEMA(data.slice(0, i+1), fast) - calculateEMA(data.slice(0, i+1), slow)); } const signalLine = calculateEMA(macdLineData, signal); return { macd: macdLine, signal: signalLine, histogram: macdLine - signalLine }; };
+
         async function fetchCryptoData(pair) {
             try {
                 const [klinesResponse, tickerResponse] = await Promise.all([
-                    axios.get(`https://api.binance.com/api/v3/klines?symbol=${pair}&interval=1d&limit=100`),
+                    axios.get(`https://api.binance.com/api/v3/klines?symbol=${pair}&interval=1d&limit=400`),
                     axios.get(`https://api.binance.com/api/v3/ticker/24hr?symbol=${pair}`)
                 ]);
                 const dailyKlines = klinesResponse.data;
                 const tickerData = tickerResponse.data;
                 const latestPrice = parseFloat(tickerData.lastPrice);
+                const closePrices = dailyKlines.map(d => parseFloat(d[4]));
+                
                 const calculatePct = (col) => {
                     const days = settings.columns[col].days;
-                    if (dailyKlines.length < days) return { pct: 'N/A' };
-                    const periodData = dailyKlines.slice(-days);
+                    if (dailyKlines.length <= days) return { pct: 'N/A' };
+                    const periodData = dailyKlines.slice(-(days + 1), -1);
                     const lowestPrice = Math.min(...periodData.map(d => parseFloat(d[3])));
                     const lowestKline = periodData.find(d => parseFloat(d[3]) === lowestPrice);
                     return {
@@ -580,7 +560,9 @@
                         lowestDate: lowestKline ? new Date(lowestKline[0]).toLocaleDateString(settings.lang) : 'N/A'
                     };
                 };
-                 const yesterday = dailyKlines[dailyKlines.length - 2];
+                
+                const yesterday = dailyKlines[dailyKlines.length - 2];
+                if (!yesterday) throw new Error("Yetersiz geçmiş veri.");
                 const high = parseFloat(yesterday[2]), low = parseFloat(yesterday[3]), close = parseFloat(yesterday[4]);
                 const pivot = (high + low + close) / 3;
 
@@ -588,20 +570,24 @@
                     pair, latestPrice, error: false,
                     col1: calculatePct(1), col2: calculatePct(2), col3: calculatePct(3),
                     sr: { r2: pivot + (high - low), r1: (2 * pivot) - low, pivot: pivot, s1: (2 * pivot) - high, s2: pivot - (high - low) },
-                    indicators: {} // Add indicator calculations here
+                    indicators: {
+                        sma: calculateSMA(closePrices, 50), ema: calculateEMA(closePrices, 20),
+                        rsi: calculateRSI(closePrices), macd: calculateMACD(closePrices)
+                    }
                 };
             } catch (error) {
                 console.error(`${pair} verisi çekilirken hata oluştu:`, error);
                 return { pair, error: true };
             }
         }
-
+        
+        // --- RENDER FUNCTIONS ---
         async function fetchAllDataAndRender() {
             document.getElementById('refreshBtn').innerHTML = '<div class="loading"></div>';
             allCryptoData = await Promise.all(cryptoPairs.map(fetchCryptoData));
             renderTable(allCryptoData);
-            renderIndicatorCards('crypto', allCryptoData, document.getElementById('crypto-indicator-cards-container'));
-            renderSupportResistance('crypto', allCryptoData, document.getElementById('crypto-pivot-container'));
+            renderIndicatorCards(allCryptoData);
+            renderSupportResistance(allCryptoData);
             document.getElementById('refreshBtn').innerHTML = `<i class="fas fa-sync-alt"></i>`;
             document.getElementById('updateTime').textContent = new Date().toLocaleString(settings.lang);
         }
@@ -637,11 +623,66 @@
                 tableBody.appendChild(row);
             });
         }
-
-        function getRecommendation(asset, activeIndicators) { /* Placeholder */ return { recommendation: "Tut", color: "var(--hold)", summary: "Analiz için veri yetersiz."}; }
-        function renderIndicatorCards(type, data, container) { /* Placeholder */ container.innerHTML = "<p>AI Analiz modülü yakında...</p>"; }
         
-        function renderSupportResistance(type, data, container) {
+        function getRecommendation(asset) {
+            const { indicators, latestPrice } = asset;
+            const activeIndicators = settings.cryptoAnalysisIndicators;
+            let score = 0;
+            let summaryPoints = { buy: [], sell: [], neutral: [] };
+            if (!indicators) return { recommendation: "Veri Yok", color: "var(--hold)", summary: "Analiz için veri yetersiz."};
+
+            if (activeIndicators.ema && activeIndicators.sma && indicators.ema && indicators.sma) { 
+                if (indicators.ema > indicators.sma) { score++; summaryPoints.buy.push("EMA, SMA'nın üzerinde (yükseliş)."); } 
+                else { score--; summaryPoints.sell.push("EMA, SMA'nın altında (düşüş)."); } 
+            }
+            if (activeIndicators.rsi && indicators.rsi) { 
+                if (indicators.rsi < 35) { score++; summaryPoints.buy.push("RSI aşırı satım bölgesinde."); } 
+                if (indicators.rsi > 65) { score--; summaryPoints.sell.push("RSI aşırı alım bölgesinde."); } 
+            }
+            if (activeIndicators.macd && indicators.macd) { 
+                if (indicators.macd.histogram > 0) { score++; summaryPoints.buy.push("MACD histogramı pozitif."); } 
+                else { score--; summaryPoints.sell.push("MACD histogramı negatif."); } 
+            }
+            
+            let recommendation, color;
+            if (score >= 2) { recommendation = "Güçlü Al"; color = "var(--strong-buy)"; }
+            else if (score === 1) { recommendation = "Al"; color = "var(--buy)"; }
+            else if (score <= -2) { recommendation = "Güçlü Sat"; color = "var(--strong-sell)"; }
+            else if (score === -1) { recommendation = "Sat"; color = "var(--sell)"; }
+            else { recommendation = "Tut"; color = "var(--hold)"; summaryPoints.neutral.push("Mevcut göstergeler net bir yön belirtmiyor."); }
+            
+            let summary = [...summaryPoints.buy, ...summaryPoints.sell, ...summaryPoints.neutral].join(' ');
+            return { recommendation, color, summary: summary || "Nötr sinyaller." };
+        }
+
+        function renderIndicatorCards(data) {
+            const container = document.getElementById('crypto-indicator-cards-container');
+            container.innerHTML = '';
+            data.forEach(asset => {
+                const card = document.createElement('div');
+                card.className = 'indicator-card';
+                if (asset.error) {
+                    card.innerHTML = `<h4>${asset.pair.replace("USDT", "")}</h4><p style="color:var(--accent-red)">Veri yüklenemedi.</p>`;
+                } else {
+                    const { recommendation, color, summary } = getRecommendation(asset);
+                    card.innerHTML = `
+                        <div class="indicator-card-header">
+                            <h4>${asset.pair.replace("USDT", "")}</h4>
+                            <span class="recommendation-badge" style="background-color:${color};">${recommendation}</span>
+                        </div>
+                        <div class="card-footer">
+                            <div class="summary"><p><strong>Özet:</strong> ${summary}</p></div>
+                            <div class="gemini-btn-wrapper">
+                               <button class="gemini-single-btn" data-pair="${asset.pair}" title="Bu varlığı Gemini ile yorumla">${geminiIconSVG}</button>
+                            </div>
+                        </div>`;
+                }
+                container.appendChild(card);
+            });
+        }
+        
+        function renderSupportResistance(data) {
+            const container = document.getElementById('crypto-pivot-container');
             container.innerHTML = '';
             const filter = settings.cryptoPivotFilter;
             data.forEach(asset => {
@@ -671,39 +712,65 @@
                 container.appendChild(card);
             });
         }
+        
+        function updateAnalysisSettings() {
+            settings.cryptoAnalysisIndicators = {};
+            document.querySelectorAll('#crypto-indicator-filters-grid input[type="checkbox"]').forEach(checkbox => {
+                settings.cryptoAnalysisIndicators[checkbox.dataset.indicator] = checkbox.checked;
+            });
+            if (userDocRef) {
+                userDocRef.update({ settings: settings }).then(() => {
+                    renderIndicatorCards(allCryptoData);
+                    showNotification("Analiz güncellendi!", true);
+                }).catch(err => console.error(err));
+            }
+        }
 
         async function getGeminiAnalysis(pair) {
-            // This function is now simplified as the full logic is not requested.
-            showPanel('analysisPanel');
-            document.getElementById('analysisContent').innerHTML = `<p>${pair} için AI analizi getiriliyor...</p><div class="loading"></div>`;
+            const button = document.querySelector(`.gemini-single-btn[data-pair="${pair}"]`);
+            if (!button) return;
+            button.disabled = true; button.innerHTML = `<div class="loading"></div>`;
+            const asset = allCryptoData.find(c => c.pair === pair);
+            if (!asset || asset.error) {
+                document.getElementById('analysisContent').innerHTML = `<p style="color:var(--accent-red)">Analiz için veri bulunamadı.</p>`;
+                showPanel('analysisPanel');
+                button.disabled = false; button.innerHTML = geminiIconSVG; return;
+            }
+            const dataSummary = `Varlık: ${asset.pair.replace('USDT', '')}, Fiyat: ${asset.latestPrice.toFixed(2)} USD. İndikatörler: ${JSON.stringify(asset.indicators)}`;
+            const fullPrompt = `Sen bir uzman finansal analistsin. Şu verileri analiz et: ${dataSummary}. Kısa bir özet ve net bir 'Al', 'Sat' veya 'Tut' tavsiyesi ver. Cevabını HTML formatında, '.analysis-section' div'i içinde ver.`;
+            try {
+                const geminiProxy = functions.httpsCallable('geminiProxy');
+                const result = await geminiProxy({ prompt: fullPrompt });
+                if (result.data && result.data.analysis) {
+                    document.getElementById('analysisContent').innerHTML = result.data.analysis;
+                } else { throw new Error("Yapay zekadan geçerli bir yanıt alınamadı."); }
+            } catch (error) {
+                console.error("Cloud Function Çağrı Hatası:", error);
+                document.getElementById('analysisContent').innerHTML = `<p style="color:var(--accent-red)">Yorumlama sırasında bir hata oluştu: ${error.message}</p>`;
+            } finally {
+                showPanel('analysisPanel');
+                button.disabled = false; button.innerHTML = geminiIconSVG;
+            }
         }
 
         const addNewAsset = async () => {
             const input = document.getElementById('newCoinInput');
             const newAssetSymbols = input.value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
             if (newAssetSymbols.length === 0) return;
-            
-            const added = [];
+            const added = [], alreadyExist = [], invalid = [];
             for (const symbol of newAssetSymbols) {
+                if (cryptoPairs.length >= coinLimit) { showNotification(translations[settings.lang].limit_exceeded, false); break; }
                 const newPair = symbol.endsWith('USDT') ? symbol : `${symbol}USDT`;
-                if (!cryptoPairs.includes(newPair)) {
-                    if (cryptoPairs.length < coinLimit) {
-                        cryptoPairs.push(newPair);
-                        added.push(symbol);
-                    } else {
-                        showNotification(translations[settings.lang].limit_exceeded, false);
-                        break; 
-                    }
-                } else {
-                    showNotification(translations[settings.lang].already_in_list(symbol), false);
-                }
+                if (cryptoPairs.includes(newPair)) { alreadyExist.push(symbol); continue; }
+                cryptoPairs.push(newPair);
+                added.push(symbol);
             }
-            
             if (added.length > 0) {
                 saveCryptoPairsToFirestore();
                 await fetchAllDataAndRender();
                 showNotification(`${added.join(', ')} eklendi!`, true);
             }
+            if (alreadyExist.length > 0) showNotification(`${alreadyExist.join(', ')} zaten listede.`, false);
             input.value = '';
         };
 
@@ -714,7 +781,9 @@
             showPanel('chartPanel');
         }
 
-        // --- EVENT LISTENERS ---
+        // --- GLOBAL EVENT LISTENERS ---
+        document.getElementById('loginBtn').addEventListener('click', () => auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).catch(err => document.getElementById("error-message").textContent = err.message));
+        document.getElementById('signupBtn').addEventListener('click', () => auth.createUserWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).catch(err => document.getElementById("error-message").textContent = err.message));
         document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); auth.signOut(); });
         document.getElementById('refreshBtn').addEventListener('click', fetchAllDataAndRender);
         document.getElementById('addCoinBtn').addEventListener('click', addNewAsset);
@@ -722,6 +791,7 @@
         document.getElementById('settingsBtn').addEventListener('click', () => showPanel('settingsPanel'));
         document.querySelectorAll('.close-btn, #modalOverlay').forEach(el => el.addEventListener('click', closeAllPanels));
         document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+        document.getElementById('updateCryptoAnalysisBtn').addEventListener('click', updateAnalysisSettings);
 
         trackerPage.addEventListener('click', (e) => {
             const target = e.target;
@@ -788,9 +858,10 @@
             if(content) content.innerHTML = `
                 <div class="dictionary-item"><h5>RSI (Göreceli Güç Endeksi)</h5><p>Fiyat hareketlerinin hızını ve değişimini ölçerek bir varlığın aşırı alım veya aşırı satım koşullarında olup olmadığını değerlendirir.</p></div>
                 <div class="dictionary-item"><h5>MACD (Hareketli Ortalama Yakınsama/Iraksama)</h5><p>İki farklı üssel hareketli ortalama arasındaki ilişkiyi gösteren bir trend takip ve momentum göstergesidir.</p></div>
-                <div class="dictionary-item"><h5>Bollinger Bantları</h5><p>Bir basit hareketli ortalamanın etrafına standart sapma ile hesaplanan iki bandın eklenmesiyle oluşur.</p></div>`;
+                <div class="dictionary-item"><h5>Hareketli Ortalamalar (EMA/SMA)</h5><p>Belirli bir periyottaki fiyatların ortalamasını alarak trend yönünü belirginleştirir.</p></div>`;
         }
 
+        // --- INITIAL LOAD ---
         loadSettings(userData);
         await fetchAllDataAndRender();
         renderIndicatorFilters();
