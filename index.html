@@ -30,6 +30,7 @@
             background-color: var(--bg-primary);
             color: var(--text-primary);
             overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
         body.modal-open { overflow: hidden; }
         .page { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 10px; box-sizing: border-box; }
@@ -58,9 +59,11 @@
         .add-asset-bar { display: flex; gap: 10px; margin-bottom: 25px; }
         .add-asset-bar input { flex-grow: 1; padding: 12px 15px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; background-color: var(--bg-tertiary); color: var(--text-primary); }
         .add-asset-bar button { padding: 12px 20px; background-color: var(--accent-blue); border-radius: 8px; border: none; color: white; cursor: pointer; }
+        .table-controls { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+        .table-controls button { background-color: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 8px; cursor: pointer; }
         .table-wrapper { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
-        th, td { padding: 14px 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th, td { padding: 14px 10px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
         th { color: var(--text-secondary); font-weight: 500; position: sticky; top: 0; background-color: var(--bg-secondary); z-index: 1; }
         th.sortable { cursor: pointer; }
         th .sort-indicator { margin-left: 8px; opacity: 0.5; transition: opacity 0.2s; }
@@ -68,7 +71,10 @@
         td { color: var(--text-primary); }
         .asset-cell { font-weight: 600; color: #64b5f6; cursor: pointer; }
         .asset-cell:hover { text-decoration: underline; }
-        .asset-cell .symbol { font-size: 0.8em; color: var(--text-secondary); margin-left: 4px; }
+        .asset-cell .symbol { display:none; }
+        .drag-handle-col { width: 20px; padding: 0 10px; }
+        .drag-handle-col.hidden, #cryptoPriceTable .drag-handle-col.hidden { display: none; }
+        .drag-handle { cursor: grab; padding: 0 10px; color: #9ca3af; }
         tr:hover td { background-color: var(--bg-tertiary); }
         .positive { color: var(--accent-green); }
         .positive-high { font-weight: 600; }
@@ -76,7 +82,6 @@
         .negative { color: var(--accent-red); font-weight: 600; }
         .clickable-pct { cursor: pointer; text-decoration: underline; text-decoration-style: dotted; text-decoration-color: var(--text-secondary); }
         .update-time { text-align: center; margin: 20px 0 10px 0; color: var(--text-secondary); font-size: 0.85rem; }
-        .drag-handle { cursor: grab; padding: 0 10px; color: #9ca3af; }
         .action-btn { background-color: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1rem; }
         .action-btn:hover { color: var(--accent-red); }
         .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 1s linear infinite; }
@@ -100,14 +105,7 @@
         .notification.show { opacity: 1; transform: translateX(-50%) translateY(-20px); visibility: visible; }
         .tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 25px; overflow-x: auto; }
         .tab-link { padding: 10px 15px; cursor: pointer; color: var(--text-secondary); border-bottom: 2px solid transparent; white-space: nowrap; font-size: 0.9rem; }
-        .tab-link.active {
-            color: var(--text-primary);
-            font-weight: 600;
-            background-color: var(--bg-tertiary);
-            border-color: var(--accent-blue);
-            border-top-left-radius: 6px;
-            border-top-right-radius: 6px;
-        }
+        .tab-link.active { color: var(--text-primary); font-weight: 600; background-color: var(--bg-tertiary); border-color: var(--accent-blue); border-top-left-radius: 6px; border-top-right-radius: 6px; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         #chartPanel { width: 90vw; max-width: 1200px; height: 80vh; padding: 0; }
@@ -177,6 +175,13 @@
         .pivot-dictionary { margin-top: 20px; background-color: var(--bg-tertiary); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 0.9rem;}
         .pivot-dictionary p { margin: 5px 0; }
         .pivot-dictionary span { font-weight: bold; color: var(--text-primary); }
+
+        @media (max-width: 768px) {
+            th, td { padding: 12px 6px; font-size: 0.85rem; }
+            .app-header .header-left h1 { font-size: 1.4rem; }
+            .add-asset-bar { flex-direction: column; }
+            .add-asset-bar button { width: 100%; }
+        }
     </style>
 </head>
 <body>
@@ -185,8 +190,8 @@
         <div class="login-container">
             <h1><i class="fas fa-chart-line"></i> Fiyat Takipçisi</h1>
             <p data-lang="login_prompt">Devam etmek için giriş yapın veya yeni hesap oluşturun.</p>
-            <div class="input-group"><label for="email" data-lang="email">E-posta</label><input type="email" id="email"></div>
-            <div class="input-group"><label for="password" data-lang="password">Şifre</label><input type="password" id="password"></div>
+            <div class="input-group"><label for="email" data-lang="email">E-posta</label><input type="email" id="email" autocomplete="email"></div>
+            <div class="input-group"><label for="password" data-lang="password">Şifre</label><input type="password" id="password" autocomplete="current-password"></div>
             <div id="error-message"></div>
             <div class="button-group">
                 <button id="loginBtn" data-lang="login">Giriş Yap</button>
@@ -224,11 +229,14 @@
                     <input type="text" id="newCoinInput" placeholder="BTC, ETH, SOL...">
                     <button id="addCoinBtn"><i class="fas fa-plus"></i> <span data-lang="add">Ekle</span></button>
                 </div>
+                <div class="table-controls">
+                    <button id="toggleSortBtn">Sırala</button>
+                </div>
                 <div class="table-wrapper">
                     <table>
                         <thead>
                             <tr>
-                                <th><i class="fas fa-grip-lines"></i></th>
+                                <th class="drag-handle-col hidden"><i class="fas fa-grip-lines"></i></th>
                                 <th class="sortable" data-sort-key="pair"><span data-lang="coin">Coin</span><span class="sort-indicator"></span></th>
                                 <th class="sortable" data-sort-key="latestPrice"><span data-lang="price">Fiyat</span><span class="sort-indicator"></span></th>
                                 <th id="col1_header_crypto" class="sortable" data-sort-key="col1"></th>
@@ -244,8 +252,8 @@
 
             <div id="crypto-ai-content" class="tab-content">
                 <div class="collapsible">
-                    <div class="collapsible-header"><span>Analiz Filtreleri</span><i class="fas fa-chevron-down"></i></div>
-                    <div class="collapsible-content">
+                    <div class="collapsible-header open"><span>Analiz Filtreleri</span><i class="fas fa-chevron-down"></i></div>
+                    <div class="collapsible-content open">
                         <div id="crypto-indicator-filters-grid" class="filters-grid"></div>
                         <div class="analysis-actions"><button id="updateCryptoAnalysisBtn"><i class="fas fa-check"></i> Analizi Güncelle</button></div>
                     </div>
@@ -345,15 +353,17 @@
     <div class="notification" id="notification"></div>
 
 <script>
-    // FİREBASE PROJE BİLGİLERİNİZİ GİRİN
+    // #############################################################################
+    // # DİKKAT! BURAYA KENDİ FIREBASE PROJE BİLGİLERİNİZİ GİRMENİZ GEREKİYOR! #
+    // #############################################################################
     const firebaseConfig = {
-      apiKey: "AIzaSyAuSI8KIqnqGYeel3WTJD1D8IDPeuBz15Y",
-      authDomain: "crypto-price-tracker-ae3ad.firebaseapp.com",
-      projectId: "crypto-price-tracker-ae3ad",
-      storageBucket: "crypto-price-tracker-ae3ad.appspot.com",
-      messagingSenderId: "61950492308",
-      appId: "1:61950492308:web:8dd2c3b7826abd6a663e81"
-    };
+  apiKey: "AIzaSyA3flTu3Jz9E1D1U_DympYE7B4I4FDxj88",
+  authDomain: "fiyattakipv3.firebaseapp.com",
+  projectId: "fiyattakipv3",
+  storageBucket: "fiyattakipv3.firebasestorage.app",
+  messagingSenderId: "440839843277",
+  appId: "1:440839843277:web:2c9c15e4a103e8b2f2e884"
+};
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
@@ -363,6 +373,7 @@
     let allCryptoData = [];
     let cryptoPairs = [];
     let userDocRef = null;
+    let sortableInstance = null;
     const loginPage = document.getElementById('login-page'), trackerPage = document.getElementById('tracker-page'), notification = document.getElementById("notification"), modalOverlay = document.getElementById('modalOverlay');
 
     const AVAILABLE_INDICATORS = {
@@ -373,22 +384,7 @@
 
     const geminiIconSVG = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="geminiGradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#4285F4;stop-opacity:1" /><stop offset="100%" style="stop-color:#9B72CB;stop-opacity:1" /></linearGradient></defs><path d="M12 2.25C6.07 2.25 2.25 6.07 2.25 12C2.25 17.93 6.07 21.75 12 21.75C17.93 21.75 21.75 17.93 21.75 12C21.75 6.07 17.93 2.25 12 2.25Z" stroke="url(#geminiGradient)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.38 12.38L12 10.5L8.62 12.38L9.75 8.62L6.75 6.38L10.62 6.38L12 2.62L13.38 6.38L17.25 6.38L14.25 8.62L15.38 12.38Z" stroke="url(#geminiGradient)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
-    const translations = {
-        tr: {
-            login_prompt: "Devam etmek için giriş yapın veya yeni hesap oluşturun.", email: "E-posta", password: "Şifre", login: "Giriş Yap", signup: "Kayıt Ol",
-            logout: "Çıkış Yap", app_title: "Fiyat Takipçisi", add: "Ekle", refresh: "Yenile", settings: "Ayarlar", coin: "Coin", price: "Fiyat",
-            delete: "Sil", last_update: "Son güncelleme", color_rules: "Renk Kuralları", general_settings: "Genel Ayarlar", language: "Dil",
-            auto_refresh: "Otomatik Yenileme", refresh_interval: "Yenileme Aralığı (sn)", column_settings: "Kolon Ayarları",
-            positive_threshold: "Pozitif Eşik (%)", color_settings: "Renk Ayarları", high_positive_color: "Yüksek Pozitif Renk",
-            low_positive_color: "Düşük Pozitif Renk", save_settings: "Ayarları Kaydet", saved: "Kaydedildi!", limit_exceeded: "Limit aşıldı!",
-            role_info: (role, limit, type) => `Rolünüz (${role}) en fazla ${limit} ${type} eklemeye izin veriyor.`,
-            invalid_asset: (asset) => `Geçersiz varlık: ${asset}`, already_in_list: (asset) => `${asset} zaten listede.`,
-            lowest_price_title: (asset, period) => `${asset} - ${period} En Düşük Fiyat`,
-            lowest_price_detail: (price, date) => `Bu dönemdeki en düşük fiyat <strong>${price}</strong>, ${date} tarihinde görüldü.`,
-            no_data: "Veri yok"
-        },
-        en: { /* English translations can be added here */ }
-    };
+    const translations = { tr: { login_prompt: "Devam etmek için giriş yapın veya yeni hesap oluşturun.", email: "E-posta", password: "Şifre", login: "Giriş Yap", signup: "Kayıt Ol", logout: "Çıkış Yap", app_title: "Fiyat Takipçisi", add: "Ekle", refresh: "Yenile", settings: "Ayarlar", coin: "Coin", price: "Fiyat", delete: "Sil", last_update: "Son güncelleme", color_rules: "Renk Kuralları", general_settings: "Genel Ayarlar", language: "Dil", auto_refresh: "Otomatik Yenileme", refresh_interval: "Yenileme Aralığı (sn)", column_settings: "Kolon Ayarları", positive_threshold: "Pozitif Eşik (%)", color_settings: "Renk Ayarları", high_positive_color: "Yüksek Pozitif Renk", low_positive_color: "Düşük Pozitif Renk", save_settings: "Ayarları Kaydet", saved: "Kaydedildi!", limit_exceeded: "Limit aşıldı!", role_info: (role, limit, type) => `Rolünüz (${role}) en fazla ${limit} ${type} eklemeye izin veriyor.`, invalid_asset: (asset) => `Geçersiz varlık: ${asset}`, already_in_list: (asset) => `${asset} zaten listede.`, lowest_price_title: (asset, period) => `${asset} - ${period} En Düşük Fiyat`, lowest_price_detail: (price, date) => `Bu dönemdeki en düşük fiyat <strong>${price}</strong>, ${date} tarihinde görüldü.`, no_data: "Veri yok" }, en: {} };
 
     function translatePage(lang) { document.querySelectorAll('[data-lang]').forEach(el => { const key = el.getAttribute('data-lang'); if (translations[lang]?.[key] && typeof translations[lang][key] === 'string') el.textContent = translations[lang][key]; }); }
     function showPage(pageId) { loginPage.style.display = (pageId === 'login-page') ? 'flex' : 'none'; trackerPage.style.display = (pageId === 'tracker-page') ? 'flex' : 'none'; }
@@ -403,12 +399,7 @@
                 const doc = await userDocRef.get();
                 let userData = doc.data();
                 if (!doc.exists) {
-                     userData = {
-                        email: user.email,
-                        role: 'new_user',
-                        coins: ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
-                        settings: getDefaultSettings()
-                    };
+                     userData = { email: user.email, role: 'new_user', coins: ["BTCUSDT", "ETHUSDT", "SOLUSDT"], settings: getDefaultSettings() };
                     await userDocRef.set(userData);
                 }
                 setRoleAndLimits(userData.role);
@@ -418,9 +409,7 @@
                 showPage('tracker-page');
             } catch (err) {
                 console.error("Auth/Firestore Error:", err);
-                if (err.code === 'permission-denied') {
-                    document.getElementById("error-message").textContent = "Firestore yetki hatası. Lütfen veritabanı kurallarınızı kontrol edin.";
-                }
+                if (err.code === 'permission-denied') { document.getElementById("error-message").textContent = "Firestore yetki hatası. Lütfen veritabanı kurallarınızı kontrol edin."; }
                 auth.signOut();
             }
         } else {
@@ -452,7 +441,18 @@
         cryptoPairs = userData.coins || ["BTCUSDT", "ETHUSDT", "SOLUSDT"];
 
         const saveCryptoPairsToFirestore = () => { if (userDocRef) { userDocRef.update({ coins: cryptoPairs }).catch(error => console.error("Firebase kaydetme hatası (Kripto):", error)); } };
-        const formatPrice = (price, currency = "USDT") => { const num = parseFloat(price); if (isNaN(num)) return 'N/A'; if (currency === 'TRY') { return num.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' }); } if (num < 1) return num.toFixed(6); if (num < 10) return num.toFixed(4); return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+
+        const formatPrice = (price) => {
+            const num = parseFloat(price);
+            if (isNaN(num)) return 'N/A';
+            let formattedPrice;
+            if (num < 0.001) formattedPrice = num.toFixed(8);
+            else if (num < 1) formattedPrice = num.toFixed(6);
+            else if (num < 10) formattedPrice = num.toFixed(4);
+            else formattedPrice = num.toFixed(2);
+            return parseFloat(formattedPrice).toString();
+        };
+
         const formatVolume = (volume) => { const num = parseFloat(volume); if (isNaN(num)) return 'N/A'; if (num >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(2)}B`; if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M`; if (num >= 1_000) return `${(num / 1_000).toFixed(2)}K`; return num.toFixed(0); };
 
         function getDefaultSettings() {
@@ -462,7 +462,7 @@
                 colors: { high: '#26a69a', low: '#f59e0b' },
                 cryptoPivotFilter: 'all',
                 cryptoAnalysisInterval: '4h',
-                cryptoAnalysisIndicators: { ema: true, rsi: true, macd: true, bollinger: true, volume: true, sma: false, stochRsi: false, atr: false, ichimoku: false, fibonacci: false }
+                cryptoAnalysisIndicators: { ema: true, rsi: true, macd: true, bollinger: true, volume: false, sma: false, stochRsi: false, atr: false, ichimoku: false, fibonacci: false }
             };
         }
 
@@ -502,7 +502,7 @@
             });
             if (userDocRef) {
                 userDocRef.update({ 'settings.cryptoAnalysisIndicators': settings.cryptoAnalysisIndicators }).then(() => {
-                    renderIndicatorCards('crypto', allCryptoData, document.getElementById('crypto-indicator-cards-container'));
+                    renderIndicatorCards('crypto', allCryptoData);
                     showNotification("Analiz güncellendi!", true);
                 }).catch(error => console.error("Firebase analiz ayarı kaydetme hatası:", error));
             }
@@ -602,8 +602,8 @@
             renderLoadingSkeletons('crypto', cryptoPairs, document.getElementById('cryptoPriceTable'));
             allCryptoData = await Promise.all(cryptoPairs.map(fetchCryptoData));
             updateAllTableRows('crypto', allCryptoData);
-            renderIndicatorCards('crypto', allCryptoData, document.getElementById('crypto-indicator-cards-container'));
-            renderSupportResistance('crypto', allCryptoData, document.getElementById('crypto-pivot-container'));
+            renderIndicatorCards('crypto', allCryptoData);
+            renderSupportResistance('crypto', allCryptoData);
             refreshBtn.innerHTML = `<i class="fas fa-sync-alt"></i>`;
             updateTime.textContent = new Date().toLocaleString(settings.lang);
         }
@@ -614,8 +614,8 @@
                 const row = document.createElement("tr");
                 row.dataset.pair = pair;
                 row.innerHTML = `
-                    <td><i class="fas fa-grip-lines drag-handle"></i></td>
-                    <td class="asset-cell" data-pair="${pair}" data-type="${type}">${pair.replace("USDT", "")}<span class="symbol">/USDT</span></td>
+                    <td class="drag-handle-col hidden"><i class="fas fa-grip-lines drag-handle"></i></td>
+                    <td class="asset-cell" data-pair="${pair}" data-type="${type}">${pair.replace("USDT", "")}</td>
                     <td colspan="5" style="text-align:center;"><div class="loading"></div></td>
                 `;
                 tableBody.appendChild(row);
@@ -625,18 +625,23 @@
         function updateAllTableRows(type, data) {
             const tableBody = document.getElementById(`${type}PriceTable`);
             tableBody.innerHTML = '';
+            const isSorting = !document.querySelector('.drag-handle-col.hidden');
             data.forEach(result => {
                 const row = document.createElement("tr");
                 row.dataset.pair = result.pair;
                 const getCellStyle = (colData, threshold) => { const pct = parseFloat(colData.pct); if (isNaN(pct)) return ''; if (pct < 0) return 'class="negative"'; if (pct >= threshold) return `class="positive-high" style="color: ${settings.colors.high};"`; return `class="positive-low" style="color: ${settings.colors.low};"`; };
                 let rowHTML;
                 if (result.error) {
-                    rowHTML = `<td><i class="fas fa-grip-lines drag-handle"></i></td><td class="asset-cell">${result.pair.replace("USDT", "")}</td><td colspan="5" style="text-align:center; color: var(--accent-red);">Veri alınamadı</td>`;
+                    rowHTML = `
+                        <td class="drag-handle-col ${isSorting ? '' : 'hidden'}"><i class="fas fa-grip-lines drag-handle"></i></td>
+                        <td class="asset-cell">${result.pair.replace("USDT", "")}</td>
+                        <td colspan="5" style="text-align:center; color: var(--accent-red);">Veri alınamadı</td>
+                    `;
                 } else {
                     rowHTML = `
-                        <td><i class="fas fa-grip-lines drag-handle"></i></td>
-                        <td class="asset-cell" data-pair="${result.pair}" data-type="${type}">${result.pair.replace("USDT", "")}<span class="symbol">/USDT</span></td>
-                        <td>${formatPrice(result.latestPrice, result.currency)}</td>
+                        <td class="drag-handle-col ${isSorting ? '' : 'hidden'}"><i class="fas fa-grip-lines drag-handle"></i></td>
+                        <td class="asset-cell" data-pair="${result.pair}" data-type="${type}">${result.pair.replace("USDT", "")}</td>
+                        <td>${formatPrice(result.latestPrice)}</td>
                         <td ${getCellStyle(result.col1, settings.columns[1].threshold)} class="clickable-pct" data-col="1" data-pair="${result.pair}" data-type="${type}">${result.col1.pct}%</td>
                         <td ${getCellStyle(result.col2, settings.columns[2].threshold)} class="clickable-pct" data-col="2" data-pair="${result.pair}" data-type="${type}">${result.col2.pct}%</td>
                         <td ${getCellStyle(result.col3, settings.columns[3].threshold)} class="clickable-pct" data-col="3" data-pair="${result.pair}" data-type="${type}">${result.col3.pct}%</td>
@@ -649,7 +654,8 @@
         }
 
 
-        function renderSupportResistance(type, data, container) {
+        function renderSupportResistance(type, data) {
+            const container = document.getElementById('crypto-pivot-container');
             container.innerHTML = '';
             document.getElementById('pivot-dictionary-container').innerHTML = `
                 <div class="pivot-dictionary">
@@ -683,7 +689,7 @@
                             <div class="pivot-marker" style="left: ${getPosition(r1)}%;" data-label="R1"></div>
                             <div class="pivot-marker" style="left: ${getPosition(r2)}%;" data-label="R2"></div>
                         </div>
-                        <div class="current-price-indicator" style="left: ${pricePos}%;" data-price="${formatPrice(asset.latestPrice, asset.currency)}"></div>
+                        <div class="current-price-indicator" style="left: ${pricePos}%;" data-price="${formatPrice(asset.latestPrice)}"></div>
                     </div>
                 `;
                 container.appendChild(card);
@@ -705,30 +711,31 @@
             let score = 0;
             let summaryPoints = { buy: [], sell: [], neutral: [] };
 
-            if (activeIndicators.ema && activeIndicators.sma && indicators.ema && indicators.sma) { if (indicators.ema > indicators.sma) { score++; summaryPoints.buy.push("EMA, SMA'nın üzerinde (yükseliş)."); } else { score--; summaryPoints.sell.push("EMA, SMA'nın altında (düşüş)."); } }
-            if (activeIndicators.rsi && indicators.rsi !== null) { if (indicators.rsi < 35) { score += 1.5; summaryPoints.buy.push("RSI aşırı satımda."); } if (indicators.rsi > 65) { score -= 1.5; summaryPoints.sell.push("RSI aşırı alımda."); } }
-            if (activeIndicators.macd && indicators.macd) { if (indicators.macd.histogram > 0) { score++; summaryPoints.buy.push("MACD histogramı pozitif."); } else { score--; summaryPoints.sell.push("MACD histogramı negatif."); } }
-            if (activeIndicators.bollinger && indicators.bollinger) { if (latestPrice < indicators.bollinger.lower) { score++; summaryPoints.buy.push("Fiyat alt Bollinger Bandı'na yakın."); } if (latestPrice > indicators.bollinger.upper) { score--; summaryPoints.sell.push("Fiyat üst Bollinger Bandı'na yakın."); } }
-            if (activeIndicators.ichimoku && indicators.ichimoku) { if (latestPrice > indicators.ichimoku.senkouSpanA && latestPrice > indicators.ichimoku.senkouSpanB) { score+=1.5; summaryPoints.buy.push("Fiyat Ichimoku bulutunun üzerinde."); } else if (latestPrice < indicators.ichimoku.senkouSpanA && latestPrice < indicators.ichimoku.senkouSpanB) { score-=1.5; summaryPoints.sell.push("Fiyat Ichimoku bulutunun altında."); } }
-            if (activeIndicators.stochRsi && indicators.stochRsi) { if(indicators.stochRsi.k < 20) { score += 1; summaryPoints.buy.push("StochRSI aşırı satımda."); } if(indicators.stochRsi.k > 80) { score -= 1; summaryPoints.sell.push("StochRSI aşırı alımda."); } }
+            if (activeIndicators.ema && activeIndicators.sma && indicators.ema && indicators.sma) { if (indicators.ema > indicators.sma) { score++; summaryPoints.buy.push("EMA>SMA"); } else { score--; summaryPoints.sell.push("EMA<SMA"); } }
+            if (activeIndicators.rsi && indicators.rsi !== null) { if (indicators.rsi < 35) { score += 1.5; summaryPoints.buy.push("RSI aşırı satımda"); } if (indicators.rsi > 65) { score -= 1.5; summaryPoints.sell.push("RSI aşırı alımda"); } }
+            if (activeIndicators.macd && indicators.macd) { if (indicators.macd.histogram > 0) { score++; summaryPoints.buy.push("MACD pozitif"); } else { score--; summaryPoints.sell.push("MACD negatif"); } }
+            if (activeIndicators.bollinger && indicators.bollinger) { if (latestPrice < indicators.bollinger.lower) { score++; summaryPoints.buy.push("Alt Bollinger'a yakın"); } if (latestPrice > indicators.bollinger.upper) { score--; summaryPoints.sell.push("Üst Bollinger'a yakın"); } }
+            if (activeIndicators.ichimoku && indicators.ichimoku) { if (latestPrice > indicators.ichimoku.senkouSpanA && latestPrice > indicators.ichimoku.senkouSpanB) { score+=1.5; summaryPoints.buy.push("Ichimoku bulutu üstünde"); } else if (latestPrice < indicators.ichimoku.senkouSpanA && latestPrice < indicators.ichimoku.senkouSpanB) { score-=1.5; summaryPoints.sell.push("Ichimoku bulutu altında"); } }
+            if (activeIndicators.stochRsi && indicators.stochRsi) { if(indicators.stochRsi.k < 20) { score += 1; summaryPoints.buy.push("StochRSI aşırı satımda"); } if(indicators.stochRsi.k > 80) { score -= 1; summaryPoints.sell.push("StochRSI aşırı alımda"); } }
 
             let recommendation, color;
             if (score >= 2) { recommendation = "Güçlü Al"; color = "var(--strong-buy)"; }
             else if (score >= 0.5) { recommendation = "Al"; color = "var(--buy)"; }
             else if (score <= -2) { recommendation = "Güçlü Sat"; color = "var(--strong-sell)"; }
             else if (score <= -0.5) { recommendation = "Sat"; color = "var(--sell)"; }
-            else { recommendation = "Tut"; color = "var(--hold)"; summaryPoints.neutral.push("Göstergeler nötr."); }
+            else { recommendation = "Tut"; color = "var(--hold)"; summaryPoints.neutral.push("Nötr"); }
 
-            let summary = [...summaryPoints.buy, ...summaryPoints.sell, ...summaryPoints.neutral].join(' ');
-            if (summary.trim() === "" || summary === "Göstergeler nötr.") summary = "Seçili göstergeler net bir yön belirtmiyor veya veri yetersiz.";
+            let summary = [...summaryPoints.buy, ...summaryPoints.sell, ...summaryPoints.neutral].join(', ');
+            if (summary.trim() === "" || summary === "Nötr") summary = "Seçili göstergeler net bir yön belirtmiyor.";
             return { recommendation, color, summary };
         }
 
-        function renderIndicatorCards(type, data, container) {
+        function renderIndicatorCards(type) {
+            const container = document.getElementById('crypto-indicator-cards-container');
             container.innerHTML = '';
             const activeIndicators = settings[`${type}AnalysisIndicators`];
 
-            data.forEach(asset => {
+            allCryptoData.forEach(asset => {
                 const card = document.createElement('div');
                 card.className = 'indicator-card';
                 if (asset.error) {
@@ -739,31 +746,31 @@
                 const { recommendation, color, summary } = getRecommendation(asset, activeIndicators);
                 const { indicators, latestPrice } = asset;
 
-                const getValueHTML = (label, value, formatter = (v) => formatPrice(v, asset.currency), positiveCondition, negativeCondition) => {
+                const getValueHTML = (label, value, formatter, positiveCondition, negativeCondition) => {
                     if (value === null || value === undefined) return '';
                     let className = 'value';
-                    if (positiveCondition && positiveCondition(value)) className += ' value-positive';
-                    else if (negativeCondition && negativeCondition(value)) className += ' value-negative';
+                    if (positiveCondition?.(value)) className += ' value-positive';
+                    else if (negativeCondition?.(value)) className += ' value-negative';
                     return `<div class="indicator-item"><span class="label">${label}</span><span class="${className}">${formatter(value)}</span></div>`;
                 };
 
                 let detailsHTML = '<div class="indicator-details-grid">';
-                detailsHTML += getValueHTML('Fiyat', latestPrice);
+                detailsHTML += getValueHTML('Fiyat', latestPrice, val => `$${formatPrice(val)}`);
                 Object.keys(AVAILABLE_INDICATORS).forEach(key => {
                     if(activeIndicators[key]) {
                         const indicatorValue = indicators[key];
                         if (indicatorValue !== undefined && indicatorValue !== null) {
                             switch(key) {
-                                case 'rsi': detailsHTML += getValueHTML('RSI', indicatorValue, (v) => v.toFixed(2), v => v < 35, v => v > 65); break;
-                                case 'macd': detailsHTML += getValueHTML('MACD Hist.', indicatorValue?.histogram, (v) => v.toFixed(6), v => v > 0, v => v < 0); break;
-                                case 'stochRsi': detailsHTML += getValueHTML('Stoch RSI (k)', indicatorValue?.k, (v) => v.toFixed(2), v => v < 20, v => v > 80); break;
+                                case 'rsi': detailsHTML += getValueHTML('RSI', indicatorValue, v => v.toFixed(2), v => v < 35, v => v > 65); break;
+                                case 'macd': detailsHTML += getValueHTML('MACD Hist.', indicatorValue?.histogram, v => v.toFixed(6), v => v > 0, v => v < 0); break;
+                                case 'stochRsi': detailsHTML += getValueHTML('Stoch RSI (k)', indicatorValue?.k, v => v.toFixed(2), v => v < 20, v => v > 80); break;
                                 case 'volume': detailsHTML += getValueHTML('Hacim (24s)', indicatorValue, formatVolume); break;
-                                case 'ema': detailsHTML += getValueHTML('EMA (50)', indicatorValue, (v) => v.toFixed(2)); break;
-                                case 'sma': detailsHTML += getValueHTML('SMA (50)', indicatorValue, (v) => v.toFixed(2)); break;
-                                case 'atr': detailsHTML += getValueHTML('ATR', indicatorValue, (v) => v.toFixed(4)); break;
-                                case 'bollinger': detailsHTML += getValueHTML('Bollinger (Orta)', indicatorValue?.middle, (v) => v.toFixed(2)); break;
-                                case 'ichimoku': detailsHTML += getValueHTML('Ichimoku (Tenkan)', indicatorValue?.tenkanSen, (v) => v.toFixed(2)); break;
-                                case 'fibonacci': detailsHTML += getValueHTML('Fib 0.5 Seviyesi', indicatorValue?.level_500, (v) => v.toFixed(2)); break;
+                                case 'ema': detailsHTML += getValueHTML('EMA (50)', indicatorValue, v => v.toFixed(2)); break;
+                                case 'sma': detailsHTML += getValueHTML('SMA (50)', indicatorValue, v => v.toFixed(2)); break;
+                                case 'atr': detailsHTML += getValueHTML('ATR', indicatorValue, v => v.toFixed(4)); break;
+                                case 'bollinger': detailsHTML += getValueHTML('Bollinger (Orta)', indicatorValue?.middle, v => v.toFixed(2)); break;
+                                case 'ichimoku': detailsHTML += getValueHTML('Ichimoku (Tenkan)', indicatorValue?.tenkanSen, v => v.toFixed(2)); break;
+                                case 'fibonacci': detailsHTML += getValueHTML('Fib 0.5 Seviyesi', indicatorValue?.level_500, v => v.toFixed(2)); break;
                             }
                         }
                     }
@@ -806,7 +813,7 @@
                     Object.keys(activeIndicators).forEach(key => {
                         if(activeIndicators[key] && asset.indicators[key] !== null && asset.indicators[key] !== undefined) {
                              let val = asset.indicators[key];
-                             if(typeof val === 'object') val = JSON.stringify(val, (k,v) => typeof v === 'number' ? v.toFixed(4) : v);
+                             if(typeof val === 'object') val = JSON.stringify(val, (k,v) => typeof v === 'number' ? parseFloat(v.toFixed(4)) : v);
                              dataSummary += `${key}: ${val}, `;
                         }
                     });
@@ -817,11 +824,9 @@
             const prompt = `Sen bir uzman finansal analistsin. Aşağıdaki kripto para piyasası verilerini ve seçili teknik göstergeleri analiz et. Her varlık için kısa bir özet çıkar ve net bir 'Al', 'Sat' veya 'Tut' tavsiyesi ver. Cevabını HTML formatında, her varlık için '.analysis-section' div'i içinde ver. Tavsiye kelimesini (Al, Sat, Tut, Güçlü Al, Güçlü Sat) bir <span class='recommendation-al'>, <span class='recommendation-sat'>, veya <span class='recommendation-tut'> gibi uygun bir class ile sarmala. İşte veriler:\n\n${dataSummary}`;
 
             try {
-                let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
-                const payload = { contents: chatHistory };
-                const apiKey = "AIzaSyDl-VY4kiMnF97UA8JX-8_zw0ObsFhkhMw"; // BU KEY'İ GÜVENLİ BİR YERDE SAKLAYIN!
+                const apiKey = firebaseConfig.apiKey; // Use the key from your config
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
-                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{text: prompt}] }] }) });
 
                 if (!response.ok) throw new Error(`API isteği başarısız: ${response.status}`);
                 const result = await response.json();
@@ -840,7 +845,7 @@
         }
 
         const addNewAsset = async (type) => {
-            const input = document.getElementById(type === 'crypto' ? 'newCoinInput' : 'newStockInput');
+            const input = document.getElementById('newCoinInput');
             const assetList = cryptoPairs;
             const limit = coinLimit;
             const saveFunction = saveCryptoPairsToFirestore;
@@ -848,7 +853,7 @@
             const newAssetSymbols = input.value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
             if (newAssetSymbols.length === 0) return;
             if (limit !== Infinity && (assetList.length + newAssetSymbols.length) > limit) {
-                showNotification(translations[settings.lang].role_info(currentUserRole, limit, type), false);
+                showNotification(translations[settings.lang].role_info(currentUserRole, limit, 'coin'), false);
                 return;
             }
 
@@ -871,7 +876,7 @@
         };
 
         function showChart(pair, type) {
-            document.getElementById('chartPanelTitle').textContent = pair;
+            document.getElementById('chartPanelTitle').textContent = pair.replace("USDT", "");
             document.getElementById('chartContainer').innerHTML = '';
             new TradingView.widget({ "autosize": true, "symbol": `BINANCE:${pair}`, "interval": "D", "theme": "dark", "style": "1", "locale": settings.lang, "container_id": "chartContainer" });
             showPanel('chartPanel');
@@ -886,6 +891,9 @@
         document.querySelectorAll('.close-btn').forEach(btn => btn.addEventListener('click', closeAllPanels));
         document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
         modalOverlay.addEventListener('click', closeAllPanels);
+        document.getElementById('toggleSortBtn').addEventListener('click', () => {
+            document.querySelectorAll('.drag-handle-col').forEach(el => el.classList.toggle('hidden'));
+        });
 
         trackerPage.addEventListener('click', (e) => {
             const collapsibleHeader = e.target.closest('.collapsible-header');
@@ -912,7 +920,7 @@
                         const colData = assetData[`col${col}`];
                         if (colData && colData.lowestPrice) {
                             document.getElementById('lowestPriceTitle').textContent = translations[settings.lang].lowest_price_title(assetData.pair.replace('USDT',''), settings.columns[col].name);
-                            document.getElementById('lowestPriceDetails').innerHTML = translations[settings.lang].lowest_price_detail(formatPrice(colData.lowestPrice, assetData.currency), colData.lowestDate);
+                            document.getElementById('lowestPriceDetails').innerHTML = translations[settings.lang].lowest_price_detail(formatPrice(colData.lowestPrice), colData.lowestDate);
                             showPanel('lowestPricePanel');
                         }
                     }
@@ -928,7 +936,7 @@
                  settings.cryptoPivotFilter = pivotFilterBtn.dataset.filter;
                  if (userDocRef) userDocRef.update({ 'settings.cryptoPivotFilter': settings.cryptoPivotFilter });
                  applySettings();
-                 renderSupportResistance('crypto', allCryptoData, document.getElementById('crypto-pivot-container'));
+                 renderSupportResistance('crypto', allCryptoData);
                  return;
             }
              const intervalFilterBtn = e.target.closest('#cryptoIntervalFilters button');
@@ -948,13 +956,16 @@
             if (target) getGeminiAnalysis(target.dataset.type, target.dataset.pair);
         });
 
-        new Sortable(document.getElementById('cryptoPriceTable'), { handle: '.drag-handle', animation: 150, onEnd: (evt) => {
-            const [movedItem] = cryptoPairs.splice(evt.oldIndex, 1);
-            cryptoPairs.splice(evt.newIndex, 0, movedItem);
-            saveCryptoPairsToFirestore();
-        }});
+        sortableInstance = new Sortable(document.getElementById('cryptoPriceTable'), {
+            handle: '.drag-handle',
+            animation: 150,
+            onEnd: (evt) => {
+                const [movedItem] = cryptoPairs.splice(evt.oldIndex, 1);
+                cryptoPairs.splice(evt.newIndex, 0, movedItem);
+                saveCryptoPairsToFirestore();
+            }
+        });
 
-        // Initial setup calls
         renderIndicatorFilters();
         renderDictionary();
         loadSettings(userData);
