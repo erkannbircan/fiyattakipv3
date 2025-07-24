@@ -12,6 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-functions-compat.js"></script>
 
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
 
@@ -25,12 +26,8 @@
         }
         html { scroll-behavior: smooth; }
         body {
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
-            overflow-x: hidden;
-            -webkit-tap-highlight-color: transparent;
+            font-family: 'Inter', sans-serif; margin: 0; background-color: var(--bg-primary); color: var(--text-primary);
+            overflow-x: hidden; -webkit-tap-highlight-color: transparent;
         }
         body.modal-open { overflow: hidden; }
         .page { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 10px; box-sizing: border-box; }
@@ -66,8 +63,11 @@
         th, td { padding: 14px 10px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
         th { color: var(--text-secondary); font-weight: 500; position: sticky; top: 0; background-color: var(--bg-secondary); z-index: 1; }
         th.sortable { cursor: pointer; }
+        th.sortable:hover { color: var(--text-primary); }
         th .sort-indicator { margin-left: 8px; opacity: 0.5; transition: opacity 0.2s; }
         th.asc .sort-indicator, th.desc .sort-indicator { opacity: 1; }
+        th.asc .sort-indicator::before { content: '▲'; }
+        th.desc .sort-indicator::before { content: '▼'; }
         td { color: var(--text-primary); }
         .asset-cell { font-weight: 600; color: #64b5f6; cursor: pointer; }
         .asset-cell:hover { text-decoration: underline; }
@@ -126,8 +126,7 @@
         .interval-filters { display: flex; gap: 10px; justify-content: center; flex-grow: 1; }
         .interval-filters button { background-color: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; cursor: pointer; }
         .interval-filters button.active { background-color: var(--accent-blue); color: white; border-color: var(--accent-blue); }
-        .analyze-all-btn { background: linear-gradient(45deg, #4285F4, #9B72CB); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;}
-        .analyze-all-btn svg { width: 28px; height: 28px; }
+        .ai-btn { background: linear-gradient(45deg, #4285F4, #9B72CB); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;}
         .indicator-cards-container { display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 20px; }
         .indicator-card { background: linear-gradient(145deg, var(--bg-tertiary), var(--bg-secondary)); border-radius: 12px; border: 1px solid var(--border-color); padding: 20px; transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .indicator-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
@@ -143,10 +142,6 @@
         .card-footer { margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
         .card-footer .summary { flex-grow: 1; }
         .card-footer .summary p { margin: 0; font-size: 0.9rem; line-height: 1.5; color: var(--text-primary); }
-        .gemini-btn-wrapper { flex-shrink: 0; margin-left: 15px; }
-        .gemini-single-btn { background: none; border: none; cursor: pointer; padding: 8px; border-radius: 50%; display: inline-flex; justify-content: center; align-items: center; transition: background-color 0.2s; }
-        .gemini-single-btn:hover { background-color: rgba(155, 114, 203, 0.2); }
-        .gemini-single-btn svg { width: 28px; height: 28px; }
         .dictionary-item { margin-bottom: 20px; }
         .dictionary-item h5 { color: #64b5f6; margin: 0 0 8px 0; font-size: 1.1rem; }
         .dictionary-item p { margin: 0 0 10px 0; line-height: 1.6; color: var(--text-secondary); }
@@ -162,7 +157,7 @@
         .pivot-filters { display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
         .pivot-filters button { background-color: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; cursor: pointer; }
         .pivot-filters button.active { background-color: var(--accent-blue); color: white; border-color: var(--accent-blue); }
-        .pivot-container { display: flex; flex-direction: column; gap: 30px; }
+        .pivot-container { display: flex; flex-direction: column; gap: 15px; }
         .pivot-bar-card { background-color: var(--bg-tertiary); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); }
         .pivot-bar-header { margin: 0 0 20px 0; color: #64b5f6; font-size: 1.2rem; font-weight: 600; }
         .pivot-bar-container { position: relative; height: 50px; display: flex; align-items: center; }
@@ -170,12 +165,12 @@
         .pivot-marker { position: absolute; top: -5px; height: 20px; width: 2px; background-color: rgba(255, 255, 255, 0.6); transform: translateX(-50%); }
         .pivot-marker::after { content: attr(data-label); position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap; }
         .pivot-marker.pivot-p::after { color: var(--accent-yellow); font-weight: bold; }
+        .pivot-values { display: flex; justify-content: space-between; margin-top: 25px; font-size: 0.8rem; color: var(--text-secondary); }
         .current-price-indicator { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 16px; height: 16px; background-color: var(--accent-blue); border: 2px solid white; border-radius: 50%; z-index: 3; transition: left 0.5s ease-out; }
         .current-price-indicator::before { content: attr(data-price); position: absolute; top: -25px; left: 50%; transform: translateX(-50%); background-color: var(--bg-primary); color: white; padding: 2px 6px; border-radius: 5px; font-size: 0.8rem; font-weight: bold; z-index: 2; white-space: nowrap; border: 1px solid var(--border-color); }
         .pivot-dictionary { margin-top: 20px; background-color: var(--bg-tertiary); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 0.9rem;}
         .pivot-dictionary p { margin: 5px 0; }
         .pivot-dictionary span { font-weight: bold; color: var(--text-primary); }
-
         @media (max-width: 768px) {
             th, td { padding: 12px 6px; font-size: 0.85rem; }
             .app-header .header-left h1 { font-size: 1.4rem; }
@@ -230,7 +225,7 @@
                     <button id="addCoinBtn"><i class="fas fa-plus"></i> <span data-lang="add">Ekle</span></button>
                 </div>
                 <div class="table-controls">
-                    <button id="toggleSortBtn">Sırala</button>
+                    <button id="toggleSortBtn"><i class="fas fa-sort"></i> Sırala</button>
                 </div>
                 <div class="table-wrapper">
                     <table>
@@ -266,7 +261,7 @@
                              <button class="interval-btn active" data-interval="4h">4 Saat</button>
                              <button class="interval-btn" data-interval="1d">1 Gün</button>
                         </div>
-                        <button id="analyzeAllCryptoBtn" class="analyze-all-btn" title="Tüm listeyi Gemini ile yorumla"></button>
+                        <button id="analyzeAllCryptoBtn" class="ai-btn" title="Tüm listeyi Gemini ile yorumla"><i class="fas fa-magic-sparkles"></i> Toplu Yorumla</button>
                     </div>
                 </div>
                 <div id="crypto-indicator-cards-container" class="indicator-cards-container"></div>
@@ -367,10 +362,12 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
+    const functions = firebase.functions();
 
     // --- GLOBAL STATE ---
     let currentUserRole = null, coinLimit = 10, settings = {}, autoRefreshTimer = null, pageInitialized = false;
-    let allCryptoData = [];
+    let allCryptoData = [], sortedCryptoData = [];
+    let currentSort = { key: 'pair', order: 'asc' };
     let cryptoPairs = [];
     let userDocRef = null;
     let sortableInstance = null;
@@ -381,8 +378,6 @@
         bollinger: "Bollinger Bands", stochRsi: "Stochastic RSI",
         volume: "Hacim (24s)", atr: "ATR", ichimoku: "Ichimoku Cloud", fibonacci: "Fibonacci"
     };
-
-    const geminiIconSVG = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="geminiGradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#4285F4;stop-opacity:1" /><stop offset="100%" style="stop-color:#9B72CB;stop-opacity:1" /></linearGradient></defs><path d="M12 2.25C6.07 2.25 2.25 6.07 2.25 12C2.25 17.93 6.07 21.75 12 21.75C17.93 21.75 21.75 17.93 21.75 12C21.75 6.07 17.93 2.25 12 2.25Z" stroke="url(#geminiGradient)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.38 12.38L12 10.5L8.62 12.38L9.75 8.62L6.75 6.38L10.62 6.38L12 2.62L13.38 6.38L17.25 6.38L14.25 8.62L15.38 12.38Z" stroke="url(#geminiGradient)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
     const translations = { tr: { login_prompt: "Devam etmek için giriş yapın veya yeni hesap oluşturun.", email: "E-posta", password: "Şifre", login: "Giriş Yap", signup: "Kayıt Ol", logout: "Çıkış Yap", app_title: "Fiyat Takipçisi", add: "Ekle", refresh: "Yenile", settings: "Ayarlar", coin: "Coin", price: "Fiyat", delete: "Sil", last_update: "Son güncelleme", color_rules: "Renk Kuralları", general_settings: "Genel Ayarlar", language: "Dil", auto_refresh: "Otomatik Yenileme", refresh_interval: "Yenileme Aralığı (sn)", column_settings: "Kolon Ayarları", positive_threshold: "Pozitif Eşik (%)", color_settings: "Renk Ayarları", high_positive_color: "Yüksek Pozitif Renk", low_positive_color: "Düşük Pozitif Renk", save_settings: "Ayarları Kaydet", saved: "Kaydedildi!", limit_exceeded: "Limit aşıldı!", role_info: (role, limit, type) => `Rolünüz (${role}) en fazla ${limit} ${type} eklemeye izin veriyor.`, invalid_asset: (asset) => `Geçersiz varlık: ${asset}`, already_in_list: (asset) => `${asset} zaten listede.`, lowest_price_title: (asset, period) => `${asset} - ${period} En Düşük Fiyat`, lowest_price_detail: (price, date) => `Bu dönemdeki en düşük fiyat <strong>${price}</strong>, ${date} tarihinde görüldü.`, no_data: "Veri yok" }, en: {} };
 
@@ -502,7 +497,7 @@
             });
             if (userDocRef) {
                 userDocRef.update({ 'settings.cryptoAnalysisIndicators': settings.cryptoAnalysisIndicators }).then(() => {
-                    renderIndicatorCards('crypto', allCryptoData);
+                    renderIndicatorCards('crypto');
                     showNotification("Analiz güncellendi!", true);
                 }).catch(error => console.error("Firebase analiz ayarı kaydetme hatası:", error));
             }
@@ -533,8 +528,6 @@
                 const checkbox = document.querySelector(`#crypto-indicator-filters-grid input[data-indicator="${key}"]`);
                 if (checkbox) checkbox.checked = !!settings.cryptoAnalysisIndicators[key];
             });
-
-            document.querySelectorAll('.analyze-all-btn').forEach(btn => btn.innerHTML = geminiIconSVG);
             translatePage(settings.lang);
             toggleAutoRefresh();
         }
@@ -572,7 +565,7 @@
                     let lowestPrice = Infinity, lowestDate = null;
                     periodData.forEach(d => { const low = parseFloat(d[3]); if (low < lowestPrice) { lowestPrice = low; lowestDate = new Date(d[0]); } });
                     if (lowestPrice === Infinity) return { pct: 'N/A' };
-                    return { pct: ((latestPrice - lowestPrice) / lowestPrice * 100).toFixed(2), lowestPrice, lowestDate: lowestDate.toLocaleDateString(settings.lang) };
+                    return { pct: ((latestPrice - lowestPrice) / lowestPrice * 100), lowestPrice, lowestDate: lowestDate.toLocaleDateString(settings.lang) };
                 };
                 const yesterday = dailyKlines[dailyKlines.length - 2];
                 const high = parseFloat(yesterday[2]), low = parseFloat(yesterday[3]), close = parseFloat(yesterday[4]);
@@ -582,13 +575,7 @@
                     pair, latestPrice, error: false, type: 'crypto', currency: 'USDT',
                     col1: calculatePct(1), col2: calculatePct(2), col3: calculatePct(3),
                     sr: { r2: pivot + (high - low), r1: (2 * pivot) - low, pivot: pivot, s1: (2 * pivot) - high, s2: pivot - (high - low) },
-                    indicators: {
-                        sma: calculateSMA(analysisClosePrices, 50), ema: calculateEMA(analysisClosePrices, 50), rsi: calculateRSI(analysisClosePrices, 14),
-                        macd: calculateMACD(analysisClosePrices), bollinger: calculateBollingerBands(analysisClosePrices),
-                        stochRsi: calculateStochasticRSI(analysisClosePrices, 14), volume: parseFloat(tickerData.quoteVolume),
-                        atr: calculateATR(analysisKlines, 14), ichimoku: calculateIchimokuCloud(analysisKlines),
-                        fibonacci: calculateFibonacciRetracement(analysisKlines)
-                    }
+                    indicators: { sma: calculateSMA(analysisClosePrices, 50), ema: calculateEMA(analysisClosePrices, 50), rsi: calculateRSI(analysisClosePrices, 14), macd: calculateMACD(analysisClosePrices), bollinger: calculateBollingerBands(analysisClosePrices), stochRsi: calculateStochasticRSI(analysisClosePrices, 14), volume: parseFloat(tickerData.quoteVolume), atr: calculateATR(analysisKlines, 14), ichimoku: calculateIchimokuCloud(analysisKlines), fibonacci: calculateFibonacciRetracement(analysisKlines) }
                 };
             } catch (error) {
                 console.error(`${pair} verisi çekilirken hata oluştu:`, error);
@@ -601,8 +588,8 @@
             allCryptoData = [];
             renderLoadingSkeletons('crypto', cryptoPairs, document.getElementById('cryptoPriceTable'));
             allCryptoData = await Promise.all(cryptoPairs.map(fetchCryptoData));
-            updateAllTableRows('crypto', allCryptoData);
-            renderIndicatorCards('crypto', allCryptoData);
+            sortAndRenderTable();
+            renderIndicatorCards('crypto');
             renderSupportResistance('crypto', allCryptoData);
             refreshBtn.innerHTML = `<i class="fas fa-sync-alt"></i>`;
             updateTime.textContent = new Date().toLocaleString(settings.lang);
@@ -613,13 +600,43 @@
             pairs.forEach(pair => {
                 const row = document.createElement("tr");
                 row.dataset.pair = pair;
-                row.innerHTML = `
-                    <td class="drag-handle-col hidden"><i class="fas fa-grip-lines drag-handle"></i></td>
-                    <td class="asset-cell" data-pair="${pair}" data-type="${type}">${pair.replace("USDT", "")}</td>
-                    <td colspan="5" style="text-align:center;"><div class="loading"></div></td>
-                `;
+                row.innerHTML = `<td class="drag-handle-col hidden"><i class="fas fa-grip-lines drag-handle"></i></td><td class="asset-cell" data-pair="${pair}" data-type="${type}">${pair.replace("USDT", "")}</td><td colspan="5" style="text-align:center;"><div class="loading"></div></td>`;
                 tableBody.appendChild(row);
             });
+        }
+
+        function sortAndRenderTable() {
+            const { key, order } = currentSort;
+            sortedCryptoData = [...allCryptoData].sort((a, b) => {
+                let valA, valB;
+
+                if (key.startsWith('col')) {
+                    valA = a[key]?.pct;
+                    valB = b[key]?.pct;
+                } else {
+                    valA = a[key];
+                    valB = b[key];
+                }
+
+                if (a.error) return 1; if (b.error) return -1;
+                if (valA === undefined || valA === null) return 1;
+                if (valB === undefined || valB === null) return -1;
+
+                if (typeof valA === 'string') {
+                    return order === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                } else {
+                    return order === 'asc' ? valA - valB : valB - valA;
+                }
+            });
+
+            document.querySelectorAll('#crypto-content th.sortable').forEach(th => {
+                th.classList.remove('asc', 'desc');
+                if (th.dataset.sortKey === key) {
+                    th.classList.add(order);
+                }
+            });
+
+            updateAllTableRows('crypto', sortedCryptoData);
         }
 
         function updateAllTableRows(type, data) {
@@ -629,22 +646,18 @@
             data.forEach(result => {
                 const row = document.createElement("tr");
                 row.dataset.pair = result.pair;
-                const getCellStyle = (colData, threshold) => { const pct = parseFloat(colData.pct); if (isNaN(pct)) return ''; if (pct < 0) return 'class="negative"'; if (pct >= threshold) return `class="positive-high" style="color: ${settings.colors.high};"`; return `class="positive-low" style="color: ${settings.colors.low};"`; };
+                const getCellStyle = (colData, threshold) => { const pct = colData?.pct; if (isNaN(pct)) return ''; if (pct < 0) return 'class="negative"'; if (pct >= threshold) return `class="positive-high" style="color: ${settings.colors.high};"`; return `class="positive-low" style="color: ${settings.colors.low};"`; };
                 let rowHTML;
                 if (result.error) {
-                    rowHTML = `
-                        <td class="drag-handle-col ${isSorting ? '' : 'hidden'}"><i class="fas fa-grip-lines drag-handle"></i></td>
-                        <td class="asset-cell">${result.pair.replace("USDT", "")}</td>
-                        <td colspan="5" style="text-align:center; color: var(--accent-red);">Veri alınamadı</td>
-                    `;
+                    rowHTML = `<td class="drag-handle-col ${isSorting ? '' : 'hidden'}"><i class="fas fa-grip-lines drag-handle"></i></td><td class="asset-cell">${result.pair.replace("USDT", "")}</td><td colspan="5" style="text-align:center; color: var(--accent-red);">Veri alınamadı</td>`;
                 } else {
                     rowHTML = `
                         <td class="drag-handle-col ${isSorting ? '' : 'hidden'}"><i class="fas fa-grip-lines drag-handle"></i></td>
                         <td class="asset-cell" data-pair="${result.pair}" data-type="${type}">${result.pair.replace("USDT", "")}</td>
                         <td>${formatPrice(result.latestPrice)}</td>
-                        <td ${getCellStyle(result.col1, settings.columns[1].threshold)} class="clickable-pct" data-col="1" data-pair="${result.pair}" data-type="${type}">${result.col1.pct}%</td>
-                        <td ${getCellStyle(result.col2, settings.columns[2].threshold)} class="clickable-pct" data-col="2" data-pair="${result.pair}" data-type="${type}">${result.col2.pct}%</td>
-                        <td ${getCellStyle(result.col3, settings.columns[3].threshold)} class="clickable-pct" data-col="3" data-pair="${result.pair}" data-type="${type}">${result.col3.pct}%</td>
+                        <td ${getCellStyle(result.col1, settings.columns[1].threshold)} class="clickable-pct" data-col="1" data-pair="${result.pair}" data-type="${type}">${result.col1.pct?.toFixed(2)}%</td>
+                        <td ${getCellStyle(result.col2, settings.columns[2].threshold)} class="clickable-pct" data-col="2" data-pair="${result.pair}" data-type="${type}">${result.col2.pct?.toFixed(2)}%</td>
+                        <td ${getCellStyle(result.col3, settings.columns[3].threshold)} class="clickable-pct" data-col="3" data-pair="${result.pair}" data-type="${type}">${result.col3.pct?.toFixed(2)}%</td>
                     `;
                 }
                 rowHTML += `<td><button class="action-btn remove-btn" data-pair="${result.pair}" data-type="${type}"><i class="fas fa-times"></i></button></td>`;
@@ -659,37 +672,35 @@
             container.innerHTML = '';
             document.getElementById('pivot-dictionary-container').innerHTML = `
                 <div class="pivot-dictionary">
-                    <p><span>P:</span> Pivot Noktası - Ortalama referans fiyatı.</p>
-                    <p><span>R1, R2:</span> Direnç Seviyeleri - Fiyatın yükselirken zorlanabileceği seviyeler.</p>
-                    <p><span>S1, S2:</span> Destek Seviyeleri - Fiyatın düşerken tutunabileceği seviyeler.</p>
+                    <p><span>P:</span> Pivot Noktası (Referans)</p>
+                    <p><span>R1, R2:</span> Direnç Seviyeleri (Yükseliş Hedefleri)</p>
+                    <p><span>S1, S2:</span> Destek Seviyeleri (Düşüş Durakları)</p>
                 </div>`;
 
             const filter = settings[`${type}PivotFilter`];
             data.filter(asset => !asset.error && asset.sr).forEach(asset => {
-                if (filter === 'above' && asset.latestPrice < asset.sr.pivot) return;
-                if (filter === 'below' && asset.latestPrice > asset.sr.pivot) return;
+                if ((filter === 'above' && asset.latestPrice < asset.sr.pivot) || (filter === 'below' && asset.latestPrice > asset.sr.pivot)) return;
 
                 const { s2, s1, pivot, r1, r2 } = asset.sr;
                 const min = s2, max = r2;
                 if (max <= min) return;
                 const range = max - min;
-
                 const getPosition = (value) => Math.max(0, Math.min(100, ((value - min) / range) * 100));
-                const pricePos = getPosition(asset.latestPrice);
 
                 const card = document.createElement('div');
                 card.className = 'pivot-bar-card';
                 card.innerHTML = `
                     <h4 class="pivot-bar-header">${asset.pair.replace("USDT", "")} - Günlük Pivot Seviyeleri</h4>
                     <div class="pivot-bar-container">
-                        <div class="pivot-bar">
-                            <div class="pivot-marker" style="left: ${getPosition(s2)}%;" data-label="S2"></div>
-                            <div class="pivot-marker" style="left: ${getPosition(s1)}%;" data-label="S1"></div>
-                            <div class="pivot-marker pivot-p" style="left: ${getPosition(pivot)}%;" data-label="PIVOT"></div>
-                            <div class="pivot-marker" style="left: ${getPosition(r1)}%;" data-label="R1"></div>
-                            <div class="pivot-marker" style="left: ${getPosition(r2)}%;" data-label="R2"></div>
-                        </div>
-                        <div class="current-price-indicator" style="left: ${pricePos}%;" data-price="${formatPrice(asset.latestPrice)}"></div>
+                        <div class="pivot-bar"></div>
+                        <div class="current-price-indicator" style="left: ${getPosition(asset.latestPrice)}%;" data-price="${formatPrice(asset.latestPrice)}"></div>
+                    </div>
+                    <div class="pivot-values">
+                        <span>S2: ${formatPrice(s2)}</span>
+                        <span>S1: ${formatPrice(s1)}</span>
+                        <span>P: ${formatPrice(pivot)}</span>
+                        <span>R1: ${formatPrice(r1)}</span>
+                        <span>R2: ${formatPrice(r2)}</span>
                     </div>
                 `;
                 container.appendChild(card);
@@ -711,22 +722,23 @@
             let score = 0;
             let summaryPoints = { buy: [], sell: [], neutral: [] };
 
-            if (activeIndicators.ema && activeIndicators.sma && indicators.ema && indicators.sma) { if (indicators.ema > indicators.sma) { score++; summaryPoints.buy.push("EMA>SMA"); } else { score--; summaryPoints.sell.push("EMA<SMA"); } }
-            if (activeIndicators.rsi && indicators.rsi !== null) { if (indicators.rsi < 35) { score += 1.5; summaryPoints.buy.push("RSI aşırı satımda"); } if (indicators.rsi > 65) { score -= 1.5; summaryPoints.sell.push("RSI aşırı alımda"); } }
-            if (activeIndicators.macd && indicators.macd) { if (indicators.macd.histogram > 0) { score++; summaryPoints.buy.push("MACD pozitif"); } else { score--; summaryPoints.sell.push("MACD negatif"); } }
-            if (activeIndicators.bollinger && indicators.bollinger) { if (latestPrice < indicators.bollinger.lower) { score++; summaryPoints.buy.push("Alt Bollinger'a yakın"); } if (latestPrice > indicators.bollinger.upper) { score--; summaryPoints.sell.push("Üst Bollinger'a yakın"); } }
-            if (activeIndicators.ichimoku && indicators.ichimoku) { if (latestPrice > indicators.ichimoku.senkouSpanA && latestPrice > indicators.ichimoku.senkouSpanB) { score+=1.5; summaryPoints.buy.push("Ichimoku bulutu üstünde"); } else if (latestPrice < indicators.ichimoku.senkouSpanA && latestPrice < indicators.ichimoku.senkouSpanB) { score-=1.5; summaryPoints.sell.push("Ichimoku bulutu altında"); } }
-            if (activeIndicators.stochRsi && indicators.stochRsi) { if(indicators.stochRsi.k < 20) { score += 1; summaryPoints.buy.push("StochRSI aşırı satımda"); } if(indicators.stochRsi.k > 80) { score -= 1; summaryPoints.sell.push("StochRSI aşırı alımda"); } }
+            if (activeIndicators.ema && activeIndicators.sma && indicators.ema && indicators.sma) { if (indicators.ema > indicators.sma) { score++; summaryPoints.buy.push("hareketli ortalamalar yükselişi destekliyor (EMA > SMA)"); } else { score--; summaryPoints.sell.push("hareketli ortalamalar düşüş sinyali veriyor (EMA < SMA)"); } }
+            if (activeIndicators.rsi && indicators.rsi !== null) { if (indicators.rsi < 35) { score += 1.5; summaryPoints.buy.push(`RSI (${indicators.rsi.toFixed(0)}) aşırı satım bölgesine yakın, tepki alımı potansiyeli taşıyor`); } if (indicators.rsi > 65) { score -= 1.5; summaryPoints.sell.push(`RSI (${indicators.rsi.toFixed(0)}) aşırı alım bölgesinde, düzeltme riski mevcut`); } }
+            if (activeIndicators.macd && indicators.macd) { if (indicators.macd.histogram > 0) { score++; summaryPoints.buy.push("MACD histogramı pozitif, alım momentumu güçlü"); } else { score--; summaryPoints.sell.push("MACD histogramı negatif, satış baskısı hakim"); } }
+            if (activeIndicators.bollinger && indicators.bollinger) { if (latestPrice < indicators.bollinger.lower) { score++; summaryPoints.buy.push("fiyat alt Bollinger Bandı'na yakın, bu durum tepki alımları için bir fırsat olabilir"); } if (latestPrice > indicators.bollinger.upper) { score--; summaryPoints.sell.push("fiyat üst Bollinger Bandı'nı zorluyor, bu durum kar satışı baskısı yaratabilir"); } }
+            if (activeIndicators.ichimoku && indicators.ichimoku) { if (latestPrice > indicators.ichimoku.senkouSpanA && latestPrice > indicators.ichimoku.senkouSpanB) { score+=1.5; summaryPoints.buy.push("fiyat Ichimoku bulutunun üzerinde, bu güçlü bir yükseliş sinyali"); } else if (latestPrice < indicators.ichimoku.senkouSpanA && latestPrice < indicators.ichimoku.senkouSpanB) { score-=1.5; summaryPoints.sell.push("fiyat Ichimoku bulutunun altında, bu güçlü bir düşüş sinyali"); } }
+            if (activeIndicators.stochRsi && indicators.stochRsi) { if(indicators.stochRsi.k < 20) { score += 1; summaryPoints.buy.push("StochRSI aşırı satım bölgesinde, alım için uygun olabilir"); } if(indicators.stochRsi.k > 80) { score -= 1; summaryPoints.sell.push("StochRSI aşırı alım bölgesinde, satış baskısı artabilir"); } }
 
-            let recommendation, color;
-            if (score >= 2) { recommendation = "Güçlü Al"; color = "var(--strong-buy)"; }
-            else if (score >= 0.5) { recommendation = "Al"; color = "var(--buy)"; }
-            else if (score <= -2) { recommendation = "Güçlü Sat"; color = "var(--strong-sell)"; }
-            else if (score <= -0.5) { recommendation = "Sat"; color = "var(--sell)"; }
-            else { recommendation = "Tut"; color = "var(--hold)"; summaryPoints.neutral.push("Nötr"); }
+            let recommendation, color, summary;
+            if (score >= 2) { recommendation = "Güçlü Al"; color = "var(--strong-buy)"; summary = `Genel olarak pozitif bir görünüm var. ${summaryPoints.buy.join(', ')}.`;}
+            else if (score >= 0.5) { recommendation = "Al"; color = "var(--buy)"; summary = `Alım sinyalleri ağırlıkta. ${summaryPoints.buy.join(', ')}, ancak ${summaryPoints.sell.join(', ')} gibi aksi sinyaller de mevcut, dikkatli olunmalı.`; }
+            else if (score <= -2) { recommendation = "Güçlü Sat"; color = "var(--strong-sell)"; summary = `Genel olarak negatif bir görünüm hakim. ${summaryPoints.sell.join(', ')}.`; }
+            else if (score <= -0.5) { recommendation = "Sat"; color = "var(--sell)"; summary = `Satış sinyalleri ağırlıkta. ${summaryPoints.sell.join(', ')}, fakat ${summaryPoints.buy.join(', ')} gibi olumlu sinyaller de izlenmeli.`; }
+            else { recommendation = "Tut"; color = "var(--hold)"; summary = "Piyasa kararsız görünüyor. Belirgin alım veya satım sinyali yok, beklemek daha doğru olabilir."; }
 
-            let summary = [...summaryPoints.buy, ...summaryPoints.sell, ...summaryPoints.neutral].join(', ');
-            if (summary.trim() === "" || summary === "Nötr") summary = "Seçili göstergeler net bir yön belirtmiyor.";
+            if (summaryPoints.buy.length === 0 && summaryPoints.sell.length > 0) summary = `Negatif bir görünüm hakim. ${summaryPoints.sell.join(', ')}.`;
+            if (summaryPoints.sell.length === 0 && summaryPoints.buy.length > 0) summary = `Pozitif bir görünüm var. ${summaryPoints.buy.join(', ')}.`;
+
             return { recommendation, color, summary };
         }
 
@@ -777,9 +789,9 @@
                 });
                 detailsHTML += '</div>';
 
-                let geminiButtonHTML = '';
+                let aiButtonHTML = '';
                 if (currentUserRole === 'admin') {
-                    geminiButtonHTML = `<div class="gemini-btn-wrapper"><button class="gemini-single-btn" data-pair="${asset.pair}" data-type="${type}" title="Bu varlığı yorumla">${geminiIconSVG}</button></div>`;
+                    aiButtonHTML = `<button class="ai-btn" data-pair="${asset.pair}" data-type="${type}" title="Bu varlığı yorumla"><i class="fas fa-magic-sparkles"></i></button>`;
                 }
 
                 card.innerHTML = `
@@ -790,18 +802,21 @@
                     ${detailsHTML}
                     <div class="card-footer">
                         <div class="summary"><p><strong>Özet:</strong> ${summary}</p></div>
-                        ${geminiButtonHTML}
+                        ${aiButtonHTML}
                     </div>`;
                 container.appendChild(card);
             });
         }
 
         async function getGeminiAnalysis(type, pair = null) {
-            const button = pair ? document.querySelector(`.gemini-single-btn[data-pair="${pair}"][data-type="${type}"]`) : document.getElementById(`analyzeAllCryptoBtn`);
+            const button = pair ? document.querySelector(`.ai-btn[data-pair="${pair}"]`) : document.getElementById(`analyzeAllCryptoBtn`);
             if (!button) return;
 
             const originalButtonHTML = button.innerHTML;
             button.disabled = true; button.innerHTML = `<div class="loading"></div>`;
+            const analysisContent = document.getElementById('analysisContent');
+            analysisContent.innerHTML = '<div class="loading" style="margin: 20px auto; display:block;"></div>';
+            showPanel('analysisPanel');
 
             const dataToAnalyze = (pair ? allCryptoData.filter(c => c.pair === pair) : allCryptoData);
             const activeIndicators = settings[`${type}AnalysisIndicators`];
@@ -824,21 +839,19 @@
             const prompt = `Sen bir uzman finansal analistsin. Aşağıdaki kripto para piyasası verilerini ve seçili teknik göstergeleri analiz et. Her varlık için kısa bir özet çıkar ve net bir 'Al', 'Sat' veya 'Tut' tavsiyesi ver. Cevabını HTML formatında, her varlık için '.analysis-section' div'i içinde ver. Tavsiye kelimesini (Al, Sat, Tut, Güçlü Al, Güçlü Sat) bir <span class='recommendation-al'>, <span class='recommendation-sat'>, veya <span class='recommendation-tut'> gibi uygun bir class ile sarmala. İşte veriler:\n\n${dataSummary}`;
 
             try {
-                const apiKey = firebaseConfig.apiKey; // Use the key from your config
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
-                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{text: prompt}] }] }) });
+                // Firebase projenizde "geminiProxy" adında bir Cloud Function oluşturmalısınız.
+                const geminiProxy = functions.httpsCallable('geminiProxy');
+                const result = await geminiProxy({ prompt: prompt });
 
-                if (!response.ok) throw new Error(`API isteği başarısız: ${response.status}`);
-                const result = await response.json();
-                if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
-                    const cleanedHtml = result.candidates[0].content.parts[0].text.replace(/^```html\n|```$/g, '');
-                    document.getElementById('analysisContent').innerHTML = cleanedHtml;
-                } else { throw new Error("Yapay zekadan geçerli bir yanıt alınamadı."); }
+                if (result.data && result.data.analysis) {
+                    analysisContent.innerHTML = result.data.analysis;
+                } else {
+                    throw new Error("Yapay zekadan geçerli bir yanıt alınamadı.");
+                }
             } catch (error) {
-                console.error("Gemini AI Error:", error);
-                document.getElementById('analysisContent').innerHTML = `<p style="color:var(--accent-red)">Yorumlama sırasında bir hata oluştu: ${error.message}</p>`;
+                console.error("Gemini AI Hatası:", error);
+                analysisContent.innerHTML = `<p style="color:var(--accent-red)">Yorumlama sırasında bir hata oluştu: ${error.message}. Lütfen Firebase projenizde 'geminiProxy' adlı Cloud Function'ın doğru şekilde deploy edildiğinden ve faturalandırmanın aktif olduğundan emin olun.</p>`;
             } finally {
-                showPanel('analysisPanel');
                 button.disabled = false;
                 button.innerHTML = originalButtonHTML;
             }
@@ -894,6 +907,20 @@
         document.getElementById('toggleSortBtn').addEventListener('click', () => {
             document.querySelectorAll('.drag-handle-col').forEach(el => el.classList.toggle('hidden'));
         });
+        document.querySelector('#crypto-content thead').addEventListener('click', (e) => {
+            const header = e.target.closest('th.sortable');
+            if (!header) return;
+
+            const key = header.dataset.sortKey;
+            if (currentSort.key === key) {
+                currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.key = key;
+                currentSort.order = 'asc';
+            }
+            sortAndRenderTable();
+        });
+
 
         trackerPage.addEventListener('click', (e) => {
             const collapsibleHeader = e.target.closest('.collapsible-header');
@@ -952,7 +979,7 @@
         document.getElementById('updateCryptoAnalysisBtn').addEventListener('click', () => updateAnalysisSettings('crypto'));
         document.getElementById('analyzeAllCryptoBtn').addEventListener('click', () => getGeminiAnalysis('crypto'));
         document.getElementById('crypto-indicator-cards-container').addEventListener('click', (e) => {
-            const target = e.target.closest('.gemini-single-btn');
+            const target = e.target.closest('.ai-btn');
             if (target) getGeminiAnalysis(target.dataset.type, target.dataset.pair);
         });
 
