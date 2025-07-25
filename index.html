@@ -146,8 +146,7 @@
         .indicator-item .value.value-positive { color: var(--value-positive); }
         .indicator-item .value.value-negative { color: var(--value-negative); }
         .card-footer { margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
-        .card-footer .summary { flex-grow: 1; }
-        .card-footer .summary p { margin: 0; font-size: 0.9rem; line-height: 1.5; color: var(--text-primary); }
+        .card-footer .summary { flex-grow: 1; font-size: 0.9rem; line-height: 1.5; color: var(--text-primary); }
         .dictionary-item { margin-bottom: 20px; }
         .dictionary-item h5 { color: #64b5f6; margin: 0 0 8px 0; font-size: 1.1rem; }
         .dictionary-item p { margin: 0 0 10px 0; line-height: 1.6; color: var(--text-secondary); }
@@ -335,12 +334,12 @@
         </div>
     </div>
 
-    <div id="lowestPricePanel" class="panel">
+    <div id="detailPanel" class="panel">
          <div class="panel-header">
-            <h3 id="lowestPriceTitle"></h3>
+            <h3 id="detailPanelTitle"></h3>
              <div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div>
         </div>
-        <div class="panel-content"><p id="lowestPriceDetails"></p></div>
+        <div class="panel-content" id="detailPanelContent"></div>
     </div>
 
     <div id="chartPanel" class="panel">
@@ -394,7 +393,25 @@
         volume: "Hacim (24s)", atr: "ATR", ichimoku: "Ichimoku Cloud", fibonacci: "Fibonacci"
     };
 
-    const translations = { tr: { login_prompt: "Devam etmek için giriş yapın veya yeni hesap oluşturun.", email: "E-posta", password: "Şifre", login: "Giriş Yap", signup: "Kayıt Ol", logout: "Çıkış Yap", app_title: "Fiyat Takipçisi", add: "Ekle", refresh: "Yenile", settings: "Ayarlar", coin: "Coin", price: "Fiyat", delete: "Sil", last_update: "Son güncelleme", color_rules: "Renk Kuralları", general_settings: "Genel Ayarlar", language: "Dil", auto_refresh: "Otomatik Yenileme", refresh_interval: "Yenileme Aralığı (sn)", column_settings: "Kolon Ayarları", positive_threshold: "Pozitif Eşik (%)", color_settings: "Renk Ayarları", high_positive_color: "Yüksek Pozitif Renk", low_positive_color: "Düşük Pozitif Renk", save_settings: "Ayarları Kaydet", saved: "Kaydedildi!", settings_saved: "Ayarlar başarıyla kaydedildi.", analysis_updated: "Analiz başarıyla güncellendi.", limit_exceeded: "Limit aşıldı!", role_info: (role, limit, type) => `Rolünüz (${role}) en fazla ${limit} ${type} eklemeye izin veriyor.`, invalid_asset: (asset) => `Geçersiz varlık: ${asset}`, already_in_list: (asset) => `${asset} zaten listede.`, lowest_price_title: (asset, period) => `${asset} - ${period} En Düşük Fiyat`, lowest_price_detail: (price, date) => `Bu dönemdeki en düşük fiyat <strong>${price}</strong>, ${date} tarihinde görüldü.`, no_data: "Veri yok" }, en: {} };
+    const translations = { 
+        tr: { 
+            login_prompt: "Devam etmek için giriş yapın veya yeni hesap oluşturun.", email: "E-posta", password: "Şifre", login: "Giriş Yap", signup: "Kayıt Ol", logout: "Çıkış Yap", app_title: "Fiyat Takipçisi", add: "Ekle", refresh: "Yenile", settings: "Ayarlar", coin: "Coin", price: "Fiyat", delete: "Sil", last_update: "Son güncelleme", color_rules: "Renk Kuralları", general_settings: "Genel Ayarlar", language: "Dil", auto_refresh: "Otomatik Yenileme", refresh_interval: "Yenileme Aralığı (sn)", column_settings: "Kolon Ayarları", positive_threshold: "Pozitif Eşik (%)", color_settings: "Renk Ayarları", high_positive_color: "Yüksek Pozitif Renk", low_positive_color: "Düşük Pozitif Renk", save_settings: "Ayarları Kaydet", saved: "Kaydedildi!", settings_saved: "Ayarlar başarıyla kaydedildi.", analysis_updated: "Analiz başarıyla güncellendi.", limit_exceeded: "Limit aşıldı!", 
+            role_info: (role, limit, type) => `Rolünüz (${role}) en fazla ${limit} ${type} eklemeye izin veriyor.`, 
+            invalid_asset: (asset) => `Geçersiz varlık: ${asset}`, 
+            already_in_list: (asset) => `${asset} zaten listede.`, 
+            lowest_price_detail: (period, lowestPrice, lowestDate, currentPrice, pctChange) => `
+                <div style="line-height: 1.8; font-size: 0.95rem;">
+                    <p style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 10px;"><strong>${period} periyodundaki analiz:</strong></p>
+                    <p>Bu dönemdeki en düşük fiyat: <strong style="color: var(--accent-yellow);">${lowestPrice}</strong><br><small>(Tarih: ${lowestDate})</small></p>
+                    <p>Mevcut Fiyat: <strong style="color: var(--accent-blue);">${currentPrice}</strong></p>
+                    <hr style="border-color: var(--border-color); margin: 15px 0;">
+                    <p>Hesaplanan Değişim: <strong style="font-size: 1.2rem; color: ${pctChange > 0 ? 'var(--accent-green)' : 'var(--accent-red)'};">${pctChange}%</strong></p>
+                </div>
+            `,
+            no_data: "Veri yok" 
+        }, 
+        en: {} 
+    };
 
     function translatePage(lang) { document.querySelectorAll('[data-lang]').forEach(el => { const key = el.getAttribute('data-lang'); if (translations[lang]?.[key] && typeof translations[lang][key] === 'string') el.textContent = translations[lang][key]; }); }
     function showPage(pageId) { loginPage.style.display = (pageId === 'login-page') ? 'flex' : 'none'; trackerPage.style.display = (pageId === 'tracker-page') ? 'flex' : 'none'; }
@@ -889,6 +906,7 @@
 
             return { recommendation, color, summary, category };
         }
+
         function renderIndicatorCards(type) {
             const container = document.getElementById('crypto-indicator-cards-container');
             container.innerHTML = '';
@@ -965,7 +983,7 @@
                     </div>
                     ${detailsHTML}
                     <div class="card-footer">
-                        <div class="summary"><p><strong>Özet:</strong> ${recommendationSummary}</p></div>
+                        <div class="summary">${recommendationSummary}</div>
                         ${aiButtonHTML}
                     </div>`;
                 container.appendChild(card);
@@ -1114,14 +1132,25 @@
                 if (!pair) return;
                 const assetData = allCryptoData.find(c => c.pair === pair);
 
-                if (assetActionTarget.classList.contains('asset-cell')) { showChart(pair, type); }
+                if (assetActionTarget.classList.contains('asset-cell')) { 
+                    showChart(pair, type); 
+                }
                 else if (assetActionTarget.classList.contains('clickable-pct')) {
                     if (assetData && !assetData.error) {
                         const colData = assetData[`col${col}`];
                         if (colData && colData.lowestPrice) {
-                            document.getElementById('lowestPriceTitle').textContent = translations[settings.lang].lowest_price_title(assetData.pair.replace('USDT',''), settings.columns[col].name);
-                            document.getElementById('lowestPriceDetails').innerHTML = translations[settings.lang].lowest_price_detail(formatPrice(colData.lowestPrice), colData.lowestDate);
-                            showPanel('lowestPricePanel');
+                            const periodName = settings.columns[col].name;
+                            const pctChange = colData.pct.toFixed(2);
+                            
+                            document.getElementById('detailPanelTitle').textContent = `${assetData.pair.replace('USDT','')} - ${periodName} Değişim Detayı`;
+                            document.getElementById('detailPanelContent').innerHTML = translations[settings.lang].lowest_price_detail(
+                                periodName,
+                                formatPrice(colData.lowestPrice), 
+                                colData.lowestDate,
+                                formatPrice(assetData.latestPrice),
+                                pctChange
+                            );
+                            showPanel('detailPanel');
                         }
                     }
                 } else if (assetActionTarget.classList.contains('remove-btn')) {
