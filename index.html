@@ -186,7 +186,11 @@
 </head>
 <body>
 
-    <div id="login-page" class="page">
+    <div id="app-loader" class="page" style="justify-content: center; align-items: center; display: flex;">
+        <div class="loading" style="width: 40px; height: 40px; border-width: 4px;"></div>
+    </div>
+
+    <div id="login-page" class="page" style="display: none;">
         <div class="login-container">
             <h1><i class="fas fa-chart-line"></i> Fiyat Takipçisi</h1>
             <p data-lang="login_prompt">Devam etmek için giriş yapın veya yeni hesap oluşturun.</p>
@@ -385,7 +389,10 @@
     let userDocRef = null;
     let sortableInstance = null;
     let currentRecommendationFilter = 'all';
-    const loginPage = document.getElementById('login-page'), trackerPage = document.getElementById('tracker-page'), notification = document.getElementById("notification"), modalOverlay = document.getElementById('modalOverlay');
+    const notification = document.getElementById("notification"), modalOverlay = document.getElementById('modalOverlay');
+    const appLoader = document.getElementById('app-loader');
+    const loginPage = document.getElementById('login-page');
+    const trackerPage = document.getElementById('tracker-page');
 
     const AVAILABLE_INDICATORS = {
         ema: "EMA", sma: "SMA", rsi: "RSI", macd: "MACD",
@@ -414,7 +421,16 @@
     };
 
     function translatePage(lang) { document.querySelectorAll('[data-lang]').forEach(el => { const key = el.getAttribute('data-lang'); if (translations[lang]?.[key] && typeof translations[lang][key] === 'string') el.textContent = translations[lang][key]; }); }
-    function showPage(pageId) { loginPage.style.display = (pageId === 'login-page') ? 'flex' : 'none'; trackerPage.style.display = (pageId === 'tracker-page') ? 'flex' : 'none'; }
+    
+    function showPage(pageId) {
+        appLoader.style.display = 'none';
+        loginPage.style.display = 'none';
+        trackerPage.style.display = 'none';
+        if (pageId) {
+            document.getElementById(pageId).style.display = 'flex';
+        }
+    }
+
     function showPanel(panelId) { document.getElementById(panelId).classList.add('show'); modalOverlay.classList.add('show'); document.body.classList.add('modal-open'); }
     function closeAllPanels() { document.querySelectorAll('.panel.show').forEach(p => p.classList.remove('show')); modalOverlay.classList.remove('show'); document.body.classList.remove('modal-open'); }
     function showNotification(message, isSuccess = true) { notification.textContent = message; notification.style.backgroundColor = isSuccess ? 'var(--accent-green)' : 'var(--accent-red)'; notification.classList.add('show'); setTimeout(() => notification.classList.remove('show'), 3000); }
@@ -720,21 +736,42 @@
                 return 'N/A';
             };
 
+            const getCellStyle = (colData, threshold) => {
+                const pct = colData?.pct;
+                let classes = '';
+                let style = '';
+                if (typeof pct !== 'number') return { classes: '', style: '' };
+                if (pct < 0) {
+                    classes = 'negative';
+                } else if (pct >= threshold) {
+                    classes = 'positive-high';
+                    style = `style="color: ${settings.colors.high};"`;
+                } else {
+                    classes = 'positive-low';
+                    style = `style="color: ${settings.colors.low};"`;
+                }
+                return { classes, style };
+            };
+
             data.forEach(result => {
                 const row = document.createElement("tr");
                 row.dataset.pair = result.pair;
-                const getCellStyle = (colData, threshold) => { const pct = colData?.pct; if (typeof pct !== 'number') return ''; if (pct < 0) return 'class="negative"'; if (pct >= threshold) return `class="positive-high" style="color: ${settings.colors.high};"`; return `class="positive-low" style="color: ${settings.colors.low};"`; };
                 let rowHTML;
+
                 if (result.error) {
                     rowHTML = `<td class="drag-handle-col ${isSorting ? '' : 'hidden'}"><i class="fas fa-grip-lines drag-handle"></i></td><td class="asset-cell">${result.pair.replace("USDT", "")}</td><td colspan="5" style="text-align:center; color: var(--accent-red);">Veri alınamadı</td>`;
                 } else {
+                    const cellStyle1 = getCellStyle(result.col1, settings.columns[1].threshold);
+                    const cellStyle2 = getCellStyle(result.col2, settings.columns[2].threshold);
+                    const cellStyle3 = getCellStyle(result.col3, settings.columns[3].threshold);
+
                     rowHTML = `
                         <td class="drag-handle-col ${isSorting ? '' : 'hidden'}"><i class="fas fa-grip-lines drag-handle"></i></td>
                         <td class="asset-cell" data-pair="${result.pair}" data-type="${type}">${result.pair.replace("USDT", "")}</td>
                         <td>${formatPrice(result.latestPrice)}</td>
-                        <td ${getCellStyle(result.col1, settings.columns[1].threshold)} class="clickable-pct" data-col="1" data-pair="${result.pair}" data-type="${type}">${formatPct(result.col1.pct)}</td>
-                        <td ${getCellStyle(result.col2, settings.columns[2].threshold)} class="clickable-pct" data-col="2" data-pair="${result.pair}" data-type="${type}">${formatPct(result.col2.pct)}</td>
-                        <td ${getCellStyle(result.col3, settings.columns[3].threshold)} class="clickable-pct" data-col="3" data-pair="${result.pair}" data-type="${type}">${formatPct(result.col3.pct)}</td>
+                        <td class="${cellStyle1.classes} clickable-pct" ${cellStyle1.style} data-col="1" data-pair="${result.pair}" data-type="${type}">${formatPct(result.col1.pct)}</td>
+                        <td class="${cellStyle2.classes} clickable-pct" ${cellStyle2.style} data-col="2" data-pair="${result.pair}" data-type="${type}">${formatPct(result.col2.pct)}</td>
+                        <td class="${cellStyle3.classes} clickable-pct" ${cellStyle3.style} data-col="3" data-pair="${result.pair}" data-type="${type}">${formatPct(result.col3.pct)}</td>
                     `;
                 }
                 rowHTML += `<td><button class="action-btn remove-btn" data-pair="${result.pair}" data-type="${type}"><i class="fas fa-times"></i></button></td>`;
