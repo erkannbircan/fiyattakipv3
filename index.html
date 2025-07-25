@@ -780,54 +780,115 @@
             let buyScore = 0, sellScore = 0;
             let summaryPoints = { buy: [], sell: [], neutral: [] };
 
-            if (activeIndicators.ema && activeIndicators.sma && indicators.ema && indicators.sma) {
-                if (indicators.ema > indicators.sma) { buyScore++; summaryPoints.buy.push("EMA, SMA'nın üzerinde (yükseliş trendi)"); } 
-                else { sellScore++; summaryPoints.sell.push("EMA, SMA'nın altında (düşüş trendi)"); }
-            }
+            const formatVal = (val) => (typeof val === 'number' ? val.toFixed(2) : val);
+
+            // --- PUANLAMA MANTIĞI ---
+
+            // RSI
             if (activeIndicators.rsi && indicators.rsi !== null) {
-                if (indicators.rsi < 30) { buyScore += 1.5; summaryPoints.buy.push(`RSI(${indicators.rsi.toFixed(0)}) aşırı satımda`); }
-                else if (indicators.rsi < 40) { buyScore += 0.5; summaryPoints.buy.push(`RSI(${indicators.rsi.toFixed(0)}) satım bölgesine yakın`); }
-                if (indicators.rsi > 70) { sellScore += 1.5; summaryPoints.sell.push(`RSI(${indicators.rsi.toFixed(0)}) aşırı alımda`); }
-                else if (indicators.rsi > 60) { sellScore += 0.5; summaryPoints.sell.push(`RSI(${indicators.rsi.toFixed(0)}) alım bölgesine yakın`); }
+                if (indicators.rsi <= 30) { buyScore += 2; summaryPoints.buy.push(`RSI(${formatVal(indicators.rsi)}) aşırı satım bölgesinde`); }
+                else if (indicators.rsi < 45) { buyScore += 1; summaryPoints.buy.push(`RSI(${formatVal(indicators.rsi)}) düşük seviyede`); }
+                if (indicators.rsi >= 70) { sellScore += 2; summaryPoints.sell.push(`RSI(${formatVal(indicators.rsi)}) aşırı alım bölgesinde`); }
+                else if (indicators.rsi > 55) { sellScore += 1; summaryPoints.sell.push(`RSI(${formatVal(indicators.rsi)}) yüksek seviyede`); }
             }
-            if (activeIndicators.macd && indicators.macd) {
-                if (indicators.macd.histogram > 0 && indicators.macd.macd > indicators.macd.signal) { buyScore++; summaryPoints.buy.push("MACD pozitif kesişim"); } 
-                else if (indicators.macd.histogram < 0 && indicators.macd.macd < indicators.macd.signal) { sellScore++; summaryPoints.sell.push("MACD negatif kesişim"); }
+
+            // Stochastic RSI
+            if (activeIndicators.stochRsi && indicators.stochRsi) {
+                if(indicators.stochRsi.k <= 20) { buyScore += 2; summaryPoints.buy.push(`StochRSI(${formatVal(indicators.stochRsi.k)}) aşırı satımda`); } 
+                if(indicators.stochRsi.k >= 80) { sellScore += 2; summaryPoints.sell.push(`StochRSI(${formatVal(indicators.stochRsi.k)}) aşırı alımda`); }
             }
+            
+            // Bollinger Bands
             if (activeIndicators.bollinger && indicators.bollinger) {
-                if (latestPrice < indicators.bollinger.lower) { buyScore += 1.5; summaryPoints.buy.push("Fiyat alt Bollinger bandının altında"); } 
-                if (latestPrice > indicators.bollinger.upper) { sellScore += 1.5; summaryPoints.sell.push("Fiyat üst Bollinger bandının üzerinde"); }
+                if (latestPrice < indicators.bollinger.lower) { buyScore += 2; summaryPoints.buy.push("Fiyat alt Bollinger bandının altında"); } 
+                else if (latestPrice > indicators.bollinger.upper) { sellScore += 2; summaryPoints.sell.push("Fiyat üst Bollinger bandının üzerinde"); }
+                else if (latestPrice < indicators.bollinger.middle) { sellScore += 0.5; } // Ortalamanın altı hafif negatif
+                else if (latestPrice > indicators.bollinger.middle) { buyScore += 0.5; } // Ortalamanın üstü hafif pozitif
             }
+
+            // MACD
+            if (activeIndicators.macd && indicators.macd) {
+                if (indicators.macd.histogram > 0) {
+                    buyScore += 1.5;
+                    summaryPoints.buy.push("MACD histogramı pozitif");
+                } else {
+                    sellScore += 1.5;
+                    summaryPoints.sell.push("MACD histogramı negatif");
+                }
+            }
+            
+            // Moving Averages (EMA/SMA)
+            if (activeIndicators.ema && activeIndicators.sma && indicators.ema && indicators.sma) {
+                if (indicators.ema > indicators.sma) {
+                    buyScore += 1;
+                    summaryPoints.buy.push("EMA, SMA'nın üzerinde (yükseliş trendi)");
+                } else {
+                    sellScore += 1;
+                    summaryPoints.sell.push("EMA, SMA'nın altında (düşüş trendi)");
+                }
+            }
+
+            // Ichimoku Cloud
             if (activeIndicators.ichimoku && indicators.ichimoku) {
                 const { tenkanSen, kijunSen, senkouSpanA, senkouSpanB } = indicators.ichimoku;
-                if (latestPrice > senkouSpanA && latestPrice > senkouSpanB && tenkanSen > kijunSen) { buyScore+=2; summaryPoints.buy.push("Ichimoku güçlü yükseliş sinyali"); } 
-                else if (latestPrice < senkouSpanA && latestPrice < senkouSpanB && tenkanSen < kijunSen) { sellScore+=2; summaryPoints.sell.push("Ichimoku güçlü düşüş sinyali"); }
-            }
-            if (activeIndicators.stochRsi && indicators.stochRsi) {
-                if(indicators.stochRsi.k < 20) { buyScore += 1; summaryPoints.buy.push("StochRSI aşırı satımda"); } 
-                if(indicators.stochRsi.k > 80) { sellScore += 1; summaryPoints.sell.push("StochRSI aşırı alımda"); } 
-            }
-            if (activeIndicators.fibonacci && indicators.fibonacci) {
-                if (latestPrice > indicators.fibonacci.level_618) { buyScore += 0.5; summaryPoints.buy.push("Fiyat, 0.618 Fibonacci seviyesi üzerinde"); }
-                else if (latestPrice < indicators.fibonacci.level_382) { sellScore += 0.5; summaryPoints.sell.push("Fiyat, 0.382 Fibonacci seviyesi altında"); }
-            }
+                const inCloud = latestPrice > Math.min(senkouSpanA, senkouSpanB) && latestPrice < Math.max(senkouSpanA, senkouSpanB);
+                
+                if (latestPrice > senkouSpanA && latestPrice > senkouSpanB) {
+                    buyScore += 2;
+                    summaryPoints.buy.push("Fiyat Ichimoku bulutunun üzerinde");
+                } else if (latestPrice < senkouSpanA && latestPrice < senkouSpanB) {
+                    sellScore += 2;
+                    summaryPoints.sell.push("Fiyat Ichimoku bulutunun altında");
+                } else if (inCloud) {
+                    summaryPoints.neutral.push("Fiyat Ichimoku bulutunun içinde (kararsız)");
+                }
 
-            let recommendation, color, summary, category;
-            const totalScore = buyScore - sellScore;
-
-            if (totalScore >= 3 && buyScore > sellScore) { recommendation = "Güçlü Al"; color = "var(--strong-buy)"; category = "buy"; }
-            else if (totalScore >= 1 && buyScore > sellScore) { recommendation = "Al"; color = "var(--buy)"; category = "buy"; }
-            else if (totalScore <= -3 && sellScore > buyScore) { recommendation = "Güçlü Sat"; color = "var(--strong-sell)"; category = "sell"; }
-            else if (totalScore <= -1 && sellScore > buyScore) { recommendation = "Sat"; color = "var(--sell)"; category = "sell"; }
-            else { recommendation = "Tut"; color = "var(--hold)"; category = "hold"; }
+                if (tenkanSen > kijunSen) { buyScore += 1; summaryPoints.buy.push("Tenkan/Kijun kesişimi pozitif"); }
+                else { sellScore += 1; summaryPoints.sell.push("Tenkan/Kijun kesişimi negatif"); }
+            }
             
-            if (buyScore === 0 && sellScore === 0) summary = "Aktif indikatörlere göre belirgin bir sinyal yok.";
-            else if(category === 'buy' || category === 'sell') summary = `Al sinyalleri (${buyScore.toFixed(0)}): ${summaryPoints.buy.join(', ') || 'yok'}. Sat sinyalleri (${sellScore.toFixed(0)}): ${summaryPoints.sell.join(', ') || 'yok'}.`;
-            else summary = "Piyasa kararsız görünüyor, alım ve satım sinyalleri birbirine yakın."
+            // Fibonacci
+            if (activeIndicators.fibonacci && indicators.fibonacci) {
+                if (latestPrice < indicators.fibonacci.level_618) { sellScore += 0.5; summaryPoints.sell.push("Fiyat kritik 0.618 Fibonacci desteğinin altında"); }
+                else { buyScore += 0.5; summaryPoints.buy.push("Fiyat kritik 0.618 Fibonacci desteğinin üzerinde"); }
+            }
+
+            // --- KARAR MEKANİZMASI ---
+            let recommendation, color, category;
+            const finalScore = buyScore - sellScore;
+            const conflictLevel = Math.min(buyScore, sellScore);
+
+            // Eğer güçlü çelişki varsa (hem al hem sat sinyalleri güçlüyse) TUT tavsiyesi verilir.
+            if (conflictLevel >= 3) {
+                recommendation = "Tut";
+                color = "var(--hold)";
+                category = "hold";
+            } else {
+                if (finalScore >= 4) { recommendation = "Güçlü Al"; color = "var(--strong-buy)"; category = "buy"; }
+                else if (finalScore >= 1.5) { recommendation = "Al"; color = "var(--buy)"; category = "buy"; }
+                else if (finalScore <= -4) { recommendation = "Güçlü Sat"; color = "var(--strong-sell)"; category = "sell"; }
+                else if (finalScore <= -1.5) { recommendation = "Sat"; color = "var(--sell)"; category = "sell"; }
+                else { recommendation = "Tut"; color = "var(--hold)"; category = "hold"; }
+            }
+
+            // --- ÖZET OLUŞTURMA ---
+            let summary = "";
+            if (summaryPoints.buy.length > 0) {
+                summary += `<b>⬆ Al Sinyalleri (${summaryPoints.buy.length}):</b> ${summaryPoints.buy.join(', ')}. `;
+            }
+            if (summaryPoints.sell.length > 0) {
+                summary += `<br><b>⬇ Sat Sinyalleri (${summaryPoints.sell.length}):</b> ${summaryPoints.sell.join(', ')}. `;
+            }
+            if (summaryPoints.neutral.length > 0) {
+                 summary += `<br><b>➖ Nötr Sinyaller (${summaryPoints.neutral.length}):</b> ${summaryPoints.neutral.join(', ')}.`;
+            }
+            if (summary.length === 0) {
+                summary = "Aktif indikatörlere göre belirgin bir sinyal bulunamadı.";
+            }
+
 
             return { recommendation, color, summary, category };
         }
-
         function renderIndicatorCards(type) {
             const container = document.getElementById('crypto-indicator-cards-container');
             container.innerHTML = '';
