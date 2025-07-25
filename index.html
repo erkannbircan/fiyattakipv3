@@ -101,8 +101,8 @@
         .collapsible-header.open .fas { transform: rotate(180deg); }
         .collapsible-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out, padding 0.4s ease; padding: 0 15px; background-color: var(--bg-secondary); }
         .collapsible-content.open { max-height: 4000px; padding: 15px; border-top: 1px solid var(--border-color); }
-        .notification { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); background-color: var(--bg-tertiary); color: var(--text-primary); padding: 14px 25px; border-radius: 8px; z-index: 1003; border: 1px solid var(--border-color); opacity: 0; visibility: hidden; transition: all 0.4s ease; }
-        .notification.show { opacity: 1; transform: translateX(-50%) translateY(-20px); visibility: visible; }
+        .notification { position: fixed; bottom: 25px; left: 25px; transform: translateX(-150%); background-color: var(--bg-tertiary); color: var(--text-primary); padding: 14px 25px; border-radius: 8px; z-index: 1003; border: 1px solid var(--border-color); opacity: 0; visibility: hidden; transition: all 0.4s ease; }
+        .notification.show { opacity: 1; transform: translateX(0); visibility: visible; }
         .tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 25px; overflow-x: auto; }
         .tab-link { padding: 10px 15px; cursor: pointer; color: var(--text-secondary); border-bottom: 2px solid transparent; white-space: nowrap; font-size: 0.9rem; }
         .tab-link.active { color: var(--text-primary); font-weight: 600; background-color: var(--bg-tertiary); border-color: var(--accent-blue); border-top-left-radius: 6px; border-top-right-radius: 6px; }
@@ -255,17 +255,25 @@
                 <div class="collapsible">
                     <div class="collapsible-header open"><span>Analiz Filtreleri</span><i class="fas fa-chevron-down"></i></div>
                     <div class="collapsible-content open">
+                        <div class="interval-filters" id="cryptoIntervalFilters" style="margin-bottom: 20px;">
+                             <button class="interval-btn" data-interval="1h">1 Saat</button>
+                             <button class="interval-btn active" data-interval="4h">4 Saat</button>
+                             <button class="interval-btn" data-interval="1d">1 Gün</button>
+                        </div>
                         <div id="crypto-indicator-filters-grid" class="filters-grid"></div>
-                        <div class="analysis-actions"><button id="updateCryptoAnalysisBtn"><i class="fas fa-check"></i> Analizi Güncelle</button></div>
+                        <div class="analysis-actions">
+                            <button id="updateCryptoAnalysisBtn"><i class="fas fa-check"></i> Analizi Güncelle</button>
+                        </div>
                     </div>
                 </div>
                 <div class="global-analysis-header">
                     <h3>Otomatik Analiz Sonuçları</h3>
                     <div class="global-analysis-controls">
-                         <div class="interval-filters" id="cryptoIntervalFilters">
-                             <button class="interval-btn" data-interval="1h">1 Saat</button>
-                             <button class="interval-btn active" data-interval="4h">4 Saat</button>
-                             <button class="interval-btn" data-interval="1d">1 Gün</button>
+                         <div class="pivot-filters" id="cryptoRecommendationFilters">
+                            <button class="active" data-filter="all">Tümü</button>
+                            <button data-filter="buy">Al</button>
+                            <button data-filter="sell">Sat</button>
+                            <button data-filter="hold">Tut</button>
                         </div>
                         <button id="analyzeAllCryptoBtn" class="ai-btn" title="Tüm listeyi Gemini ile yorumla"><i class="fas fa-magic-sparkles"></i> Toplu Yorumla</button>
                     </div>
@@ -357,14 +365,14 @@
     // #############################################################################
     // # DİKKAT! BURAYA KENDİ FIREBASE PROJE BİLGİLERİNİZİ GİRMENİZ GEREKİYOR! #
     // #############################################################################
- const firebaseConfig = {
-  apiKey: "AIzaSyA3flTu3Jz9E1D1U_DympYE7B4I4FDxj88",
-  authDomain: "fiyattakipv3.firebaseapp.com",
-  projectId: "fiyattakipv3",
-  storageBucket: "fiyattakipv3.firebasestorage.app",
-  messagingSenderId: "440839843277",
-  appId: "1:440839843277:web:2c9c15e4a103e8b2f2e884"
-};
+    const firebaseConfig = {
+        apiKey: "AIzaSyA3flTu3Jz9E1D1U_DympYE7B4I4FDxj88",
+        authDomain: "fiyattakipv3.firebaseapp.com",
+        projectId: "fiyattakipv3",
+        storageBucket: "fiyattakipv3.firebasestorage.app",
+        messagingSenderId: "440839843277",
+        appId: "1:440839843277:web:2c9c15e4a103e8b2f2e884"
+    };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
@@ -377,6 +385,7 @@
     let cryptoPairs = [];
     let userDocRef = null;
     let sortableInstance = null;
+    let currentRecommendationFilter = 'all';
     const loginPage = document.getElementById('login-page'), trackerPage = document.getElementById('tracker-page'), notification = document.getElementById("notification"), modalOverlay = document.getElementById('modalOverlay');
 
     const AVAILABLE_INDICATORS = {
@@ -385,13 +394,17 @@
         volume: "Hacim (24s)", atr: "ATR", ichimoku: "Ichimoku Cloud", fibonacci: "Fibonacci"
     };
 
-    const translations = { tr: { login_prompt: "Devam etmek için giriş yapın veya yeni hesap oluşturun.", email: "E-posta", password: "Şifre", login: "Giriş Yap", signup: "Kayıt Ol", logout: "Çıkış Yap", app_title: "Fiyat Takipçisi", add: "Ekle", refresh: "Yenile", settings: "Ayarlar", coin: "Coin", price: "Fiyat", delete: "Sil", last_update: "Son güncelleme", color_rules: "Renk Kuralları", general_settings: "Genel Ayarlar", language: "Dil", auto_refresh: "Otomatik Yenileme", refresh_interval: "Yenileme Aralığı (sn)", column_settings: "Kolon Ayarları", positive_threshold: "Pozitif Eşik (%)", color_settings: "Renk Ayarları", high_positive_color: "Yüksek Pozitif Renk", low_positive_color: "Düşük Pozitif Renk", save_settings: "Ayarları Kaydet", saved: "Kaydedildi!", limit_exceeded: "Limit aşıldı!", role_info: (role, limit, type) => `Rolünüz (${role}) en fazla ${limit} ${type} eklemeye izin veriyor.`, invalid_asset: (asset) => `Geçersiz varlık: ${asset}`, already_in_list: (asset) => `${asset} zaten listede.`, lowest_price_title: (asset, period) => `${asset} - ${period} En Düşük Fiyat`, lowest_price_detail: (price, date) => `Bu dönemdeki en düşük fiyat <strong>${price}</strong>, ${date} tarihinde görüldü.`, no_data: "Veri yok" }, en: {} };
+    const translations = { tr: { login_prompt: "Devam etmek için giriş yapın veya yeni hesap oluşturun.", email: "E-posta", password: "Şifre", login: "Giriş Yap", signup: "Kayıt Ol", logout: "Çıkış Yap", app_title: "Fiyat Takipçisi", add: "Ekle", refresh: "Yenile", settings: "Ayarlar", coin: "Coin", price: "Fiyat", delete: "Sil", last_update: "Son güncelleme", color_rules: "Renk Kuralları", general_settings: "Genel Ayarlar", language: "Dil", auto_refresh: "Otomatik Yenileme", refresh_interval: "Yenileme Aralığı (sn)", column_settings: "Kolon Ayarları", positive_threshold: "Pozitif Eşik (%)", color_settings: "Renk Ayarları", high_positive_color: "Yüksek Pozitif Renk", low_positive_color: "Düşük Pozitif Renk", save_settings: "Ayarları Kaydet", saved: "Kaydedildi!", settings_saved: "Ayarlar başarıyla kaydedildi.", analysis_updated: "Analiz başarıyla güncellendi.", limit_exceeded: "Limit aşıldı!", role_info: (role, limit, type) => `Rolünüz (${role}) en fazla ${limit} ${type} eklemeye izin veriyor.`, invalid_asset: (asset) => `Geçersiz varlık: ${asset}`, already_in_list: (asset) => `${asset} zaten listede.`, lowest_price_title: (asset, period) => `${asset} - ${period} En Düşük Fiyat`, lowest_price_detail: (price, date) => `Bu dönemdeki en düşük fiyat <strong>${price}</strong>, ${date} tarihinde görüldü.`, no_data: "Veri yok" }, en: {} };
 
     function translatePage(lang) { document.querySelectorAll('[data-lang]').forEach(el => { const key = el.getAttribute('data-lang'); if (translations[lang]?.[key] && typeof translations[lang][key] === 'string') el.textContent = translations[lang][key]; }); }
     function showPage(pageId) { loginPage.style.display = (pageId === 'login-page') ? 'flex' : 'none'; trackerPage.style.display = (pageId === 'tracker-page') ? 'flex' : 'none'; }
     function showPanel(panelId) { document.getElementById(panelId).classList.add('show'); modalOverlay.classList.add('show'); document.body.classList.add('modal-open'); }
     function closeAllPanels() { document.querySelectorAll('.panel.show').forEach(p => p.classList.remove('show')); modalOverlay.classList.remove('show'); document.body.classList.remove('modal-open'); }
     function showNotification(message, isSuccess = true) { notification.textContent = message; notification.style.backgroundColor = isSuccess ? 'var(--accent-green)' : 'var(--accent-red)'; notification.classList.add('show'); setTimeout(() => notification.classList.remove('show'), 3000); }
+
+    function showLoading(button) { button.dataset.originalHtml = button.innerHTML; button.innerHTML = '<div class="loading"></div>'; button.disabled = true; }
+    function hideLoading(button) { if (button.dataset.originalHtml) { button.innerHTML = button.dataset.originalHtml; } button.disabled = false; }
+
 
     document.getElementById('loginBtn').addEventListener('click', () => auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).catch(err => document.getElementById("error-message").textContent = err.message));
     document.getElementById('signupBtn').addEventListener('click', () => auth.createUserWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).catch(err => document.getElementById("error-message").textContent = err.message));
@@ -477,6 +490,9 @@
         }
 
         function saveSettings() {
+            const btn = document.getElementById('saveSettingsBtn');
+            showLoading(btn);
+
             let interval = parseInt(document.getElementById('refreshInterval').value);
             const minInterval = { admin: 10, qualified: 120, new_user: 300 }[currentUserRole] || 300;
             if (interval < minInterval) interval = minInterval;
@@ -490,24 +506,43 @@
                 userDocRef.update({ settings: settings }).then(() => {
                     applySettings();
                     closeAllPanels();
-                    showNotification(translations[settings.lang].saved, true);
+                    showNotification(translations[settings.lang].settings_saved, true);
                     fetchAllDataAndRender();
-                }).catch(error => console.error("Firebase ayar kaydetme hatası:", error));
+                }).catch(error => {
+                    console.error("Firebase ayar kaydetme hatası:", error);
+                    showNotification("Ayarları kaydederken hata oluştu.", false);
+                }).finally(() => {
+                    hideLoading(btn);
+                });
             }
         }
 
         function updateAnalysisSettings(type) {
+            const btn = document.getElementById('updateCryptoAnalysisBtn');
+            showLoading(btn);
+            
+            settings.cryptoAnalysisInterval = document.querySelector('#cryptoIntervalFilters button.active').dataset.interval;
+
             settings[`${type}AnalysisIndicators`] = {};
             document.querySelectorAll(`#${type}-indicator-filters-grid input[type="checkbox"]`).forEach(checkbox => {
                 settings[`${type}AnalysisIndicators`][checkbox.dataset.indicator] = checkbox.checked;
             });
             if (userDocRef) {
-                userDocRef.update({ 'settings.cryptoAnalysisIndicators': settings.cryptoAnalysisIndicators }).then(() => {
-                    renderIndicatorCards('crypto');
-                    showNotification("Analiz güncellendi!", true);
-                }).catch(error => console.error("Firebase analiz ayarı kaydetme hatası:", error));
+                userDocRef.update({ 
+                    'settings.cryptoAnalysisIndicators': settings.cryptoAnalysisIndicators,
+                    'settings.cryptoAnalysisInterval': settings.cryptoAnalysisInterval
+                }).then(() => {
+                    showNotification(translations[settings.lang].analysis_updated, true);
+                    fetchAllDataAndRender(); 
+                }).catch(error => {
+                    console.error("Firebase analiz ayarı kaydetme hatası:", error);
+                    showNotification("Analiz ayarları güncellenirken bir hata oluştu.", false);
+                }).finally(() => {
+                    hideLoading(btn);
+                });
             }
         }
+
 
         function applySettings() {
             document.getElementById('langSelect').value = settings.lang;
@@ -590,14 +625,27 @@
         }
 
         async function fetchAllDataAndRender() {
-            refreshBtn.innerHTML = '<div class="loading"></div>';
+            const refreshBtn = document.getElementById('refreshBtn');
+            showLoading(refreshBtn);
+            
             allCryptoData = [];
             renderLoadingSkeletons('crypto', cryptoPairs, document.getElementById('cryptoPriceTable'));
             allCryptoData = await Promise.all(cryptoPairs.map(fetchCryptoData));
+
+            allCryptoData.forEach(asset => {
+                if(!asset.error) {
+                    const { recommendation, color, summary, category } = getRecommendation(asset, settings.cryptoAnalysisIndicators);
+                    asset.recommendation = recommendation;
+                    asset.recommendationColor = color;
+                    asset.recommendationSummary = summary;
+                    asset.recommendationCategory = category;
+                }
+            });
+
             sortAndRenderTable();
             renderIndicatorCards('crypto');
             renderSupportResistance('crypto', allCryptoData);
-            refreshBtn.innerHTML = `<i class="fas fa-sync-alt"></i>`;
+            hideLoading(refreshBtn);
             updateTime.textContent = new Date().toLocaleString(settings.lang);
         }
 
@@ -727,29 +775,57 @@
             if(content) content.innerHTML = `<div class="dictionary-item"><h5>RSI (Göreceli Güç Endeksi)</h5><p>Fiyat hareketlerinin hızını ve değişimini ölçerek bir varlığın aşırı alım veya aşırı satım koşullarında olup olmadığını değerlendirir. 0 ile 100 arasında bir değer alır.</p><p class="example"><b>Örnek:</b> RSI değeri 70'in üzerine çıktığında, varlığın aşırı değerlendiği ve bir düzeltme (düşüş) yaşanabileceği düşünülür (Sat sinyali). 30'un altına indiğinde ise aşırı satıldığı ve bir tepki yükselişi gelebileceği düşünülür (Al sinyali).</p></div><div class="dictionary-item"><h5>MACD (Hareketli Ortalama Yakınsama/Iraksama)</h5><p>İki farklı üssel hareketli ortalama (genellikle 12 ve 26 günlük) arasındaki ilişkiyi gösteren bir trend takip ve momentum göstergesidir. MACD çizgisi, sinyal çizgisini yukarı kestiğinde al, aşağı kestiğinde sat sinyali olarak yorumlanır.</p><p class="example"><b>Örnek:</b> Mavi MACD çizgisi, turuncu sinyal çizgisini alttan yukarı doğru keserse, bu yükseliş momentumunun arttığını gösterir ve bir 'Al' fırsatı olabilir. Histogramın (çubukların) sıfır çizgisinin üzerine çıkması bu sinyali güçlendirir.</p></div><div class="dictionary-item"><h5>Hareketli Ortalamalar (EMA/SMA)</h5><p>Belirli bir periyottaki fiyatların ortalamasını alarak trend yönünü yumuşatır ve belirginleştirir. EMA (Üssel) son fiyatlara daha fazla ağırlık verirken, SMA (Basit) tüm fiyatlara eşit ağırlık verir. Kısa vadeli ortalamanın (örn. 20 EMA) uzun vadeli ortalamayı (örn. 50 EMA) yukarı kesmesi 'Golden Cross' (Al sinyali), aşağı kesmesi 'Death Cross' (Sat sinyali) olarak bilinir.</p><p class="example"><b>Örnek:</b> Fiyat grafiği 50 günlük EMA'nın üzerinde seyrediyorsa, orta vadeli trendin yükselişte olduğu kabul edilir.</p></div><div class="dictionary-item"><h5>Bollinger Bantları</h5><p>Bir basit hareketli ortalamanın (orta bant) etrafına standart sapma ile hesaplanan iki bandın (üst ve alt) eklenmesiyle oluşur. Fiyatların bu bantların dışına çıkması nadirdir ve genellikle aşırı oynaklığa veya güçlü bir trende işaret eder.</p><p class="example"><b>Örnek:</b> Fiyatlar alt banda değip tekrar içeri dönerse bu bir alım fırsatı olabilir. Fiyatların üst banda sürekli baskı yapması ve bandın genişlemesi, güçlü bir yükseliş trendinin işareti olabilir.</p></div><div class="dictionary-item"><h5>Ichimoku Cloud (Ichimoku Bulutu)</h5><p>Tek bakışta trend yönü, momentum, destek ve direnç seviyeleri hakkında kapsamlı bilgi sunar. Fiyatın bulutun (Kumo) üzerinde olması yükseliş, altında olması düşüş trendini gösterir. Bulutun kendisi ise dinamik bir destek/direnç bölgesi olarak çalışır.</p><p class="example"><b>Örnek:</b> Fiyat, yeşil bulutun üzerindeyse bu güçlü bir yükseliş trendidir. Fiyatın bulutun içine girmesi ise piyasanın kararsız olduğunu gösterir.</p></div><div class="dictionary-item"><h5>Stochastic RSI</h5><p>RSI göstergesine stokastik osilatör formülünün uygulanmasıyla elde edilir ve aşırı alım/satım sinyallerini daha sık ve net bir şekilde üretir. 80 üzeri aşırı alım, 20 altı aşırı satım olarak kabul edilir.</p><p class="example"><b>Örnek:</b> StochRSI 20 seviyesinin altına düşüp tekrar yukarı döndüğünde bu bir alım sinyali olarak değerlendirilebilir.</p></div><div class="dictionary-item"><h5>ATR (Average True Range)</h5><p>Piyasanın oynaklığını (volatilite) ölçer. Fiyatın ne kadar hareket ettiğini gösterir, ancak yönünü belirtmez. Yüksek ATR, yüksek oynaklık; düşük ATR, düşük oynaklık anlamına gelir.</p><p class="example"><b>Örnek:</b> Bir yatırımcı, stop-loss seviyesini belirlerken mevcut fiyatın 2 ATR kadar altına koyabilir. Bu, normal piyasa dalgalanmalarından etkilenmemesine yardımcı olur.</p></div><div class="dictionary-item"><h5>Fibonacci Düzeltmesi</h5><p>Bir trendin başlangıç ve bitiş noktaları arasına çizilen yatay seviyelerdir. Trendin olası geri çekilme (düzeltme) seviyelerini, yani potansiyel destek ve direnç alanlarını belirlemek için kullanılır. En yaygın seviyeler %38.2, %50 ve %61.8'dir.</p><p class="example"><b>Örnek:</b> Bir yükseliş trendinde fiyat geri çekilmeye başlarsa, yatırımcılar %50 Fibonacci seviyesinin destek olarak çalışmasını ve fiyatın buradan tekrar yükselişe geçmesini bekleyebilir.</p></div>`;
         }
 
-        function getRecommendation(asset, activeIndicators) {
+       function getRecommendation(asset, activeIndicators) {
             const { indicators, latestPrice } = asset;
-            let score = 0;
+            let buyScore = 0, sellScore = 0;
             let summaryPoints = { buy: [], sell: [], neutral: [] };
 
-            if (activeIndicators.ema && activeIndicators.sma && indicators.ema && indicators.sma) { if (indicators.ema > indicators.sma) { score++; summaryPoints.buy.push("hareketli ortalamalar yükselişi destekliyor (EMA > SMA)"); } else { score--; summaryPoints.sell.push("hareketli ortalamalar düşüş sinyali veriyor (EMA < SMA)"); } }
-            if (activeIndicators.rsi && indicators.rsi !== null) { if (indicators.rsi < 35) { score += 1.5; summaryPoints.buy.push(`RSI (${indicators.rsi.toFixed(0)}) aşırı satım bölgesine yakın, tepki alımı potansiyeli taşıyor`); } if (indicators.rsi > 65) { score -= 1.5; summaryPoints.sell.push(`RSI (${indicators.rsi.toFixed(0)}) aşırı alım bölgesinde, düzeltme riski mevcut`); } }
-            if (activeIndicators.macd && indicators.macd) { if (indicators.macd.histogram > 0) { score++; summaryPoints.buy.push("MACD histogramı pozitif, alım momentumu güçlü"); } else { score--; summaryPoints.sell.push("MACD histogramı negatif, satış baskısı hakim"); } }
-            if (activeIndicators.bollinger && indicators.bollinger) { if (latestPrice < indicators.bollinger.lower) { score++; summaryPoints.buy.push("fiyat alt Bollinger Bandı'na yakın, bu durum tepki alımları için bir fırsat olabilir"); } if (latestPrice > indicators.bollinger.upper) { score--; summaryPoints.sell.push("fiyat üst Bollinger Bandı'nı zorluyor, bu durum kar satışı baskısı yaratabilir"); } }
-            if (activeIndicators.ichimoku && indicators.ichimoku) { if (latestPrice > indicators.ichimoku.senkouSpanA && latestPrice > indicators.ichimoku.senkouSpanB) { score+=1.5; summaryPoints.buy.push("fiyat Ichimoku bulutunun üzerinde, bu güçlü bir yükseliş sinyali"); } else if (latestPrice < indicators.ichimoku.senkouSpanA && latestPrice < indicators.ichimoku.senkouSpanB) { score-=1.5; summaryPoints.sell.push("fiyat Ichimoku bulutunun altında, bu güçlü bir düşüş sinyali"); } }
-            if (activeIndicators.stochRsi && indicators.stochRsi) { if(indicators.stochRsi.k < 20) { score += 1; summaryPoints.buy.push("StochRSI aşırı satım bölgesinde, alım için uygun olabilir"); } if(indicators.stochRsi.k > 80) { score -= 1; summaryPoints.sell.push("StochRSI aşırı alım bölgesinde, satış baskısı artabilir"); } }
+            if (activeIndicators.ema && activeIndicators.sma && indicators.ema && indicators.sma) {
+                if (indicators.ema > indicators.sma) { buyScore++; summaryPoints.buy.push("EMA, SMA'nın üzerinde (yükseliş trendi)"); } 
+                else { sellScore++; summaryPoints.sell.push("EMA, SMA'nın altında (düşüş trendi)"); }
+            }
+            if (activeIndicators.rsi && indicators.rsi !== null) {
+                if (indicators.rsi < 30) { buyScore += 1.5; summaryPoints.buy.push(`RSI(${indicators.rsi.toFixed(0)}) aşırı satımda`); }
+                else if (indicators.rsi < 40) { buyScore += 0.5; summaryPoints.buy.push(`RSI(${indicators.rsi.toFixed(0)}) satım bölgesine yakın`); }
+                if (indicators.rsi > 70) { sellScore += 1.5; summaryPoints.sell.push(`RSI(${indicators.rsi.toFixed(0)}) aşırı alımda`); }
+                else if (indicators.rsi > 60) { sellScore += 0.5; summaryPoints.sell.push(`RSI(${indicators.rsi.toFixed(0)}) alım bölgesine yakın`); }
+            }
+            if (activeIndicators.macd && indicators.macd) {
+                if (indicators.macd.histogram > 0 && indicators.macd.macd > indicators.macd.signal) { buyScore++; summaryPoints.buy.push("MACD pozitif kesişim"); } 
+                else if (indicators.macd.histogram < 0 && indicators.macd.macd < indicators.macd.signal) { sellScore++; summaryPoints.sell.push("MACD negatif kesişim"); }
+            }
+            if (activeIndicators.bollinger && indicators.bollinger) {
+                if (latestPrice < indicators.bollinger.lower) { buyScore += 1.5; summaryPoints.buy.push("Fiyat alt Bollinger bandının altında"); } 
+                if (latestPrice > indicators.bollinger.upper) { sellScore += 1.5; summaryPoints.sell.push("Fiyat üst Bollinger bandının üzerinde"); }
+            }
+            if (activeIndicators.ichimoku && indicators.ichimoku) {
+                const { tenkanSen, kijunSen, senkouSpanA, senkouSpanB } = indicators.ichimoku;
+                if (latestPrice > senkouSpanA && latestPrice > senkouSpanB && tenkanSen > kijunSen) { buyScore+=2; summaryPoints.buy.push("Ichimoku güçlü yükseliş sinyali"); } 
+                else if (latestPrice < senkouSpanA && latestPrice < senkouSpanB && tenkanSen < kijunSen) { sellScore+=2; summaryPoints.sell.push("Ichimoku güçlü düşüş sinyali"); }
+            }
+            if (activeIndicators.stochRsi && indicators.stochRsi) {
+                if(indicators.stochRsi.k < 20) { buyScore += 1; summaryPoints.buy.push("StochRSI aşırı satımda"); } 
+                if(indicators.stochRsi.k > 80) { sellScore += 1; summaryPoints.sell.push("StochRSI aşırı alımda"); } 
+            }
+            if (activeIndicators.fibonacci && indicators.fibonacci) {
+                if (latestPrice > indicators.fibonacci.level_618) { buyScore += 0.5; summaryPoints.buy.push("Fiyat, 0.618 Fibonacci seviyesi üzerinde"); }
+                else if (latestPrice < indicators.fibonacci.level_382) { sellScore += 0.5; summaryPoints.sell.push("Fiyat, 0.382 Fibonacci seviyesi altında"); }
+            }
 
-            let recommendation, color, summary;
-            if (score >= 2) { recommendation = "Güçlü Al"; color = "var(--strong-buy)"; summary = `Genel olarak pozitif bir görünüm var. ${summaryPoints.buy.join(', ')}.`;}
-            else if (score >= 0.5) { recommendation = "Al"; color = "var(--buy)"; summary = `Alım sinyalleri ağırlıkta. ${summaryPoints.buy.join(', ')}, ancak ${summaryPoints.sell.join(', ')} gibi aksi sinyaller de mevcut, dikkatli olunmalı.`; }
-            else if (score <= -2) { recommendation = "Güçlü Sat"; color = "var(--strong-sell)"; summary = `Genel olarak negatif bir görünüm hakim. ${summaryPoints.sell.join(', ')}.`; }
-            else if (score <= -0.5) { recommendation = "Sat"; color = "var(--sell)"; summary = `Satış sinyalleri ağırlıkta. ${summaryPoints.sell.join(', ')}, fakat ${summaryPoints.buy.join(', ')} gibi olumlu sinyaller de izlenmeli.`; }
-            else { recommendation = "Tut"; color = "var(--hold)"; summary = "Piyasa kararsız görünüyor. Belirgin alım veya satım sinyali yok, beklemek daha doğru olabilir."; }
+            let recommendation, color, summary, category;
+            const totalScore = buyScore - sellScore;
 
-            if (summaryPoints.buy.length === 0 && summaryPoints.sell.length > 0) summary = `Negatif bir görünüm hakim. ${summaryPoints.sell.join(', ')}.`;
-            if (summaryPoints.sell.length === 0 && summaryPoints.buy.length > 0) summary = `Pozitif bir görünüm var. ${summaryPoints.buy.join(', ')}.`;
+            if (totalScore >= 3 && buyScore > sellScore) { recommendation = "Güçlü Al"; color = "var(--strong-buy)"; category = "buy"; }
+            else if (totalScore >= 1 && buyScore > sellScore) { recommendation = "Al"; color = "var(--buy)"; category = "buy"; }
+            else if (totalScore <= -3 && sellScore > buyScore) { recommendation = "Güçlü Sat"; color = "var(--strong-sell)"; category = "sell"; }
+            else if (totalScore <= -1 && sellScore > buyScore) { recommendation = "Sat"; color = "var(--sell)"; category = "sell"; }
+            else { recommendation = "Tut"; color = "var(--hold)"; category = "hold"; }
+            
+            if (buyScore === 0 && sellScore === 0) summary = "Aktif indikatörlere göre belirgin bir sinyal yok.";
+            else if(category === 'buy' || category === 'sell') summary = `Al sinyalleri (${buyScore.toFixed(0)}): ${summaryPoints.buy.join(', ') || 'yok'}. Sat sinyalleri (${sellScore.toFixed(0)}): ${summaryPoints.sell.join(', ') || 'yok'}.`;
+            else summary = "Piyasa kararsız görünüyor, alım ve satım sinyalleri birbirine yakın."
 
-            return { recommendation, color, summary };
+            return { recommendation, color, summary, category };
         }
 
         function renderIndicatorCards(type) {
@@ -758,6 +834,10 @@
             const activeIndicators = settings[`${type}AnalysisIndicators`];
 
             allCryptoData.forEach(asset => {
+                if (currentRecommendationFilter !== 'all' && asset.recommendationCategory !== currentRecommendationFilter) {
+                    return;
+                }
+
                 const card = document.createElement('div');
                 card.className = 'indicator-card';
                 if (asset.error) {
@@ -765,8 +845,7 @@
                     container.appendChild(card);
                     return;
                 }
-                const { recommendation, color, summary } = getRecommendation(asset, activeIndicators);
-                const { indicators, latestPrice } = asset;
+                const { recommendation, recommendationColor, recommendationSummary, latestPrice, indicators } = asset;
 
                 const getValueHTML = (label, value, formatter, positiveCondition, negativeCondition) => {
                     if (value === null || value === undefined) return '';
@@ -782,17 +861,31 @@
                     if(activeIndicators[key]) {
                         const indicatorValue = indicators[key];
                         if (indicatorValue !== undefined && indicatorValue !== null) {
-                            switch(key) {
-                                case 'rsi': detailsHTML += getValueHTML('RSI', indicatorValue, v => v.toFixed(2), v => v < 35, v => v > 65); break;
+                             switch(key) {
+                                case 'rsi': detailsHTML += getValueHTML('RSI', indicatorValue, v => v.toFixed(2), v => v < 30, v => v > 70); break;
                                 case 'macd': detailsHTML += getValueHTML('MACD Hist.', indicatorValue?.histogram, v => v.toFixed(6), v => v > 0, v => v < 0); break;
                                 case 'stochRsi': detailsHTML += getValueHTML('Stoch RSI (k)', indicatorValue?.k, v => v.toFixed(2), v => v < 20, v => v > 80); break;
                                 case 'volume': detailsHTML += getValueHTML('Hacim (24s)', indicatorValue, formatVolume); break;
                                 case 'ema': detailsHTML += getValueHTML('EMA (50)', indicatorValue, v => v.toFixed(2)); break;
                                 case 'sma': detailsHTML += getValueHTML('SMA (50)', indicatorValue, v => v.toFixed(2)); break;
                                 case 'atr': detailsHTML += getValueHTML('ATR', indicatorValue, v => v.toFixed(4)); break;
-                                case 'bollinger': detailsHTML += getValueHTML('Bollinger (Orta)', indicatorValue?.middle, v => v.toFixed(2)); break;
-                                case 'ichimoku': detailsHTML += getValueHTML('Ichimoku (Tenkan)', indicatorValue?.tenkanSen, v => v.toFixed(2)); break;
-                                case 'fibonacci': detailsHTML += getValueHTML('Fib 0.5 Seviyesi', indicatorValue?.level_500, v => v.toFixed(2)); break;
+                                case 'bollinger': 
+                                    detailsHTML += getValueHTML('Bollinger Üst', indicatorValue?.upper, v => v.toFixed(2));
+                                    detailsHTML += getValueHTML('Bollinger Orta', indicatorValue?.middle, v => v.toFixed(2));
+                                    detailsHTML += getValueHTML('Bollinger Alt', indicatorValue?.lower, v => v.toFixed(2));
+                                    break;
+                                case 'ichimoku': 
+                                    detailsHTML += getValueHTML('Ichimoku Tenkan', indicatorValue?.tenkanSen, v => v.toFixed(2)); 
+                                    detailsHTML += getValueHTML('Ichimoku Kijun', indicatorValue?.kijunSen, v => v.toFixed(2)); 
+                                    detailsHTML += getValueHTML('Ichimoku Senkou A', indicatorValue?.senkouSpanA, v => v.toFixed(2)); 
+                                    detailsHTML += getValueHTML('Ichimoku Senkou B', indicatorValue?.senkouSpanB, v => v.toFixed(2)); 
+                                    break;
+                                case 'fibonacci': 
+                                    detailsHTML += getValueHTML('Fib 0.236', indicatorValue?.level_236, v => v.toFixed(2)); 
+                                    detailsHTML += getValueHTML('Fib 0.382', indicatorValue?.level_382, v => v.toFixed(2)); 
+                                    detailsHTML += getValueHTML('Fib 0.5', indicatorValue?.level_500, v => v.toFixed(2)); 
+                                    detailsHTML += getValueHTML('Fib 0.618', indicatorValue?.level_618, v => v.toFixed(2)); 
+                                    break;
                             }
                         }
                     }
@@ -807,11 +900,11 @@
                 card.innerHTML = `
                     <div class="indicator-card-header">
                         <h4>${asset.pair.replace("USDT", "")}</h4>
-                        <span class="recommendation-badge" style="background-color:${color};">${recommendation}</span>
+                        <span class="recommendation-badge" style="background-color:${recommendationColor};">${recommendation}</span>
                     </div>
                     ${detailsHTML}
                     <div class="card-footer">
-                        <div class="summary"><p><strong>Özet:</strong> ${summary}</p></div>
+                        <div class="summary"><p><strong>Özet:</strong> ${recommendationSummary}</p></div>
                         ${aiButtonHTML}
                     </div>`;
                 container.appendChild(card);
@@ -822,8 +915,7 @@
             const button = pair ? document.querySelector(`.ai-btn[data-pair="${pair}"]`) : document.getElementById(`analyzeAllCryptoBtn`);
             if (!button) return;
 
-            const originalButtonHTML = button.innerHTML;
-            button.disabled = true; button.innerHTML = `<div class="loading"></div>`;
+            showLoading(button);
             const analysisContent = document.getElementById('analysisContent');
             analysisContent.innerHTML = '<div class="loading" style="margin: 20px auto; display:block;"></div>';
             showPanel('analysisPanel');
@@ -860,8 +952,7 @@
                 console.error("Gemini AI Hatası:", error);
                 analysisContent.innerHTML = `<p style="color:var(--accent-red)">Yorumlama sırasında bir hata oluştu: ${error.message}. Lütfen Firebase projenizde 'geminiProxy' adlı Cloud Function'ın doğru şekilde deploy edildiğinden ve faturalandırmanın aktif olduğundan emin olun.</p>`;
             } finally {
-                button.disabled = false;
-                button.innerHTML = originalButtonHTML;
+                hideLoading(button);
             }
         }
 
@@ -938,7 +1029,14 @@
 
         trackerPage.addEventListener('click', (e) => {
             const collapsibleHeader = e.target.closest('.collapsible-header');
-            if (collapsibleHeader) { collapsibleHeader.classList.toggle('open'); collapsibleHeader.nextElementSibling?.classList.toggle('open'); return; }
+            if (collapsibleHeader) { 
+                collapsibleHeader.classList.toggle('open'); 
+                const content = collapsibleHeader.nextElementSibling;
+                if(content?.classList.contains('collapsible-content')) {
+                    content.classList.toggle('open');
+                }
+                return; 
+            }
 
             const tabLink = e.target.closest('.tab-link');
             if(tabLink && !tabLink.classList.contains('active')) {
@@ -976,17 +1074,25 @@
             if(pivotFilterBtn) {
                  settings.cryptoPivotFilter = pivotFilterBtn.dataset.filter;
                  if (userDocRef) userDocRef.update({ 'settings.cryptoPivotFilter': settings.cryptoPivotFilter });
-                 applySettings();
+                 document.querySelector('#cryptoPivotFilters button.active').classList.remove('active');
+                 pivotFilterBtn.classList.add('active');
                  renderSupportResistance('crypto', allCryptoData);
                  return;
             }
-             const intervalFilterBtn = e.target.closest('#cryptoIntervalFilters button');
-            if(intervalFilterBtn) {
-                settings.cryptoAnalysisInterval = intervalFilterBtn.dataset.interval;
-                if (userDocRef) userDocRef.update({ 'settings.cryptoAnalysisInterval': settings.cryptoAnalysisInterval });
-                applySettings();
-                fetchAllDataAndRender();
+            const intervalFilterBtn = e.target.closest('#cryptoIntervalFilters button');
+            if(intervalFilterBtn && !intervalFilterBtn.classList.contains('active')) {
+                document.querySelector('#cryptoIntervalFilters button.active').classList.remove('active');
+                intervalFilterBtn.classList.add('active');
+                // No automatic refresh here, user must click "Update Analysis"
                 return;
+            }
+             const recommendationFilterBtn = e.target.closest('#cryptoRecommendationFilters button');
+            if(recommendationFilterBtn) {
+                 currentRecommendationFilter = recommendationFilterBtn.dataset.filter;
+                 document.querySelector('#cryptoRecommendationFilters button.active').classList.remove('active');
+                 recommendationFilterBtn.classList.add('active');
+                 renderIndicatorCards('crypto');
+                 return;
             }
         });
 
