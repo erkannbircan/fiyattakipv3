@@ -689,8 +689,8 @@
                 }
 
                 if (a.error) return 1; if (b.error) return -1;
-                if (valA === undefined || valA === null) return 1;
-                if (valB === undefined || valB === null) return -1;
+                if (valA === undefined || valA === null || valA === 'N/A') return 1;
+                if (valB === undefined || valB === null || valB === 'N/A') return -1;
 
                 if (typeof valA === 'string') {
                     return order === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
@@ -712,10 +712,18 @@
             const tableBody = document.getElementById(`${type}PriceTable`);
             tableBody.innerHTML = '';
             const isSorting = !document.querySelector('.drag-handle-col.hidden');
+            
+            const formatPct = (pct) => {
+                if(typeof pct === 'number') {
+                    return `${pct.toFixed(2)}%`;
+                }
+                return 'N/A';
+            };
+
             data.forEach(result => {
                 const row = document.createElement("tr");
                 row.dataset.pair = result.pair;
-                const getCellStyle = (colData, threshold) => { const pct = colData?.pct; if (isNaN(pct)) return ''; if (pct < 0) return 'class="negative"'; if (pct >= threshold) return `class="positive-high" style="color: ${settings.colors.high};"`; return `class="positive-low" style="color: ${settings.colors.low};"`; };
+                const getCellStyle = (colData, threshold) => { const pct = colData?.pct; if (typeof pct !== 'number') return ''; if (pct < 0) return 'class="negative"'; if (pct >= threshold) return `class="positive-high" style="color: ${settings.colors.high};"`; return `class="positive-low" style="color: ${settings.colors.low};"`; };
                 let rowHTML;
                 if (result.error) {
                     rowHTML = `<td class="drag-handle-col ${isSorting ? '' : 'hidden'}"><i class="fas fa-grip-lines drag-handle"></i></td><td class="asset-cell">${result.pair.replace("USDT", "")}</td><td colspan="5" style="text-align:center; color: var(--accent-red);">Veri alınamadı</td>`;
@@ -724,9 +732,9 @@
                         <td class="drag-handle-col ${isSorting ? '' : 'hidden'}"><i class="fas fa-grip-lines drag-handle"></i></td>
                         <td class="asset-cell" data-pair="${result.pair}" data-type="${type}">${result.pair.replace("USDT", "")}</td>
                         <td>${formatPrice(result.latestPrice)}</td>
-                        <td ${getCellStyle(result.col1, settings.columns[1].threshold)} class="clickable-pct" data-col="1" data-pair="${result.pair}" data-type="${type}">${result.col1.pct?.toFixed(2)}%</td>
-                        <td ${getCellStyle(result.col2, settings.columns[2].threshold)} class="clickable-pct" data-col="2" data-pair="${result.pair}" data-type="${type}">${result.col2.pct?.toFixed(2)}%</td>
-                        <td ${getCellStyle(result.col3, settings.columns[3].threshold)} class="clickable-pct" data-col="3" data-pair="${result.pair}" data-type="${type}">${result.col3.pct?.toFixed(2)}%</td>
+                        <td ${getCellStyle(result.col1, settings.columns[1].threshold)} class="clickable-pct" data-col="1" data-pair="${result.pair}" data-type="${type}">${formatPct(result.col1.pct)}</td>
+                        <td ${getCellStyle(result.col2, settings.columns[2].threshold)} class="clickable-pct" data-col="2" data-pair="${result.pair}" data-type="${type}">${formatPct(result.col2.pct)}</td>
+                        <td ${getCellStyle(result.col3, settings.columns[3].threshold)} class="clickable-pct" data-col="3" data-pair="${result.pair}" data-type="${type}">${formatPct(result.col3.pct)}</td>
                     `;
                 }
                 rowHTML += `<td><button class="action-btn remove-btn" data-pair="${result.pair}" data-type="${type}"><i class="fas fa-times"></i></button></td>`;
@@ -1138,7 +1146,7 @@
                 else if (assetActionTarget.classList.contains('clickable-pct')) {
                     if (assetData && !assetData.error) {
                         const colData = assetData[`col${col}`];
-                        if (colData && colData.lowestPrice) {
+                        if (colData && typeof colData.pct === 'number') {
                             const periodName = settings.columns[col].name;
                             const pctChange = colData.pct.toFixed(2);
                             
