@@ -86,9 +86,6 @@
         .action-btn:hover { color: var(--accent-red); }
         .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        button.loading-state { pointer-events: none; }
-        button.loading-state .button-text { opacity: 0; }
-        button.loading-state .loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease; }
         .modal-overlay.show { opacity: 1; visibility: visible; }
         .panel { position: fixed; top: 50%; left: 50%; background-color: var(--bg-secondary); padding: 0; border-radius: 12px; border: 1px solid var(--border-color); z-index: 1001; width: clamp(300px, 90vw, 650px); max-height: 90vh; overflow: hidden; opacity: 0; visibility: hidden; transform: translate(-50%, -50%) scale(0.95); transition: opacity 0.3s ease, transform 0.3s ease; display: flex; flex-direction: column; }
@@ -104,8 +101,8 @@
         .collapsible-header.open .fas { transform: rotate(180deg); }
         .collapsible-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out, padding 0.4s ease; padding: 0 15px; background-color: var(--bg-secondary); }
         .collapsible-content.open { max-height: 4000px; padding: 15px; border-top: 1px solid var(--border-color); }
-        .notification { position: fixed; bottom: 25px; left: 25px; transform: translateX(-150%); background-color: var(--bg-tertiary); color: var(--text-primary); padding: 14px 25px; border-radius: 8px; z-index: 1003; border: 1px solid var(--border-color); opacity: 0; visibility: hidden; transition: all 0.4s ease; }
-        .notification.show { opacity: 1; transform: translateX(0); visibility: visible; }
+        .notification { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); background-color: var(--bg-tertiary); color: var(--text-primary); padding: 14px 25px; border-radius: 8px; z-index: 1003; border: 1px solid var(--border-color); opacity: 0; visibility: hidden; transition: all 0.4s ease; }
+        .notification.show { opacity: 1; transform: translateX(-50%) translateY(-20px); visibility: visible; }
         .tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 25px; overflow-x: auto; }
         .tab-link { padding: 10px 15px; cursor: pointer; color: var(--text-secondary); border-bottom: 2px solid transparent; white-space: nowrap; font-size: 0.9rem; }
         .tab-link.active { color: var(--text-primary); font-weight: 600; background-color: var(--bg-tertiary); border-color: var(--accent-blue); border-top-left-radius: 6px; border-top-right-radius: 6px; }
@@ -116,9 +113,9 @@
         .analysis-section { background-color: var(--bg-tertiary); padding: 20px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); }
         .analysis-section h4 { color: #64b5f6; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-top: 0; font-size: 1.5rem; }
         .analysis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; margin-bottom: 15px; }
-        .analysis-item { display: flex; justify-content: space-between; align-items: center; background-color: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 6px; flex-wrap: wrap; }
+        .analysis-item { display: flex; justify-content: space-between; background-color: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 6px; }
         .analysis-item .label { color: var(--text-secondary); }
-        .analysis-item .value { font-weight: 600; text-align: right; }
+        .analysis-item .value { font-weight: 600; }
         .analysis-summary { line-height: 1.6; margin-bottom: 10px; }
         .analysis-recommendation { font-weight: bold; font-size: 1.1rem; }
         .recommendation-al, .recommendation-guclu-al { font-weight: bold; color: var(--strong-buy); }
@@ -127,25 +124,24 @@
         .filters-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
         .filter-item { display: flex; align-items: center; background-color: var(--bg-tertiary); padding: 10px; border-radius: 6px; }
         .filter-item input { margin-right: 10px; accent-color: var(--accent-blue); }
-        .analysis-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: wrap; gap: 15px; border-top: 1px solid var(--border-color); padding-top: 20px; }
-        .analysis-actions button { background-color: var(--accent-blue); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; gap: 8px; position: relative;}
-        .global-analysis-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;}
-        .global-analysis-header h3 { margin: 0; color: var(--text-primary); font-size: 1.5rem; font-weight: 600; }
-        .recommendation-filters { display: flex; gap: 10px; }
-        .recommendation-filters button { background-color: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; cursor: pointer; }
-        .recommendation-filters button.active { background-color: var(--accent-blue); color: white; border-color: var(--accent-blue); }
-        .ai-btn { background: linear-gradient(45deg, #4285F4, #9B72CB); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; position: relative;}
-        .ai-btn-single { padding: 8px; border-radius: 50%; width: 38px; height: 38px; justify-content: center; }
+        .analysis-actions { display: flex; justify-content: flex-start; align-items: center; margin-top: 20px; flex-wrap: wrap; gap: 15px; }
+        .analysis-actions button { background-color: var(--accent-blue); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; gap: 8px;}
+        .global-analysis-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 15px;}
+        .global-analysis-header h3 { margin: 0; color: var(--text-primary); font-size: 1.5rem; font-weight: 600; flex-basis: 100%; text-align: center; margin-bottom: 15px; }
+        .global-analysis-controls { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .interval-filters { display: flex; gap: 10px; justify-content: center; flex-grow: 1; }
+        .interval-filters button { background-color: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; cursor: pointer; }
+        .interval-filters button.active { background-color: var(--accent-blue); color: white; border-color: var(--accent-blue); }
+        .ai-btn { background: linear-gradient(45deg, #4285F4, #9B72CB); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;}
         .indicator-cards-container { display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 20px; }
         .indicator-card { background: linear-gradient(145deg, var(--bg-tertiary), var(--bg-secondary)); border-radius: 12px; border: 1px solid var(--border-color); padding: 20px; transition: transform 0.3s ease, box-shadow 0.3s ease; }
-        .indicator-card.hidden { display: none; }
         .indicator-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
         .indicator-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
         .indicator-card-header h4 { margin: 0; font-size: 1.5rem; color: #64b5f6; }
         .recommendation-badge { padding: 5px 12px; border-radius: 15px; font-weight: bold; color: white; font-size: 0.9rem; }
         .indicator-details-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-bottom: 15px; }
-        .indicator-item { display: flex; flex-direction: column; align-items: flex-start; background-color: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 6px; }
-        .indicator-item .label { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;}
+        .indicator-item { display: flex; justify-content: space-between; align-items: center; background-color: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 6px; }
+        .indicator-item .label { font-size: 0.9rem; color: var(--text-secondary); }
         .indicator-item .value { font-size: 1rem; font-weight: 600; }
         .indicator-item .value.value-positive { color: var(--value-positive); }
         .indicator-item .value.value-negative { color: var(--value-negative); }
@@ -192,10 +188,172 @@
 <body>
 
     <div id="login-page" class="page">
+        <div class="login-container">
+            <h1><i class="fas fa-chart-line"></i> Fiyat Takipçisi</h1>
+            <p data-lang="login_prompt">Devam etmek için giriş yapın veya yeni hesap oluşturun.</p>
+            <div class="input-group"><label for="email" data-lang="email">E-posta</label><input type="email" id="email" autocomplete="email"></div>
+            <div class="input-group"><label for="password" data-lang="password">Şifre</label><input type="password" id="password" autocomplete="current-password"></div>
+            <div id="error-message"></div>
+            <div class="button-group">
+                <button id="loginBtn" data-lang="login">Giriş Yap</button>
+                <button id="signupBtn" data-lang="signup" style="background-color: #373c4a;">Kayıt Ol</button>
+            </div>
         </div>
+    </div>
+
     <div id="tracker-page" class="page" style="display: none;">
+        <div class="tracker-container">
+            <header class="app-header">
+                 <div class="header-left"><h1><i class="fas fa-chart-line"></i> <span data-lang="app_title">Fiyat Takipçisi</span></h1></div>
+                <div class="header-right">
+                    <div class="main-actions">
+                        <button id="refreshBtn" title="Yenile"><i class="fas fa-sync-alt"></i></button>
+                        <button id="settingsBtn" title="Ayarlar"><i class="fas fa-cog"></i></button>
+                    </div>
+                    <div class="user-menu">
+                        <button id="userMenuBtn"><i class="fas fa-user-circle"></i> <span id="userEmail"></span></button>
+                        <div class="dropdown-content">
+                            <a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> <span data-lang="logout">Çıkış Yap</span></a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="tabs">
+                <div class="tab-link active" data-tab="crypto">Kripto</div>
+                <div class="tab-link" data-tab="crypto-ai">Kripto AI</div>
+                <div class="tab-link" data-tab="crypto-pivot">AI Pivot</div>
+            </div>
+
+            <div id="crypto-content" class="tab-content active">
+                 <div class="add-asset-bar">
+                    <input type="text" id="newCoinInput" placeholder="BTC, ETH, SOL...">
+                    <button id="addCoinBtn"><i class="fas fa-plus"></i> <span data-lang="add">Ekle</span></button>
+                </div>
+                <div class="table-controls">
+                    <button id="toggleSortBtn"><i class="fas fa-sort"></i> Sırala</button>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="drag-handle-col hidden"><i class="fas fa-grip-lines"></i></th>
+                                <th class="sortable" data-sort-key="pair"><span data-lang="coin">Coin</span><span class="sort-indicator"></span></th>
+                                <th class="sortable" data-sort-key="latestPrice"><span data-lang="price">Fiyat</span><span class="sort-indicator"></span></th>
+                                <th id="col1_header_crypto" class="sortable" data-sort-key="col1"></th>
+                                <th id="col2_header_crypto" class="sortable" data-sort-key="col2"></th>
+                                <th id="col3_header_crypto" class="sortable" data-sort-key="col3"></th>
+                                <th data-lang="delete">Sil</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cryptoPriceTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="crypto-ai-content" class="tab-content">
+                <div class="collapsible">
+                    <div class="collapsible-header open"><span>Analiz Filtreleri</span><i class="fas fa-chevron-down"></i></div>
+                    <div class="collapsible-content open">
+                        <div id="crypto-indicator-filters-grid" class="filters-grid"></div>
+                        <div class="analysis-actions"><button id="updateCryptoAnalysisBtn"><i class="fas fa-check"></i> Analizi Güncelle</button></div>
+                    </div>
+                </div>
+                <div class="global-analysis-header">
+                    <h3>Otomatik Analiz Sonuçları</h3>
+                    <div class="global-analysis-controls">
+                         <div class="interval-filters" id="cryptoIntervalFilters">
+                             <button class="interval-btn" data-interval="1h">1 Saat</button>
+                             <button class="interval-btn active" data-interval="4h">4 Saat</button>
+                             <button class="interval-btn" data-interval="1d">1 Gün</button>
+                        </div>
+                        <button id="analyzeAllCryptoBtn" class="ai-btn" title="Tüm listeyi Gemini ile yorumla"><i class="fas fa-magic-sparkles"></i> Toplu Yorumla</button>
+                    </div>
+                </div>
+                <div id="crypto-indicator-cards-container" class="indicator-cards-container"></div>
+                 <div class="collapsible" style="margin-top: 30px;">
+                    <div class="collapsible-header">
+                        <span>İndikatör Sözlüğü</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="collapsible-content" id="dictionaryContent"></div>
+                </div>
+            </div>
+
+            <div id="crypto-pivot-content" class="tab-content">
+                <div class="pivot-filters" id="cryptoPivotFilters">
+                    <button class="active" data-filter="all">Tümü</button>
+                    <button data-filter="above">Pivot Üstü</button>
+                    <button data-filter="below">Pivot Altı</button>
+                </div>
+                <div id="crypto-pivot-container" class="pivot-container"></div>
+                 <div id="pivot-dictionary-container"></div>
+            </div>
+
+            <div class="update-time"><i class="far fa-clock"></i>&nbsp;<span data-lang="last_update">Son güncelleme</span>: <span id="updateTime"></span></div>
         </div>
-    <script>
+    </div>
+
+    <div id="settingsPanel" class="panel">
+        <div class="panel-header">
+            <h3 data-lang="settings">Ayarlar</h3>
+            <div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div>
+        </div>
+        <div class="panel-content">
+            <div class="settings-section">
+                <h4 data-lang="general_settings">Genel Ayarlar</h4>
+                <div class="setting-item"><label data-lang="language">Dil</label><select id="langSelect"><option value="tr">Türkçe</option><option value="en">English</option></select></div>
+                <div class="setting-item"><label data-lang="auto_refresh">Otomatik Yenileme</label><input type="checkbox" id="autoRefreshToggle"></div>
+                <div class="setting-item"><label data-lang="refresh_interval">Yenileme Aralığı (sn)</label><input type="number" id="refreshInterval" min="10" step="10"></div>
+            </div>
+            <div class="settings-section">
+                <h4 data-lang="column_settings">Kolon Ayarları</h4>
+                <div class="setting-item"><label>Kolon 1 Adı</label><input type="text" id="col1_name_input"></div>
+                <div class="setting-item"><label>Gün Sayısı</label><input type="number" id="col1_days_input" min="1"></div>
+                <div class="setting-item"><label>Pozitif Eşik (%)</label><input type="number" id="col1_threshold_input" min="0"></div><hr>
+                <div class="setting-item"><label>Kolon 2 Adı</label><input type="text" id="col2_name_input"></div>
+                <div class="setting-item"><label>Gün Sayısı</label><input type="number" id="col2_days_input" min="1"></div>
+                <div class="setting-item"><label>Pozitif Eşik (%)</label><input type="number" id="col2_threshold_input" min="0"></div><hr>
+                <div class="setting-item"><label>Kolon 3 Adı</label><input type="text" id="col3_name_input"></div>
+                <div class="setting-item"><label>Gün Sayısı</label><input type="number" id="col3_days_input" min="1"></div>
+                <div class="setting-item"><label>Pozitif Eşik (%)</label><input type="number" id="col3_threshold_input" min="0"></div>
+            </div>
+            <div class="settings-section">
+                <h4 data-lang="color_settings">Renk Ayarları</h4>
+                <div class="setting-item"><label data-lang="high_positive_color">Yüksek Pozitif Renk</label><div class="color-input-wrapper"><input type="color" id="high_color_input"><span class="color-preview" id="high_color_preview"></span></div></div>
+                <div class="setting-item"><label data-lang="low_positive_color">Düşük Pozitif Renk</label><div class="color-input-wrapper"><input type="color" id="low_color_input"><span class="color-preview" id="low_color_preview"></span></div></div>
+            </div>
+            <button id="saveSettingsBtn" data-lang="save_settings">Ayarları Kaydet</button>
+        </div>
+    </div>
+
+    <div id="lowestPricePanel" class="panel">
+         <div class="panel-header">
+            <h3 id="lowestPriceTitle"></h3>
+             <div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div>
+        </div>
+        <div class="panel-content"><p id="lowestPriceDetails"></p></div>
+    </div>
+
+    <div id="chartPanel" class="panel">
+        <div class="panel-header">
+            <h3 id="chartPanelTitle"></h3>
+            <div class="panel-controls"><button class="panel-btn close-btn" title="Kapat"><i class="fas fa-times"></i></button></div>
+        </div>
+        <div id="chartContainer"></div>
+    </div>
+
+    <div id="analysisPanel" class="panel">
+        <div class="panel-header">
+            <h3>AI Analizi</h3>
+            <div class="panel-controls"><button class="panel-btn close-btn" title="Kapat"><i class="fas fa-times"></i></button></div>
+        </div>
+        <div id="analysisContent" class="panel-content"></div>
+    </div>
+    <div id="modalOverlay" class="modal-overlay"></div>
+    <div class="notification" id="notification"></div>
+
+<script>
     // #############################################################################
     // # DİKKAT! BURAYA KENDİ FIREBASE PROJE BİLGİLERİNİZİ GİRMENİZ GEREKİYOR! #
     // #############################################################################
@@ -207,10 +365,6 @@
   messagingSenderId: "440839843277",
   appId: "1:440839843277:web:2c9c15e4a103e8b2f2e884"
 };
-    
-    // ... Scriptin geri kalanı bir sonraki kod bloğunda ...
-// ... Scriptin başlangıcı (firebaseConfig ve global değişkenler) ...
-
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
@@ -237,19 +391,7 @@
     function showPage(pageId) { loginPage.style.display = (pageId === 'login-page') ? 'flex' : 'none'; trackerPage.style.display = (pageId === 'tracker-page') ? 'flex' : 'none'; }
     function showPanel(panelId) { document.getElementById(panelId).classList.add('show'); modalOverlay.classList.add('show'); document.body.classList.add('modal-open'); }
     function closeAllPanels() { document.querySelectorAll('.panel.show').forEach(p => p.classList.remove('show')); modalOverlay.classList.remove('show'); document.body.classList.remove('modal-open'); }
-    
-    function toggleButtonLoading(button, isLoading) {
-        if (isLoading) {
-            button.classList.add('loading-state');
-            button.disabled = true;
-            button.innerHTML = `<div class="loading"></div><span class="button-text">${button.innerHTML}</span>`;
-        } else {
-            const originalText = button.querySelector('.button-text')?.innerHTML || '';
-            button.classList.remove('loading-state');
-            button.disabled = false;
-            button.innerHTML = originalText;
-        }
-    }
+    function showNotification(message, isSuccess = true) { notification.textContent = message; notification.style.backgroundColor = isSuccess ? 'var(--accent-green)' : 'var(--accent-red)'; notification.classList.add('show'); setTimeout(() => notification.classList.remove('show'), 3000); }
 
     document.getElementById('loginBtn').addEventListener('click', () => auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).catch(err => document.getElementById("error-message").textContent = err.message));
     document.getElementById('signupBtn').addEventListener('click', () => auth.createUserWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).catch(err => document.getElementById("error-message").textContent = err.message));
@@ -324,9 +466,6 @@
                 cryptoAnalysisIndicators: { ema: true, rsi: true, macd: true, bollinger: true, volume: false, sma: false, stochRsi: false, atr: false, ichimoku: false, fibonacci: false }
             };
         }
-
-        // ... Diğer fonksiyonlar ve olay dinleyicileri
-  
 
         function loadSettings(userData) {
             const defaultSettings = getDefaultSettings();
