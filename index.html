@@ -441,7 +441,15 @@
 
     document.getElementById('loginBtn').addEventListener('click', () => auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).catch(err => document.getElementById("error-message").textContent = err.message));
     document.getElementById('signupBtn').addEventListener('click', () => auth.createUserWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).catch(err => document.getElementById("error-message").textContent = err.message));
-    
+
+    function loadSettings(userData) {
+            const defaultSettings = getDefaultSettings();
+            settings = { ...defaultSettings, ...userData.settings };
+            settings.columns = { ...defaultSettings.columns, ...(userData.settings?.columns || {}) };
+            settings.colors = { ...defaultSettings.colors, ...(userData.settings?.colors || {}) };
+            settings.cryptoAnalysisIndicators = { ...defaultSettings.cryptoAnalysisIndicators, ...(userData.settings?.cryptoAnalysisIndicators || {}) };
+            applySettings();
+        }
     auth.onAuthStateChanged(async user => {
         if (user) {
             userDocRef = db.collection('users').doc(user.uid);
@@ -513,14 +521,7 @@
             };
         }
 
-        function loadSettings(userData) {
-            const defaultSettings = getDefaultSettings();
-            settings = { ...defaultSettings, ...userData.settings };
-            settings.columns = { ...defaultSettings.columns, ...(userData.settings?.columns || {}) };
-            settings.colors = { ...defaultSettings.colors, ...(userData.settings?.colors || {}) };
-            settings.cryptoAnalysisIndicators = { ...defaultSettings.cryptoAnalysisIndicators, ...(userData.settings?.cryptoAnalysisIndicators || {}) };
-            applySettings();
-        }
+        
 
         function saveSettings() {
             const btn = document.getElementById('saveSettingsBtn');
