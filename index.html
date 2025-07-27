@@ -420,6 +420,19 @@
         en: {} 
     };
 
+    // --- GLOBAL HELPER FUNCTIONS ---
+
+    function getDefaultSettings() {
+        return {
+            lang: 'tr', autoRefresh: false, refreshInterval: 300,
+            columns: { 1: { name: '1G', days: 1, threshold: 2 }, 2: { name: '7G', days: 7, threshold: 5 }, 3: { name: '30G', days: 30, threshold: 10 } },
+            colors: { high: '#26a69a', low: '#f59e0b' },
+            cryptoPivotFilter: 'all',
+            cryptoAnalysisInterval: '4h',
+            cryptoAnalysisIndicators: { ema: true, rsi: true, macd: true, bollinger: true, volume: false, sma: false, stochRsi: false, atr: false, ichimoku: false, fibonacci: false }
+        };
+    }
+
     function translatePage(lang) { document.querySelectorAll('[data-lang]').forEach(el => { const key = el.getAttribute('data-lang'); if (translations[lang]?.[key] && typeof translations[lang][key] === 'string') el.textContent = translations[lang][key]; }); }
     
     function showPage(pageId) {
@@ -427,7 +440,8 @@
         loginPage.style.display = 'none';
         trackerPage.style.display = 'none';
         if (pageId) {
-            document.getElementById(pageId).style.display = 'flex';
+            const page = document.getElementById(pageId);
+            if(page) page.style.display = 'flex';
         }
     }
 
@@ -438,18 +452,20 @@
     function showLoading(button) { button.dataset.originalHtml = button.innerHTML; button.innerHTML = '<div class="loading"></div>'; button.disabled = true; }
     function hideLoading(button) { if (button.dataset.originalHtml) { button.innerHTML = button.dataset.originalHtml; } button.disabled = false; }
 
+    function loadSettings(userData) {
+        const defaultSettings = getDefaultSettings();
+        settings = { ...defaultSettings, ...userData.settings };
+        settings.columns = { ...defaultSettings.columns, ...(userData.settings?.columns || {}) };
+        settings.colors = { ...defaultSettings.colors, ...(userData.settings?.colors || {}) };
+        settings.cryptoAnalysisIndicators = { ...defaultSettings.cryptoAnalysisIndicators, ...(userData.settings?.cryptoAnalysisIndicators || {}) };
+        // applySettings() will be called inside initializeTrackerPage
+    }
+
+    // --- AUTHENTICATION ---
 
     document.getElementById('loginBtn').addEventListener('click', () => auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).catch(err => document.getElementById("error-message").textContent = err.message));
     document.getElementById('signupBtn').addEventListener('click', () => auth.createUserWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).catch(err => document.getElementById("error-message").textContent = err.message));
-
-    function loadSettings(userData) {
-            const defaultSettings = getDefaultSettings();
-            settings = { ...defaultSettings, ...userData.settings };
-            settings.columns = { ...defaultSettings.columns, ...(userData.settings?.columns || {}) };
-            settings.colors = { ...defaultSettings.colors, ...(userData.settings?.colors || {}) };
-            settings.cryptoAnalysisIndicators = { ...defaultSettings.cryptoAnalysisIndicators, ...(userData.settings?.cryptoAnalysisIndicators || {}) };
-            applySettings();
-        }
+    
     auth.onAuthStateChanged(async user => {
         if (user) {
             userDocRef = db.collection('users').doc(user.uid);
@@ -457,14 +473,17 @@
                 const doc = await userDocRef.get();
                 let userData = doc.data();
                 if (!doc.exists) {
-                     userData = { email: user.email, role: 'new_user', coins: ["BTCUSDT", "ETHUSDT", "SOLUSDT"], settings: getDefaultSettings() };
+                    userData = { email: user.email, role: 'new_user', coins: ["BTCUSDT", "ETHUSDT", "SOLUSDT"], settings: getDefaultSettings() };
                     await userDocRef.set(userData);
                 }
+                
                 setRoleAndLimits(userData.role);
+
                 if (!pageInitialized) {
                     await initializeTrackerPage(userData);
                 }
                 showPage('tracker-page');
+
             } catch (err) {
                 console.error("Auth/Firestore Error:", err);
                 if (err.code === 'permission-denied') { document.getElementById("error-message").textContent = "Firestore yetki hatası. Lütfen veritabanı kurallarınızı kontrol edin."; }
@@ -491,8 +510,13 @@
         document.getElementById('analyzeAllCryptoBtn').style.display = isAdmin ? 'flex' : 'none';
     }
     
+    // --- MAIN APPLICATION LOGIC ---
+
     async function initializeTrackerPage(userData) {
         pageInitialized = true;
+        
+        loadSettings(userData); // Load settings from user data
+
         cryptoPairs = userData.coins || ["BTCUSDT", "ETHUSDT", "SOLUSDT"];
 
         const saveCryptoPairsToFirestore = () => { if (userDocRef) { userDocRef.update({ coins: cryptoPairs }).catch(error => console.error("Firebase kaydetme hatası (Kripto):", error)); } };
@@ -510,18 +534,36 @@
 
         const formatVolume = (volume) => { const num = parseFloat(volume); if (isNaN(num)) return 'N/A'; if (num >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(2)}B`; if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M`; if (num >= 1_000) return `${(num / 1_000).toFixed(2)}K`; return num.toFixed(0); };
 
-        function getDefaultSettings() {
-            return {
-                lang: 'tr', autoRefresh: false, refreshInterval: 300,
-                columns: { 1: { name: '1G', days: 1, threshold: 2 }, 2: { name: '7G', days: 7, threshold: 5 }, 3: { name: '30G', days: 30, threshold: 10 } },
-                colors: { high: '#26a69a', low: '#f59e0b' },
-                cryptoPivotFilter: 'all',
-                cryptoAnalysisInterval: '4h',
-                cryptoAnalysisIndicators: { ema: true, rsi: true, macd: true, bollinger: true, volume: false, sma: false, stochRsi: false, atr: false, ichimoku: false, fibonacci: false }
-            };
-        }
+        function applySettings() {
+            document.getElementById('langSelect').value = settings.lang;
+            document.getElementById('autoRefreshToggle').checked = settings.autoRefresh;
+            document.getElementById('refreshInterval').value = settings.refreshInterval;
+            document.getElementById('refreshInterval').min = { admin: 10, qualified: 120, new_user: 300 }[currentUserRole] || 300;
 
-        
+            for (let i = 1; i <= 3; i++) {
+                if(settings.columns[i]) {
+                    document.getElementById(`col${i}_name_input`).value = settings.columns[i].name;
+                    document.getElementById(`col${i}_days_input`).value = settings.columns[i].days;
+                    document.getElementById(`col${i}_threshold_input`).value = settings.columns[i].threshold;
+                    document.getElementById(`col${i}_header_crypto`).innerHTML = `${settings.columns[i].name}<span class="sort-indicator"></span>`;
+                }
+            }
+            document.getElementById('high_color_input').value = settings.colors.high;
+            document.getElementById('low_color_input').value = settings.colors.low;
+            document.getElementById('high_color_preview').style.backgroundColor = settings.colors.high;
+            document.getElementById('low_color_preview').style.backgroundColor = settings.colors.low;
+
+            document.querySelectorAll(`#cryptoPivotFilters button.active, #cryptoIntervalFilters button.active`).forEach(b => b.classList.remove('active'));
+            document.querySelector(`#cryptoPivotFilters button[data-filter="${settings.cryptoPivotFilter}"]`)?.classList.add('active');
+            document.querySelector(`#cryptoIntervalFilters button[data-interval="${settings.cryptoAnalysisInterval}"]`)?.classList.add('active');
+
+            Object.keys(AVAILABLE_INDICATORS).forEach(key => {
+                const checkbox = document.querySelector(`#crypto-indicator-filters-grid input[data-indicator="${key}"]`);
+                if (checkbox) checkbox.checked = !!settings.cryptoAnalysisIndicators[key];
+            });
+            translatePage(settings.lang);
+            toggleAutoRefresh();
+        }
 
         function saveSettings() {
             const btn = document.getElementById('saveSettingsBtn');
@@ -576,37 +618,7 @@
                 });
             }
         }
-
-
-        function applySettings() {
-            document.getElementById('langSelect').value = settings.lang;
-            document.getElementById('autoRefreshToggle').checked = settings.autoRefresh;
-            document.getElementById('refreshInterval').value = settings.refreshInterval;
-            document.getElementById('refreshInterval').min = { admin: 10, qualified: 120, new_user: 300 }[currentUserRole] || 300;
-
-            for (let i = 1; i <= 3; i++) {
-                document.getElementById(`col${i}_name_input`).value = settings.columns[i].name;
-                document.getElementById(`col${i}_days_input`).value = settings.columns[i].days;
-                document.getElementById(`col${i}_threshold_input`).value = settings.columns[i].threshold;
-                document.getElementById(`col${i}_header_crypto`).innerHTML = `${settings.columns[i].name}<span class="sort-indicator"></span>`;
-            }
-            document.getElementById('high_color_input').value = settings.colors.high;
-            document.getElementById('low_color_input').value = settings.colors.low;
-            document.getElementById('high_color_preview').style.backgroundColor = settings.colors.high;
-            document.getElementById('low_color_preview').style.backgroundColor = settings.colors.low;
-
-            document.querySelectorAll(`#cryptoPivotFilters button.active, #cryptoIntervalFilters button.active`).forEach(b => b.classList.remove('active'));
-            document.querySelector(`#cryptoPivotFilters button[data-filter="${settings.cryptoPivotFilter}"]`)?.classList.add('active');
-            document.querySelector(`#cryptoIntervalFilters button[data-interval="${settings.cryptoAnalysisInterval}"]`)?.classList.add('active');
-
-            Object.keys(AVAILABLE_INDICATORS).forEach(key => {
-                const checkbox = document.querySelector(`#crypto-indicator-filters-grid input[data-indicator="${key}"]`);
-                if (checkbox) checkbox.checked = !!settings.cryptoAnalysisIndicators[key];
-            });
-            translatePage(settings.lang);
-            toggleAutoRefresh();
-        }
-
+        
         function toggleAutoRefresh() { if(autoRefreshTimer) clearInterval(autoRefreshTimer); if(settings.autoRefresh) autoRefreshTimer = setInterval(fetchAllDataAndRender, settings.refreshInterval * 1000); }
 
         const calculateSMA = (data, period) => { if (data.length < period) return null; return data.slice(-period).reduce((s, v) => s + v, 0) / period; };
@@ -780,7 +792,6 @@
                 tableBody.appendChild(row);
             });
         }
-
 
         function renderSupportResistance(type, data) {
             const container = document.getElementById('crypto-pivot-container');
@@ -1151,7 +1162,6 @@
             sortAndRenderTable();
         });
 
-
         trackerPage.addEventListener('click', (e) => {
             const collapsibleHeader = e.target.closest('.collapsible-header');
             if (collapsibleHeader) { 
@@ -1248,10 +1258,11 @@
                 saveCryptoPairsToFirestore();
             }
         });
-
+        
+        // --- INITIAL RENDER ---
         renderIndicatorFilters();
         renderDictionary();
-        loadSettings(userData);
+        applySettings(); // Apply settings after they are loaded
         await fetchAllDataAndRender();
         updateAdminUI();
     }
