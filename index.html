@@ -433,6 +433,35 @@
         <div class="panel-content">
             <input type="hidden" id="alarmIdInput">
             <div class="settings-section">
+  <h4>Zaman Dilimi ve Trend Filtreleri</h4>
+  <div class="alarm-rule-grid">
+    <label for="alarmTimeframe">Ana Zaman Dilimi</label>
+    <select id="alarmTimeframe">
+      <option value="15m" selected>15 Dakika</option>
+      <option value="1h">1 Saat</option>
+      <option value="4h">4 Saat</option>
+    </select>
+
+    <div class="filter-item" style="grid-column: 1 / -1;">
+        <input type="checkbox" id="alarmTrendFilterEnabled">
+        <label for="alarmTrendFilterEnabled">Gelişmiş Trend Filtresini Aktif Et</label>
+    </div>
+    
+    <label for="alarmADXThreshold" title="Trendin ne kadar güçlü olduğunu belirtir. 25'in üzeri genellikle güçlü bir trend olarak kabul edilir.">Trend Gücü (ADX) Eşiği</label>
+    <input type="number" id="alarmADXThreshold" min="0" max="50" value="25">
+  </div>
+</div>
+
+<div class="settings-section">
+  <h4>Fibonacci ve Risk (Geliştirme Aşamasında)</h4>
+  <div class="alarm-rule-grid">
+    <div class="filter-item">
+      <input type="checkbox" id="alarmFibCondition" disabled>
+      <label for="alarmFibCondition" style="color: var(--text-secondary);">Fibonacci Destek/Direnç Alarmı</label>
+    </div>
+  </div>
+</div>
+            <div class="settings-section">
                 <h4>Genel</h4>
                 <div class="setting-item">
                     <label for="alarmNameInput">Alarm Adı</label>
@@ -1331,83 +1360,92 @@
             });
         }
 
-        function openAlarmPanel(alarm = null) {
-            document.getElementById('alarmIdInput').value = alarm ? alarm.id : '';
-            document.getElementById('alarmNameInput').value = alarm ? alarm.name : '';
-            document.getElementById('alarmPanelTitle').textContent = alarm ? 'Alarmı Düzenle' : 'Yeni Alarm Oluştur';
-            
-            tempAlarmCoins = alarm && alarm.coins ? [...alarm.coins] : [...cryptoPairs];
-            renderAlarmCoinTags();
+      // Eskisini silip bunu yapıştırın
+function openAlarmPanel(alarm = null) {
+    document.getElementById('alarmIdInput').value = alarm ? alarm.id : '';
+    document.getElementById('alarmNameInput').value = alarm ? alarm.name : '';
+    document.getElementById('alarmPanelTitle').textContent = alarm ? 'Alarmı Düzenle' : 'Yeni Alarm Oluştur';
+    
+    tempAlarmCoins = alarm && alarm.coins ? [...alarm.coins] : [...cryptoPairs];
+    renderAlarmCoinTags();
 
-            const conditions = alarm ? alarm.conditions : {};
-            document.getElementById('alarmTrendCondition').checked = conditions.trend?.enabled ?? false;
-            document.getElementById('alarmMomentumCondition').checked = conditions.momentum?.enabled ?? false;
+    // Yeni ve Gelişmiş Ayarları Yükle
+    document.getElementById('alarmTimeframe').value = alarm?.timeframe || '15m';
+    document.getElementById('alarmTrendFilterEnabled').checked = alarm?.trendFilterEnabled ?? false;
+    document.getElementById('alarmADXThreshold').value = alarm?.adxThreshold || 25;
 
-            document.getElementById('alarmVolumeCondition').checked = conditions.volume?.enabled ?? true;
-            document.getElementById('alarmVolumePeriod').value = conditions.volume?.period ?? 5;
-            document.getElementById('alarmVolumeMultiplier').value = conditions.volume?.multiplier ?? 2;
-            
-            document.getElementById('alarmMacdCondition').checked = conditions.macd?.enabled ?? true;
-            document.getElementById('alarmMacdSignalType').value = conditions.macd?.signalType ?? 'buy';
+    // Temel Koşulları Yükle
+    const conditions = alarm ? alarm.conditions : {};
+    document.getElementById('alarmVolumeCondition').checked = conditions.volume?.enabled ?? true;
+    document.getElementById('alarmVolumePeriod').value = conditions.volume?.period ?? 20;
+    document.getElementById('alarmVolumeMultiplier').value = conditions.volume?.multiplier ?? 2;
+    
+    document.getElementById('alarmMacdCondition').checked = conditions.macd?.enabled ?? true;
+    document.getElementById('alarmMacdSignalType').value = conditions.macd?.signalType ?? 'buy';
 
-            document.getElementById('alarmPriceCondition').checked = conditions.price?.enabled ?? false;
-            document.getElementById('alarmPriceChange').value = conditions.price?.percentage ?? 0.5;
+    document.getElementById('alarmPriceCondition').checked = conditions.price?.enabled ?? false;
+    document.getElementById('alarmPriceChange').value = conditions.price?.percentage ?? 0.5;
 
-            showPanel('alarmSettingsPanel');
-        }
+    showPanel('alarmSettingsPanel');
+}
 
-        async function saveAlarm() {
-            const alarmId = document.getElementById('alarmIdInput').value;
-            const alarmName = document.getElementById('alarmNameInput').value;
-            if (!alarmName) {
-                showNotification("Alarm adı boş bırakılamaz.", false);
-                return;
-            }
-            
-            const newAlarm = {
-                id: alarmId || `alarm_${new Date().getTime()}`,
-                name: alarmName,
-                coins: tempAlarmCoins,
-                isActive: alarmId ? userAlarms.find(a => a.id === alarmId).isActive : true,
-                conditions: {
-                    trend: {
-                        enabled: document.getElementById('alarmTrendCondition').checked
-                    },
-                    momentum: {
-                        enabled: document.getElementById('alarmMomentumCondition').checked
-                    },
-                    volume: {
-                        enabled: document.getElementById('alarmVolumeCondition').checked,
-                        period: parseInt(document.getElementById('alarmVolumePeriod').value),
-                        multiplier: parseFloat(document.getElementById('alarmVolumeMultiplier').value)
-                    },
-                    macd: {
-                        enabled: document.getElementById('alarmMacdCondition').checked,
-                        signalType: document.getElementById('alarmMacdSignalType').value
-                    },
-                    price: {
-                        enabled: document.getElementById('alarmPriceCondition').checked,
-                        percentage: parseFloat(document.getElementById('alarmPriceChange').value)
-                    }
-                }
-            };
+        // Eskisini silip bunu yapıştırın
+async function saveAlarm() {
+    const alarmId = document.getElementById('alarmIdInput').value;
+    const alarmName = document.getElementById('alarmNameInput').value;
+    if (!alarmName) {
+        showNotification("Alarm adı boş bırakılamaz.", false);
+        return;
+    }
+    
+    // YENİ: Gelişmiş ayarları da objeye ekle
+    const newAlarm = {
+        id: alarmId || `alarm_${new Date().getTime()}`,
+        name: alarmName,
+        coins: tempAlarmCoins,
+        isActive: alarmId ? userAlarms.find(a => a.id === alarmId).isActive : true,
+        
+        // Ana zaman dilimi
+        timeframe: document.getElementById('alarmTimeframe').value,
+        
+        // Gelişmiş Trend Filtreleri
+        trendFilterEnabled: document.getElementById('alarmTrendFilterEnabled').checked,
+        adxThreshold: parseInt(document.getElementById('alarmADXThreshold').value),
 
-            if (alarmId) {
-                userAlarms = userAlarms.map(a => a.id === alarmId ? newAlarm : a);
-            } else {
-                userAlarms.push(newAlarm);
-            }
-
-            try {
-                await userDocRef.update({ alarms: userAlarms });
-                showNotification("Alarm başarıyla kaydedildi.", true);
-                renderAlarms();
-                closeAllPanels();
-            } catch (error) {
-                console.error("Alarm kaydedilirken hata:", error);
-                showNotification("Alarm kaydedilemedi.", false);
+        // Temel Koşullar
+        conditions: {
+            volume: {
+                enabled: document.getElementById('alarmVolumeCondition').checked,
+                period: parseInt(document.getElementById('alarmVolumePeriod').value),
+                multiplier: parseFloat(document.getElementById('alarmVolumeMultiplier').value)
+            },
+            macd: {
+                enabled: document.getElementById('alarmMacdCondition').checked,
+                signalType: document.getElementById('alarmMacdSignalType').value
+            },
+            price: {
+                enabled: document.getElementById('alarmPriceCondition').checked,
+                percentage: parseFloat(document.getElementById('alarmPriceChange').value)
             }
         }
+    };
+
+    if (alarmId) {
+        userAlarms = userAlarms.map(a => a.id === alarmId ? newAlarm : a);
+    } else {
+        userAlarms.push(newAlarm);
+    }
+
+    try {
+        await userDocRef.update({ alarms: userAlarms });
+        showNotification("Alarm başarıyla kaydedildi.", true);
+        renderAlarms();
+        closeAllPanels();
+    } catch (error) {
+        console.error("Alarm kaydedilirken hata:", error);
+        showNotification("Alarm kaydedilemedi.", false);
+    }
+}
         
         async function runBacktest(alarmId) {
             const alarm = userAlarms.find(a => a.id === alarmId);
