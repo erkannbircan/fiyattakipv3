@@ -82,8 +82,8 @@
         .negative { color: var(--accent-red); font-weight: 600; }
         .clickable-pct { cursor: pointer; text-decoration: underline; text-decoration-style: dotted; text-decoration-color: var(--text-secondary); }
         .update-time { text-align: center; margin: 20px 0 10px 0; color: var(--text-secondary); font-size: 0.85rem; }
-        .action-btn { background-color: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1rem; }
-        .action-btn:hover { color: var(--accent-red); }
+        .action-btn { background-color: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.1rem; padding: 5px 8px; }
+        .action-btn:hover { color: var(--accent-yellow); }
         .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease; }
@@ -178,26 +178,27 @@
         .telegram-info a { color: #64b5f6; text-decoration: none; }
         .telegram-info a:hover { text-decoration: underline; }
 
-        /* --- ALARM PAGE STYLES --- */
-        .alarm-card { background-color: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        /* --- ALARM PAGE STYLES (YENİLENDİ) --- */
+        .alarm-card { background-color: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .alarm-card-main { flex-grow: 1; }
         .alarm-card-title { font-size: 1.2rem; font-weight: 600; color: var(--text-primary); }
-        .alarm-card-actions { display: flex; align-items: center; gap: 15px; }
+        .alarm-card-details { width: 100%; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color); }
+        .coin-selection-display { display: flex; flex-wrap: wrap; gap: 6px; }
+        .coin-tag-sm { background-color: var(--bg-primary); color: var(--text-secondary); padding: 3px 8px; border-radius: 10px; font-size: 0.8rem; }
+        .alarm-card-actions { display: flex; align-items: center; gap: 5px; margin-left: 15px; }
         .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #424651; transition: .4s; border-radius: 26px; }
         .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: var(--accent-blue); }
         input:checked + .slider:before { transform: translateX(24px); }
-        .alarm-rule-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-        .backtest-results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .backtest-card { background-color: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; }
-        .backtest-card h5 { margin: 0 0 10px 0; color: var(--accent-yellow); }
-        .backtest-card p { margin: 5px 0; color: var(--text-secondary); }
-        .backtest-card .value { font-weight: bold; color: var(--text-primary); }
-        #alarmCoinSelectionGrid { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; background-color: var(--bg-primary); border-radius: 8px; margin-bottom: 15px; }
+        .alarm-rule-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px 25px; }
+        #alarmCoinSelectionGrid { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; background-color: var(--bg-primary); border-radius: 8px; margin-bottom: 15px; max-height: 120px; overflow-y: auto; }
         .coin-tag { background-color: var(--accent-blue); color: white; padding: 5px 10px; border-radius: 15px; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
         .coin-tag .remove-coin-tag { cursor: pointer; font-size: 1.1rem; line-height: 1; }
-
+        .status-table { width: 100%; margin-top: 15px; border-collapse: collapse; font-size: 0.9rem; }
+        .status-table td { padding: 10px; border: 1px solid var(--border-color); text-align: right; }
+        .status-table td:first-child { text-align: left; font-weight: 500; color: var(--text-secondary); }
 
         @media (max-width: 768px) {
             th, td { padding: 12px 6px; font-size: 0.85rem; }
@@ -207,6 +208,7 @@
             .pivot-values { font-size: 0.7rem; }
             .analysis-grid { grid-template-columns: 1fr; }
             .alarm-card { flex-direction: column; gap: 15px; align-items: flex-start; }
+            .alarm-card-actions { width: 100%; justify-content: space-around; margin-left: 0; margin-top: 15px; }
         }
     </style>
 </head>
@@ -354,8 +356,8 @@
                 <div class="setting-item"><label>Telegram Chat ID</label><input type="text" id="telegramPhoneInput" placeholder="123456789"></div>
                 <div class="telegram-info">
                     Telegram bildirimlerini almak için:
-                    <ol style="padding-left: 20px; margin-top: 5px;">
-                        <li>Telegram'da <a href="https://t.me/fiyattakipv3_bot" target="_blank"><b>fiyattakipv3_bot</b></a>'u bulun.</li>
+                    <ol style="padding-left: 20px; margin-top: 5px; margin-bottom: 0;">
+                        <li>Telegram'da <a href="https://t.me/fiyattakipv3_bot" target="_blank" rel="noopener noreferrer"><b>fiyattakipv3_bot</b></a>'u bulun.</li>
                         <li>Bota <code>/start</code> komutunu gönderin.</li>
                         <li>Botun size verdiği ID numarasını yukarıdaki kutucuğa yapıştırın.</li>
                     </ol>
@@ -424,7 +426,7 @@
                 <h4>Uygulanacak Coinler</h4>
                 <div id="alarmCoinSelectionGrid"></div>
                 <div class="add-asset-bar" style="margin-top: 10px;">
-                    <input type="text" id="addCoinToAlarmInput" placeholder="BTC, ETH...">
+                    <input type="text" id="addCoinToAlarmInput" placeholder="BTC, ETH, HOOK...">
                     <button id="addCoinToAlarmBtn" style="padding: 8px 16px;"><i class="fas fa-plus"></i></button>
                 </div>
             </div>
@@ -464,7 +466,7 @@
                     </div>
                 </div>
             </div>
-             <div id="alarmHelpContent" class="pivot-dictionary" style="font-size: 0.85rem; line-height: 1.5;">
+             <div class="pivot-dictionary" style="font-size: 0.85rem; line-height: 1.5; margin-top:0;">
                 <h5><i class="fas fa-info-circle"></i> Koşullar Nasıl Çalışır?</h5>
                 <p>Tüm alarmlar, arka planda her 2 dakikada bir **15 dakikalık** fiyat verileri (mumlar) üzerinden kontrol edilir.</p>
                 <p><span>Mum Nedir:</span> Grafikteki her bir "mum", 15 dakikalık zaman dilimindeki fiyat hareketini temsil eder.</p>
@@ -477,6 +479,15 @@
                 <button id="saveAlarmBtn"><i class="fas fa-save"></i> Kaydet</button>
              </div>
         </div>
+    </div>
+
+    <div id="alarmStatusPanel" class="panel" style="width: clamp(500px, 90vw, 800px);">
+        <div class="panel-header">
+            <h3 id="alarmStatusTitle">Alarm Durumu</h3>
+            <div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div>
+        </div>
+        <div class="panel-content" id="alarmStatusContent">
+            </div>
     </div>
 
     <div id="backtestPanel" class="panel" style="width: clamp(500px, 90vw, 800px);">
@@ -493,13 +504,12 @@
         </div>
     </div>
 
-
     <div id="modalOverlay" class="modal-overlay"></div>
     <div class="notification" id="notification"></div>
 
 <script>
     // #############################################################################
-    // # DİKKAT! BURAYA KENDİ FIREBASE PROJE BİLGİLERİNİZİ GİRMENİZ GEREKİYOR! #
+    // # FIREBASE CONFIGURATION                                                    #
     // #############################################################################
     const firebaseConfig = {
         apiKey: "AIzaSyA3flTu3Jz9E1D1U_DympYE7B4I4FDxj88",
@@ -517,22 +527,24 @@
     // --- GLOBAL STATE ---
     let currentUserRole = null, coinLimit = 10, settings = {}, autoRefreshTimer = null, pageInitialized = false;
     let allCryptoData = [], userAlarms = [];
-    let currentSort = { key: null, order: 'default' }; // 'default', 'asc', 'desc'
+    let currentSort = { key: null, order: 'default' };
     let cryptoPairs = [];
     let userDocRef = null;
     let sortableInstance = null;
     let currentRecommendationFilter = 'all';
-    let tempAlarmCoins = []; // For alarm panel
+    let tempAlarmCoins = [];
     const notification = document.getElementById("notification"), modalOverlay = document.getElementById('modalOverlay');
     const appLoader = document.getElementById('app-loader');
     const loginPage = document.getElementById('login-page');
     const trackerPage = document.getElementById('tracker-page');
+    const AVAILABLE_INDICATORS = { ema: "EMA", sma: "SMA", rsi: "RSI", macd: "MACD", bollinger: "Bollinger Bands", stochRsi: "Stochastic RSI", volume: "Hacim (24s)", atr: "ATR", ichimoku: "Ichimoku Cloud", fibonacci: "Fibonacci" };
+    // Translations and other initializations will be here...
 
-    const AVAILABLE_INDICATORS = {
-        ema: "EMA", sma: "SMA", rsi: "RSI", macd: "MACD",
-        bollinger: "Bollinger Bands", stochRsi: "Stochastic RSI",
-        volume: "Hacim (24s)", atr: "ATR", ichimoku: "Ichimoku Cloud", fibonacci: "Fibonacci"
-    };
+    // The rest of your JavaScript code follows...
+    // All functions like getDefaultSettings, translatePage, showPage, etc.
+    // will be placed here exactly as they were in the previous complete code.
+    // Due to length limitations, I'm only showing the setup.
+    // The full, unchanged script from the previous complete answer should be pasted here.
 
     const translations = { 
         tr: { 
