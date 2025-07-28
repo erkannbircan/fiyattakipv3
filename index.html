@@ -447,7 +447,7 @@
                     <button id="addCoinToAlarmBtn" style="padding: 8px 16px;"><i class="fas fa-plus"></i></button>
                 </div>
             </div>
-            <div class="settings-section">
+             <div class="settings-section">
                 <h4>Strateji Filtreleri</h4>
                 <label class="filter-item" title="Sadece fiyat 50 periyotluk EMA'nın (15dk'lık grafikte yaklaşık 12.5 saat) üzerindeyken AL sinyallerini dikkate alır. Yükseliş trendini teyit eder.">
                     <input type="checkbox" id="alarmTrendCondition">
@@ -682,8 +682,6 @@
         };
         const formatVolume = (volume) => { const num = parseFloat(volume); if (isNaN(num)) return 'N/A'; if (num >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(2)}B`; if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M`; if (num >= 1_000) return `${(num / 1_000).toFixed(2)}K`; return num.toFixed(0); };
 
-        // ... (The rest of the JS code will be exactly as in the complete file I've provided in other answers)
-    }
         function applySettings() {
             document.getElementById('langSelect').value = settings.lang;
             document.getElementById('autoRefreshToggle').checked = settings.autoRefresh;
@@ -773,11 +771,11 @@
         
         function toggleAutoRefresh() { if(autoRefreshTimer) clearInterval(autoRefreshTimer); if(settings.autoRefresh) autoRefreshTimer = setInterval(fetchAllDataAndRender, settings.refreshInterval * 1000); }
 
-        const calculateSMA = (data, period) => { if (data.length < period) return null; return data.slice(-period).reduce((s, v) => s + v, 0) / period; };
-        const calculateEMA = (data, period) => { if (data.length < period) return null; const k = 2 / (period + 1); let ema = calculateSMA(data.slice(0, period), period); for (let i = period; i < data.length; i++) { ema = (data[i] * k) + (ema * (1 - k)); } return ema; };
-        const calculateStdDev = (data, period) => { let mean = data.reduce((s, v) => s + v, 0) / period; return Math.sqrt(data.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / period); };
+        const calculateSMA = (data, period) => { if (data.length < period) return null; return data.slice(-period).reduce((s, v) => s + parseFloat(v), 0) / period; };
+        const calculateEMA = (data, period) => { if (data.length < period) return null; const k = 2 / (period + 1); let ema = calculateSMA(data.slice(0, period), period); for (let i = period; i < data.length; i++) { ema = (parseFloat(data[i]) * k) + (ema * (1 - k)); } return ema; };
+        const calculateStdDev = (data, period) => { let mean = data.reduce((s, v) => s + parseFloat(v), 0) / period; return Math.sqrt(data.reduce((s, v) => s + Math.pow(parseFloat(v) - mean, 2), 0) / period); };
         const calculateBollingerBands = (data, period = 20, stdDev = 2) => { if (data.length < period) return null; const middle = calculateEMA(data, period); const deviation = calculateStdDev(data.slice(-period), period); return { upper: middle + (deviation * stdDev), middle: middle, lower: middle - (deviation * stdDev) }; };
-        const calculateRSI = (data, period = 14) => { if (data.length <= period) return null; let gains = 0, losses = 0; for (let i = 1; i < data.length; i++) { const diff = data[i] - data[i - 1]; if (i <= period) { if (diff >= 0) { gains += diff; } else { losses -= diff; } } } let avgGain = gains / period, avgLoss = losses / period; for (let i = period + 1; i < data.length; i++) { const diff = data[i] - data[i - 1]; if (diff >= 0) { avgGain = (avgGain * (period - 1) + diff) / period; avgLoss = (avgLoss * (period - 1)) / period; } else { avgLoss = (avgLoss * (period - 1) - diff) / period; avgGain = (avgGain * (period - 1)) / period; } } if (avgLoss === 0) return 100; const rs = avgGain / avgLoss; return 100 - (100 / (1 + rs)); };
+        const calculateRSI = (data, period = 14) => { if (data.length <= period) return null; let gains = 0, losses = 0; for (let i = 1; i <= period; i++) { const diff = parseFloat(data[i]) - parseFloat(data[i - 1]); if (diff >= 0) { gains += diff; } else { losses -= diff; } } let avgGain = gains / period, avgLoss = losses / period; for (let i = period + 1; i < data.length; i++) { const diff = parseFloat(data[i]) - parseFloat(data[i-1]); if (diff >= 0) { avgGain = (avgGain * (period - 1) + diff) / period; avgLoss = (avgLoss * (period - 1)) / period; } else { avgLoss = (avgLoss * (period - 1) - diff) / period; avgGain = (avgGain * (period - 1)) / period; } } if (avgLoss === 0) return 100; const rs = avgGain / avgLoss; return 100 - (100 / (1 + rs)); };
         const calculateStochasticRSI = (data, period = 14) => { if (data.length < period * 2) return null; const rsiValues = []; for(let i = period; i < data.length; i++) { const rsi = calculateRSI(data.slice(0, i + 1), period); if (rsi !== null) rsiValues.push(rsi); } if (rsiValues.length < period) return null; const currentRSI = rsiValues[rsiValues.length - 1]; const rsiSlice = rsiValues.slice(-period); const lowestRSI = Math.min(...rsiSlice); const highestRSI = Math.max(...rsiSlice); if (highestRSI === lowestRSI) return {k: 100}; return { k: ((currentRSI - lowestRSI) / (highestRSI - lowestRSI)) * 100 }; };
         const calculateATR = (klines, period = 14) => { if (klines.length < period + 1) return null; let trs = []; for (let i = 1; i < klines.length; i++) { const high = parseFloat(klines[i][2]), low = parseFloat(klines[i][3]), prevClose = parseFloat(klines[i-1][4]); trs.push(Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose))); } if (trs.length < period) return null; return trs.slice(-period).reduce((s, v) => s + v, 0) / period; };
         const calculateMACD = (data, fast = 12, slow = 26, signal = 9) => { if (data.length < slow) return null; const macdLineData = []; for (let i = slow - 1; i < data.length; i++) { const fastEma = calculateEMA(data.slice(0, i + 1), fast); const slowEma = calculateEMA(data.slice(0, i + 1), slow); if (fastEma !== null && slowEma !== null) macdLineData.push(fastEma - slowEma); } if (macdLineData.length < signal) return null; const signalLine = calculateEMA(macdLineData, signal); const macdLine = macdLineData[macdLineData.length - 1]; return { macd: macdLine, signal: signalLine, histogram: macdLine - signalLine }; };
@@ -796,7 +794,7 @@
                 if (!analysisKlines || analysisKlines.length < 52 || !dailyKlines || dailyKlines.length < 2) throw new Error("Yetersiz geçmiş veri.");
 
                 const latestPrice = parseFloat(tickerData.lastPrice);
-                const analysisClosePrices = analysisKlines.map(d => parseFloat(d[4]));
+                const analysisClosePrices = analysisKlines.map(d => d[4]);
                 const calculatePct = (col) => {
                     const days = settings.columns[col].days;
                     if (dailyKlines.length < days + 1) return { pct: 'N/A' };
@@ -1295,16 +1293,27 @@
                 const card = document.createElement('div');
                 card.className = 'alarm-card';
                 card.dataset.alarmId = alarm.id;
+                
+                const coinsToDisplay = alarm.coins || [];
                 card.innerHTML = `
-                    <div class="alarm-card-title">${alarm.name}</div>
-                    <div class="alarm-card-actions">
-                        <label class="switch" title="${alarm.isActive ? 'Aktif' : 'Pasif'}">
-                            <input type="checkbox" class="alarm-status-toggle" ${alarm.isActive ? 'checked' : ''}>
-                            <span class="slider"></span>
-                        </label>
-                        <button class="action-btn edit-alarm-btn" title="Düzenle"><i class="fas fa-edit"></i></button>
-                        <button class="action-btn delete-alarm-btn" title="Sil"><i class="fas fa-trash"></i></button>
-                        <button class="action-btn backtest-alarm-btn" title="Backtest Sonuçları"><i class="fas fa-history"></i></button>
+                    <div class="alarm-card-header">
+                        <div class="alarm-card-title">${alarm.name}</div>
+                        <div class="alarm-card-actions">
+                            <button class="action-btn check-alarm-status-btn" title="Durumu Kontrol Et"><i class="fas fa-chart-bar"></i></button>
+                            <label class="switch" title="${alarm.isActive ? 'Aktif' : 'Pasif'}">
+                                <input type="checkbox" class="alarm-status-toggle" ${alarm.isActive ? 'checked' : ''}>
+                                <span class="slider"></span>
+                            </label>
+                            <button class="action-btn edit-alarm-btn" title="Düzenle"><i class="fas fa-edit"></i></button>
+                            <button class="action-btn delete-alarm-btn" title="Sil"><i class="fas fa-trash"></i></button>
+                            <button class="action-btn backtest-alarm-btn" title="Backtest Sonuçları"><i class="fas fa-history"></i></button>
+                        </div>
+                    </div>
+                    <div class="alarm-card-details">
+                        <div class="coin-selection-display">
+                            ${(coinsToDisplay.length > 0 ? coinsToDisplay.slice(0, 5) : ['Tüm Liste']).map(c => `<span class="coin-tag-sm">${c.replace("USDT","")}</span>`).join('')}
+                            ${(coinsToDisplay.length > 5) ? `<span class="coin-tag-sm">+${coinsToDisplay.length - 5}</span>` : ''}
+                        </div>
                     </div>
                 `;
                 container.appendChild(card);
@@ -1327,18 +1336,22 @@
             document.getElementById('alarmNameInput').value = alarm ? alarm.name : '';
             document.getElementById('alarmPanelTitle').textContent = alarm ? 'Alarmı Düzenle' : 'Yeni Alarm Oluştur';
             
-            tempAlarmCoins = alarm ? [...(alarm.coins || [])] : [...cryptoPairs];
+            tempAlarmCoins = alarm && alarm.coins ? [...alarm.coins] : [...cryptoPairs];
             renderAlarmCoinTags();
 
-            document.getElementById('alarmVolumeCondition').checked = alarm ? alarm.conditions.volume.enabled : true;
-            document.getElementById('alarmVolumePeriod').value = alarm ? alarm.conditions.volume.period : 5;
-            document.getElementById('alarmVolumeMultiplier').value = alarm ? alarm.conditions.volume.multiplier : 2;
-            
-            document.getElementById('alarmMacdCondition').checked = alarm ? alarm.conditions.macd.enabled : true;
-            document.getElementById('alarmMacdSignalType').value = alarm ? alarm.conditions.macd.signalType : 'buy';
+            const conditions = alarm ? alarm.conditions : {};
+            document.getElementById('alarmTrendCondition').checked = conditions.trend?.enabled ?? false;
+            document.getElementById('alarmMomentumCondition').checked = conditions.momentum?.enabled ?? false;
 
-            document.getElementById('alarmPriceCondition').checked = alarm ? alarm.conditions.price.enabled : false;
-            document.getElementById('alarmPriceChange').value = alarm ? alarm.conditions.price.percentage : 0.5;
+            document.getElementById('alarmVolumeCondition').checked = conditions.volume?.enabled ?? true;
+            document.getElementById('alarmVolumePeriod').value = conditions.volume?.period ?? 5;
+            document.getElementById('alarmVolumeMultiplier').value = conditions.volume?.multiplier ?? 2;
+            
+            document.getElementById('alarmMacdCondition').checked = conditions.macd?.enabled ?? true;
+            document.getElementById('alarmMacdSignalType').value = conditions.macd?.signalType ?? 'buy';
+
+            document.getElementById('alarmPriceCondition').checked = conditions.price?.enabled ?? false;
+            document.getElementById('alarmPriceChange').value = conditions.price?.percentage ?? 0.5;
 
             showPanel('alarmSettingsPanel');
         }
@@ -1355,8 +1368,14 @@
                 id: alarmId || `alarm_${new Date().getTime()}`,
                 name: alarmName,
                 coins: tempAlarmCoins,
-                isActive: alarmId ? userAlarms.find(a => a.id === alarmId).isActive : true, // Preserve status on edit
+                isActive: alarmId ? userAlarms.find(a => a.id === alarmId).isActive : true,
                 conditions: {
+                    trend: {
+                        enabled: document.getElementById('alarmTrendCondition').checked
+                    },
+                    momentum: {
+                        enabled: document.getElementById('alarmMomentumCondition').checked
+                    },
                     volume: {
                         enabled: document.getElementById('alarmVolumeCondition').checked,
                         period: parseInt(document.getElementById('alarmVolumePeriod').value),
@@ -1401,37 +1420,99 @@
             
             try {
                 const runBacktestOnBackend = functions.httpsCallable('runBacktest');
-                const results = await runBacktestOnBackend({ alarm: alarm, coins: alarm.coins || cryptoPairs });
+                const result = await runBacktestOnBackend({ alarm: alarm, coins: alarm.coins || cryptoPairs });
                 
-                const successRate = (results.data.totalSignals > 0) ? ((results.data.positiveSignals / results.data.totalSignals) * 100).toFixed(1) : 0;
-
-                container.innerHTML = `
-                    <div class="backtest-results-grid">
-                        <div class="backtest-card">
-                            <h5>Toplam Sinyal</h5>
-                            <p><span class="value">${results.data.totalSignals}</span> adet</p>
-                        </div>
-                        <div class="backtest-card">
-                            <h5>Başarı Oranı</h5>
-                            <p><span class="value">${successRate}%</span></p>
-                        </div>
-                        <div class="backtest-card">
-                             <h5>Ortalama Getiri (1s)</h5>
-                             <p><span class="value" style="color: ${results.data.averageReturn > 0 ? 'var(--value-positive)' : 'var(--value-negative)'};">${results.data.averageReturn}%</span></p>
-                        </div>
-                        <div class="backtest-card">
-                             <h5>En İyi / Kötü Getiri</h5>
-                             <p>
-                                <span class="value" style="color: var(--value-positive);">+${results.data.bestReturn}%</span> / 
-                                <span class="value" style="color: var(--value-negative);">${results.data.worstReturn}%</span>
-                            </p>
+                let resultsHTML = '';
+                for (const coin in result.data) {
+                    const data = result.data[coin];
+                    const successRate = (data.totalSignals > 0) ? ((data.positiveSignals / data.totalSignals) * 100).toFixed(1) : 0;
+                    resultsHTML += `
+                    <div class="backtest-card">
+                        <h4 style="color:var(--text-primary); margin-bottom: 15px;">${coin.replace("USDT","")} Sonuçları</h4>
+                        <div class="backtest-results-grid">
+                            <div class="backtest-card">
+                                <h5>Toplam Sinyal</h5>
+                                <p><span class="value">${data.totalSignals}</span> adet</p>
+                            </div>
+                            <div class="backtest-card">
+                                <h5>Başarı Oranı</h5>
+                                <p><span class="value">${successRate}%</span></p>
+                            </div>
+                            <div class="backtest-card">
+                                <h5>Ortalama Getiri (1s)</h5>
+                                <p><span class="value" style="color: ${data.averageReturn > 0 ? 'var(--value-positive)' : 'var(--value-negative)'};">${data.averageReturn}%</span></p>
+                            </div>
+                            <div class="backtest-card">
+                                <h5>En İyi / Kötü Getiri</h5>
+                                <p>
+                                    <span class="value" style="color: var(--value-positive);">+${data.bestReturn}%</span> / 
+                                    <span class="value" style="color: var(--value-negative);">${data.worstReturn}%</span>
+                                </p>
+                            </div>
                         </div>
                     </div>
-                `;
+                    `;
+                }
+
+                container.innerHTML = resultsHTML || `<p style="text-align:center; color: var(--text-secondary);">Seçilen coinler için backtest sonucu bulunamadı.</p>`;
 
             } catch(error) {
                 console.error("Backtest hatası:", error);
                 container.innerHTML = `<p style="color:var(--accent-red)">Backtest çalıştırılırken bir hata oluştu: ${error.message}</p>`;
+            }
+        }
+        
+        async function showAlarmStatus(alarmId) {
+            const alarm = userAlarms.find(a => a.id === alarmId);
+            if (!alarm) return;
+            
+            const coinToCheck = (alarm.coins && alarm.coins.length > 0) ? alarm.coins[0] : cryptoPairs[0];
+            if (!coinToCheck) {
+                showNotification("Alarmda veya ana listede kontrol edilecek coin bulunamadı.", false);
+                return;
+            }
+
+            const panelContent = document.getElementById('alarmStatusContent');
+            document.getElementById('alarmStatusTitle').textContent = `${coinToCheck.replace("USDT", "")} için "${alarm.name}" Durumu`;
+            panelContent.innerHTML = '<div style="text-align:center; padding: 40px;"><div class="loading" style="width:30px; height:30px;"></div></div>';
+            showPanel('alarmStatusPanel');
+
+            try {
+                const checkAlarmStatus = functions.httpsCallable('checkAlarmStatus');
+                const result = await checkAlarmStatus({ alarm, coin: coinToCheck });
+                const { currentStatus, historicalTriggers } = result.data;
+
+                let contentHTML = `<h4><i class="fas fa-clock"></i> Anlık Değerler (${coinToCheck.replace("USDT","")})</h4>`;
+                contentHTML += `<table class="status-table">
+                    <tr><td>Fiyat Değişimi (15dk)</td><td style="color:${currentStatus.priceChange >= 0 ? 'var(--value-positive)' : 'var(--value-negative)'}">${currentStatus.priceChange.toFixed(2)}%</td></tr>
+                    <tr><td>Son Mum Hacmi</td><td>${formatVolume(currentStatus.currentVolume)}</td></tr>
+                    <tr><td>Ortalama Hacim (${alarm.conditions.volume.period} Mum)</td><td>${formatVolume(currentStatus.avgVolume)}</td></tr>
+                    <tr><td>Hacim Oranı</td><td style="font-weight:bold; color:${currentStatus.volumeRatio > alarm.conditions.volume.multiplier ? 'var(--value-positive)' : ''}">${currentStatus.volumeRatio.toFixed(2)}x</td></tr>
+                    <tr><td>MACD Histogram</td><td style="color:${currentStatus.currentMacd.histogram >= 0 ? 'var(--value-positive)' : 'var(--value-negative)'}">${currentStatus.currentMacd.histogram.toFixed(6)}</td></tr>
+                </table>`;
+
+                contentHTML += `<h4 style="margin-top: 25px;"><i class="fas fa-history"></i> Geçmiş Tetiklenmeler (1 Saat Sonrası Değişim)</h4>`;
+                if (historicalTriggers.length > 0) {
+                     contentHTML += `<div class="table-wrapper" style="max-height: 250px;"><table><thead>
+                        <tr><th>Tarih</th><th>Fiyat</th><th>1s Sonra Fiyat</th><th>Değişim</th></tr>
+                     </thead><tbody>`;
+                     historicalTriggers.forEach(trigger => {
+                         contentHTML += `<tr>
+                            <td>${trigger.timestamp}</td>
+                            <td>${formatPrice(trigger.price)}</td>
+                            <td>${formatPrice(trigger.priceAfter1h)}</td>
+                            <td style="color:${trigger.pctChange >= 0 ? 'var(--value-positive)' : 'var(--value-negative)'}">${trigger.pctChange.toFixed(2)}%</td>
+                         </tr>`;
+                     });
+                     contentHTML += `</tbody></table></div>`;
+                } else {
+                    contentHTML += `<p style="color:var(--text-secondary); margin-top: 10px;">Son 1000 mum içinde bu alarm hiç tetiklenmedi.</p>`;
+                }
+                panelContent.innerHTML = contentHTML;
+
+            } catch (error) {
+                console.error("Alarm durumu alınırken hata:", error);
+                panelContent.innerHTML = `<p style="color:var(--accent-red); text-align:center;">Durum bilgisi alınamadı: ${error.message}</p>`;
             }
         }
 
@@ -1535,8 +1616,6 @@
             if(intervalFilterBtn && !intervalFilterBtn.classList.contains('active')) {
                 document.querySelector('#cryptoIntervalFilters button.active').classList.remove('active');
                 intervalFilterBtn.classList.add('active');
-                // No automatic refresh here, user must click "Update Analysis"
-                return;
             }
              const recommendationFilterBtn = e.target.closest('#cryptoRecommendationFilters button');
             if(recommendationFilterBtn) {
@@ -1547,7 +1626,6 @@
                  return;
             }
 
-            // --- ALARM PAGE EVENT LISTENERS ---
             if (e.target.closest('#createNewAlarmBtn')) {
                 if (!settings.telegramPhone) {
                     showNotification("Lütfen önce Ayarlar menüsünden Telegram Chat ID'nizi kaydedin.", false);
@@ -1580,6 +1658,9 @@
                  if(e.target.closest('.backtest-alarm-btn')) {
                     runBacktest(alarmId);
                 }
+                 if (e.target.closest('.check-alarm-status-btn')) {
+                    showAlarmStatus(alarmId);
+                }
             }
         });
 
@@ -1590,15 +1671,17 @@
             if (target) getGeminiAnalysis(target.dataset.type, target.dataset.pair);
         });
         
-        // ALARM PANEL SPECIFIC LISTENERS
         document.getElementById('saveAlarmBtn').addEventListener('click', saveAlarm);
         document.getElementById('addCoinToAlarmBtn').addEventListener('click', () => {
             const input = document.getElementById('addCoinToAlarmInput');
-            const newCoin = input.value.trim().toUpperCase() + "USDT";
-            if(newCoin && !tempAlarmCoins.includes(newCoin)) {
-                tempAlarmCoins.push(newCoin);
-                renderAlarmCoinTags();
-            }
+            const newCoins = input.value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+            newCoins.forEach(coinSymbol => {
+                const newPair = coinSymbol.endsWith('USDT') ? coinSymbol : coinSymbol + 'USDT';
+                if (newPair && !tempAlarmCoins.includes(newPair)) {
+                    tempAlarmCoins.push(newPair);
+                }
+            });
+            renderAlarmCoinTags();
             input.value = '';
         });
         document.getElementById('alarmCoinSelectionGrid').addEventListener('click', (e) => {
@@ -1628,7 +1711,6 @@
             }
         });
 
-
         sortableInstance = new Sortable(document.getElementById('cryptoPriceTable'), {
             handle: '.drag-handle',
             animation: 150,
@@ -1643,7 +1725,7 @@
         renderIndicatorFilters();
         renderDictionary();
         renderAlarms();
-        applySettings(); // Apply settings after they are loaded
+        applySettings();
         await fetchAllDataAndRender();
         updateAdminUI();
     }
