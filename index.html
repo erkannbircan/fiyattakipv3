@@ -174,7 +174,10 @@
         .pivot-dictionary { margin-top: 20px; background-color: var(--bg-tertiary); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 0.9rem;}
         .pivot-dictionary p { margin: 5px 0; }
         .pivot-dictionary span { font-weight: bold; color: var(--text-primary); }
-        
+        .telegram-info { background-color: var(--bg-tertiary); padding: 15px; border-radius: 8px; margin-top: 5px; font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); }
+        .telegram-info a { color: #64b5f6; text-decoration: none; }
+        .telegram-info a:hover { text-decoration: underline; }
+
         /* --- ALARM PAGE STYLES --- */
         .alarm-card { background-color: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
         .alarm-card-title { font-size: 1.2rem; font-weight: 600; color: var(--text-primary); }
@@ -191,6 +194,9 @@
         .backtest-card h5 { margin: 0 0 10px 0; color: var(--accent-yellow); }
         .backtest-card p { margin: 5px 0; color: var(--text-secondary); }
         .backtest-card .value { font-weight: bold; color: var(--text-primary); }
+        #alarmCoinSelectionGrid { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; background-color: var(--bg-primary); border-radius: 8px; margin-bottom: 15px; }
+        .coin-tag { background-color: var(--accent-blue); color: white; padding: 5px 10px; border-radius: 15px; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
+        .coin-tag .remove-coin-tag { cursor: pointer; font-size: 1.1rem; line-height: 1; }
 
 
         @media (max-width: 768px) {
@@ -345,7 +351,15 @@
                 <div class="setting-item"><label data-lang="language">Dil</label><select id="langSelect"><option value="tr">Türkçe</option><option value="en">English</option></select></div>
                 <div class="setting-item"><label data-lang="auto_refresh">Otomatik Yenileme</label><input type="checkbox" id="autoRefreshToggle"></div>
                 <div class="setting-item"><label data-lang="refresh_interval">Yenileme Aralığı (sn)</label><input type="number" id="refreshInterval" min="10" step="10"></div>
-                <div class="setting-item"><label>Telegram Telefon</label><input type="tel" id="telegramPhoneInput" placeholder="+905..."></div>
+                <div class="setting-item"><label>Telegram Chat ID</label><input type="text" id="telegramPhoneInput" placeholder="123456789"></div>
+                <div class="telegram-info">
+                    Telegram bildirimlerini almak için:
+                    <ol style="padding-left: 20px; margin-top: 5px;">
+                        <li>Telegram'da <a href="https://t.me/fiyattakipv3_bot" target="_blank"><b>fiyattakipv3_bot</b></a>'u bulun.</li>
+                        <li>Bota <code>/start</code> komutunu gönderin.</li>
+                        <li>Botun size verdiği ID numarasını yukarıdaki kutucuğa yapıştırın.</li>
+                    </ol>
+                </div>
             </div>
             <div class="settings-section">
                 <h4 data-lang="column_settings">Kolon Ayarları</h4>
@@ -405,9 +419,13 @@
                     <label for="alarmNameInput">Alarm Adı</label>
                     <input type="text" id="alarmNameInput" placeholder="Örn: Hacim + MACD Al Sinyali">
                 </div>
-                <div class="setting-item">
-                    <label for="alarmIntervalInput">Kontrol Aralığı (dk)</label>
-                    <input type="number" id="alarmIntervalInput" value="2" min="1">
+            </div>
+            <div class="settings-section">
+                <h4>Uygulanacak Coinler</h4>
+                <div id="alarmCoinSelectionGrid"></div>
+                <div class="add-asset-bar" style="margin-top: 10px;">
+                    <input type="text" id="addCoinToAlarmInput" placeholder="BTC, ETH...">
+                    <button id="addCoinToAlarmBtn" style="padding: 8px 16px;"><i class="fas fa-plus"></i></button>
                 </div>
             </div>
             <div class="settings-section">
@@ -418,8 +436,12 @@
                         <label for="alarmVolumeCondition">Hacim Artışı</label>
                     </div>
                     <div class="setting-item">
+                         <label>Ort. Hacim Mumu Sayısı</label>
+                         <input type="number" id="alarmVolumePeriod" value="5" min="2" step="1" style="width: 80px;">
+                    </div>
+                    <div class="setting-item">
                         <label>Son Mum Hacmi > Ortalama *</label>
-                        <input type="number" id="alarmVolumeMultiplier" value="2" step="0.5">
+                        <input type="number" id="alarmVolumeMultiplier" value="2" step="0.5" style="width: 80px;">
                     </div>
                     <div class="filter-item">
                         <input type="checkbox" id="alarmMacdCondition" checked>
@@ -438,11 +460,22 @@
                     </div>
                     <div class="setting-item">
                         <label>Fiyat Yükselişi > (%)</label>
-                        <input type="number" id="alarmPriceChange" value="0.5" step="0.1">
+                        <input type="number" id="alarmPriceChange" value="0.5" step="0.1" style="width: 80px;">
                     </div>
                 </div>
             </div>
-             <button id="saveAlarmBtn" style="width:100%;"><i class="fas fa-save"></i> Alarmı Kaydet</button>
+             <div id="alarmHelpContent" class="pivot-dictionary" style="font-size: 0.85rem; line-height: 1.5;">
+                <h5><i class="fas fa-info-circle"></i> Koşullar Nasıl Çalışır?</h5>
+                <p>Tüm alarmlar, arka planda her 2 dakikada bir **15 dakikalık** fiyat verileri (mumlar) üzerinden kontrol edilir.</p>
+                <p><span>Mum Nedir:</span> Grafikteki her bir "mum", 15 dakikalık zaman dilimindeki fiyat hareketini temsil eder.</p>
+                <p><span>Hacim Artışı:</span> En son tamamlanan 15 dakikalık mumun işlem hacmini, ondan önceki (sizin belirlediğiniz) X adet mumun ortalama hacmiyle karşılaştırır. Örneğin, çarpan 2 ise, son mum hacminin ortalamanın en az 2 katı olması beklenir.</p>
+                <p><span>MACD Kesişimi:</span> MACD çizgisi ile Sinyal çizgisi arasındaki ilişkiyi kontrol eder. 'Al' sinyali, MACD çizgisinin sinyal çizgisini alttan yukarıya kestiği anı yakalar. 'Sat' ise tam tersidir.</p>
+                <p><span>Fiyat Değişimi:</span> Bu koşul, en son tamamlanan 15 dakikalık mumun kapanış fiyatının, **bir önceki 15 dakikalık mumun kapanış fiyatına göre** yaptığı yüzdelik artışı kontrol eder.</p>
+             </div>
+             <div class="button-group" style="margin-top:20px;">
+                <button id="testAlarmBtn" style="background-color: #373c4a;"><i class="fab fa-telegram-plane"></i> Test Et</button>
+                <button id="saveAlarmBtn"><i class="fas fa-save"></i> Kaydet</button>
+             </div>
         </div>
     </div>
 
@@ -489,6 +522,7 @@
     let userDocRef = null;
     let sortableInstance = null;
     let currentRecommendationFilter = 'all';
+    let tempAlarmCoins = []; // For alarm panel
     const notification = document.getElementById("notification"), modalOverlay = document.getElementById('modalOverlay');
     const appLoader = document.getElementById('app-loader');
     const loginPage = document.getElementById('login-page');
@@ -1264,6 +1298,38 @@
             });
         }
 
+        function renderAlarmCoinTags() {
+            const container = document.getElementById('alarmCoinSelectionGrid');
+            container.innerHTML = '';
+            tempAlarmCoins.forEach(coin => {
+                const tag = document.createElement('div');
+                tag.className = 'coin-tag';
+                tag.innerHTML = `<span>${coin.replace("USDT", "")}</span><span class="remove-coin-tag" data-coin="${coin}">&times;</span>`;
+                container.appendChild(tag);
+            });
+        }
+
+        function openAlarmPanel(alarm = null) {
+            document.getElementById('alarmIdInput').value = alarm ? alarm.id : '';
+            document.getElementById('alarmNameInput').value = alarm ? alarm.name : '';
+            document.getElementById('alarmPanelTitle').textContent = alarm ? 'Alarmı Düzenle' : 'Yeni Alarm Oluştur';
+            
+            tempAlarmCoins = alarm ? [...(alarm.coins || [])] : [...cryptoPairs];
+            renderAlarmCoinTags();
+
+            document.getElementById('alarmVolumeCondition').checked = alarm ? alarm.conditions.volume.enabled : true;
+            document.getElementById('alarmVolumePeriod').value = alarm ? alarm.conditions.volume.period : 5;
+            document.getElementById('alarmVolumeMultiplier').value = alarm ? alarm.conditions.volume.multiplier : 2;
+            
+            document.getElementById('alarmMacdCondition').checked = alarm ? alarm.conditions.macd.enabled : true;
+            document.getElementById('alarmMacdSignalType').value = alarm ? alarm.conditions.macd.signalType : 'buy';
+
+            document.getElementById('alarmPriceCondition').checked = alarm ? alarm.conditions.price.enabled : false;
+            document.getElementById('alarmPriceChange').value = alarm ? alarm.conditions.price.percentage : 0.5;
+
+            showPanel('alarmSettingsPanel');
+        }
+
         async function saveAlarm() {
             const alarmId = document.getElementById('alarmIdInput').value;
             const alarmName = document.getElementById('alarmNameInput').value;
@@ -1275,11 +1341,12 @@
             const newAlarm = {
                 id: alarmId || `alarm_${new Date().getTime()}`,
                 name: alarmName,
-                checkInterval: parseInt(document.getElementById('alarmIntervalInput').value),
+                coins: tempAlarmCoins,
                 isActive: alarmId ? userAlarms.find(a => a.id === alarmId).isActive : true, // Preserve status on edit
                 conditions: {
                     volume: {
                         enabled: document.getElementById('alarmVolumeCondition').checked,
+                        period: parseInt(document.getElementById('alarmVolumePeriod').value),
                         multiplier: parseFloat(document.getElementById('alarmVolumeMultiplier').value)
                     },
                     macd: {
@@ -1294,10 +1361,8 @@
             };
 
             if (alarmId) {
-                // Edit existing
                 userAlarms = userAlarms.map(a => a.id === alarmId ? newAlarm : a);
             } else {
-                // Add new
                 userAlarms.push(newAlarm);
             }
 
@@ -1321,30 +1386,11 @@
             container.innerHTML = `<div style="text-align: center; padding: 20px;"><div class="loading"></div></div>`;
             showPanel('backtestPanel');
             
-            // TODO: Backend Entegrasyonu
-            // Bu noktada, Firebase Cloud Function'ı çağırmanız gerekiyor.
-            // Bu fonksiyon Binance'ten 1000 mum verisini çekecek,
-            // alarm kurallarınıza göre geçmişe dönük test yapacak ve
-            // sonuçları (toplam sinyal, başarı oranı, ortalama getiri vb.) döndürecek.
             try {
-                // const runBacktestOnBackend = functions.httpsCallable('runBacktest');
-                // const results = await runBacktestOnBackend({ alarm: alarm });
+                const runBacktestOnBackend = functions.httpsCallable('runBacktest');
+                const results = await runBacktestOnBackend({ alarm: alarm, coins: alarm.coins || cryptoPairs });
                 
-                // --- GEÇİCİ ÖRNEK VERİ ---
-                // Backend entegrasyonu yapılana kadar arayüzü test etmek için bu kısmı kullanabilirsiniz.
-                await new Promise(resolve => setTimeout(resolve, 1500)); // Network gecikmesini simüle et
-                const results = {
-                    data: {
-                        totalSignals: Math.floor(Math.random() * 50) + 10,
-                        positiveSignals: Math.floor(Math.random() * 40) + 5,
-                        averageReturn: (Math.random() * 2 - 0.5).toFixed(2),
-                        bestReturn: (Math.random() * 5 + 1).toFixed(2),
-                        worstReturn: (Math.random() * -3 - 0.5).toFixed(2),
-                    }
-                }
-                // --- ÖRNEK VERİ SONU ---
-
-                const successRate = ((results.data.positiveSignals / results.data.totalSignals) * 100).toFixed(1);
+                const successRate = (results.data.totalSignals > 0) ? ((results.data.positiveSignals / results.data.totalSignals) * 100).toFixed(1) : 0;
 
                 container.innerHTML = `
                     <div class="backtest-results-grid">
@@ -1372,7 +1418,7 @@
 
             } catch(error) {
                 console.error("Backtest hatası:", error);
-                container.innerHTML = `<p style="color:var(--accent-red)">Backtest çalıştırılırken bir hata oluştu.</p>`;
+                container.innerHTML = `<p style="color:var(--accent-red)">Backtest çalıştırılırken bir hata oluştu: ${error.message}</p>`;
             }
         }
 
@@ -1491,13 +1537,10 @@
             // --- ALARM PAGE EVENT LISTENERS ---
             if (e.target.closest('#createNewAlarmBtn')) {
                 if (!settings.telegramPhone) {
-                    showNotification("Lütfen önce Ayarlar menüsünden Telegram telefon numaranızı kaydedin.", false);
+                    showNotification("Lütfen önce Ayarlar menüsünden Telegram Chat ID'nizi kaydedin.", false);
                     return;
                 }
-                document.getElementById('alarmIdInput').value = '';
-                document.getElementById('alarmNameInput').value = '';
-                document.getElementById('alarmPanelTitle').textContent = 'Yeni Alarm Oluştur';
-                showPanel('alarmSettingsPanel');
+                openAlarmPanel(null);
             }
             
             const alarmCard = e.target.closest('.alarm-card');
@@ -1505,17 +1548,7 @@
                 const alarmId = alarmCard.dataset.alarmId;
                 if(e.target.closest('.edit-alarm-btn')) {
                     const alarm = userAlarms.find(a => a.id === alarmId);
-                    document.getElementById('alarmIdInput').value = alarm.id;
-                    document.getElementById('alarmNameInput').value = alarm.name;
-                    document.getElementById('alarmIntervalInput').value = alarm.checkInterval;
-                    document.getElementById('alarmVolumeCondition').checked = alarm.conditions.volume.enabled;
-                    document.getElementById('alarmVolumeMultiplier').value = alarm.conditions.volume.multiplier;
-                    document.getElementById('alarmMacdCondition').checked = alarm.conditions.macd.enabled;
-                    document.getElementById('alarmMacdSignalType').value = alarm.conditions.macd.signalType;
-                    document.getElementById('alarmPriceCondition').checked = alarm.conditions.price.enabled;
-                    document.getElementById('alarmPriceChange').value = alarm.conditions.price.percentage;
-                    document.getElementById('alarmPanelTitle').textContent = 'Alarmı Düzenle';
-                    showPanel('alarmSettingsPanel');
+                    openAlarmPanel(alarm);
                 }
                 if(e.target.closest('.delete-alarm-btn')) {
                     if(confirm("Bu alarmı silmek istediğinizden emin misiniz?")) {
@@ -1530,7 +1563,6 @@
                     alarm.isActive = e.target.checked;
                     await userDocRef.update({ alarms: userAlarms });
                     showNotification(`Alarm ${alarm.isActive ? 'aktif' : 'pasif'} edildi.`, true);
-                    // TODO: Backend'e bu alarmı kontrol etme/durdurma komutu gönder
                 }
                  if(e.target.closest('.backtest-alarm-btn')) {
                     runBacktest(alarmId);
@@ -1544,7 +1576,44 @@
             const target = e.target.closest('.ai-btn');
             if (target) getGeminiAnalysis(target.dataset.type, target.dataset.pair);
         });
+        
+        // ALARM PANEL SPECIFIC LISTENERS
         document.getElementById('saveAlarmBtn').addEventListener('click', saveAlarm);
+        document.getElementById('addCoinToAlarmBtn').addEventListener('click', () => {
+            const input = document.getElementById('addCoinToAlarmInput');
+            const newCoin = input.value.trim().toUpperCase() + "USDT";
+            if(newCoin && !tempAlarmCoins.includes(newCoin)) {
+                tempAlarmCoins.push(newCoin);
+                renderAlarmCoinTags();
+            }
+            input.value = '';
+        });
+        document.getElementById('alarmCoinSelectionGrid').addEventListener('click', (e) => {
+            if(e.target.classList.contains('remove-coin-tag')) {
+                const coinToRemove = e.target.dataset.coin;
+                tempAlarmCoins = tempAlarmCoins.filter(c => c !== coinToRemove);
+                renderAlarmCoinTags();
+            }
+        });
+        document.getElementById('testAlarmBtn').addEventListener('click', async (e) => {
+            const btn = e.currentTarget;
+            const chatId = document.getElementById('telegramPhoneInput').value;
+            if(!chatId) {
+                showNotification("Lütfen önce Ayarlar'dan Telegram Chat ID'nizi kaydedin.", false);
+                return;
+            }
+            showLoading(btn);
+            try {
+                const sendTestNotification = functions.httpsCallable('sendTestNotification');
+                await sendTestNotification({ chatId: chatId });
+                showNotification("Test bildirimi başarıyla gönderildi!", true);
+            } catch (error) {
+                console.error("Test bildirimi hatası:", error);
+                showNotification(`Bildirim gönderilemedi: ${error.message}`, false);
+            } finally {
+                hideLoading(btn);
+            }
+        });
 
 
         sortableInstance = new Sortable(document.getElementById('cryptoPriceTable'), {
