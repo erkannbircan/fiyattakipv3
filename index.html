@@ -491,7 +491,7 @@
              <div class="pivot-dictionary" style="font-size: 0.85rem; line-height: 1.5; margin-top:0;">
                 <h5><i class="fas fa-info-circle"></i> Koşullar Nasıl Çalışır?</h5>
                 <p>Tüm alarmlar, arka planda her 2 dakikada bir, en son **tamamlanmış 15 dakikalık mum** üzerinden kontrol edilir.</p>
-                <p><span>Hacim Artışı:</span> En son kapanan 15dk'lık mumun hacmini, ondan önceki (sizin belirlediğiniz) X adet mumun ortalama hacmiyle karşılaştırır.</p>
+                <p><span>Hacim Artışı:</span> En son kapanan 15dk'lık mumun hacmini, ondan önceki (sizin belirlediğiniz) X adet mumun ortalama hacmiyle karşılaştırır. <b>Güncelleme:</b> Bu kural artık son mumun, bir önceki mumdan da belirlediğiniz oranda büyük olmasını gerektirir.</p>
                 <p><span>MACD Kesişimi:</span> MACD çizgisinin Sinyal çizgisini kestiği anı yakalar. 'Al' yukarı kesişim, 'Sat' aşağı kesişimdir.</p>
                 <p><span>Fiyat Değişimi:</span> Son kapanan 15dk'lık mumun, bir önceki 15dk'lık muma göre yaptığı yüzdelik artışı kontrol eder.</p>
              </div>
@@ -517,7 +517,7 @@
         </div>
         <div class="panel-content">
             <h4 id="backtestAlarmName"></h4>
-            <p>Bu panel, seçilen alarm stratejisinin geçmiş <strong>1000 mum (yaklaşık 10 gün)</strong> üzerindeki performansını her bir coin için ayrı ayrı gösterir. Sonuçlar, sinyal geldikten <strong>1 saat sonraki</strong> fiyat değişimine dayanmaktadır.</p>
+            <p>Bu panel, seçilen alarm stratejisinin geçmiş <strong>1000 mum (yaklaşık 10 gün)</strong> üzerindeki performansını her bir coin için ayrı ayrı gösterir. Sonuçlar, sinyal geldikten <strong>15 dakika ve 1 saat sonraki</strong> fiyat değişimlerine dayanmaktadır.</p>
             <div id="backtest-results-container">
                 <div style="text-align: center; padding: 20px;"><div class="loading"></div></div>
             </div>
@@ -1425,30 +1425,47 @@
                 let resultsHTML = '';
                 for (const coin in result.data) {
                     const data = result.data[coin];
-                    const successRate = (data.totalSignals > 0) ? ((data.positiveSignals / data.totalSignals) * 100).toFixed(1) : 0;
+                    const successRate15m = (data.totalSignals > 0) ? ((data.positiveSignals_15m / data.totalSignals) * 100).toFixed(1) : 0;
+                    const successRate1h = (data.totalSignals > 0) ? ((data.positiveSignals_1h / data.totalSignals) * 100).toFixed(1) : 0;
+                    
+                    // YENİ: İki zaman dilimini de gösteren detaylı kart
                     resultsHTML += `
                     <div class="backtest-card">
-                        <h4 style="color:var(--text-primary); margin-bottom: 15px;">${coin.replace("USDT","")} Sonuçları</h4>
-                        <div class="backtest-results-grid">
-                            <div class="backtest-card">
-                                <h5>Toplam Sinyal</h5>
-                                <p><span class="value">${data.totalSignals}</span> adet</p>
+                        <h4 style="color:var(--text-primary); margin-bottom: 15px;">${coin.replace("USDT","")} Sonuçları (Sinyal Sayısı: ${data.totalSignals})</h4>
+                        <div class="backtest-results-grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+                            
+                            <div>
+                                <h5 style="color: var(--accent-blue);">15 Dakika Sonrası</h5>
+                                <div class="backtest-card" style="padding:10px; margin-top:10px;">
+                                    <p>Başarı Oranı: <span class="value">${successRate15m}%</span></p>
+                                </div>
+                                <div class="backtest-card" style="padding:10px; margin-top:10px;">
+                                    <p>Ort. Getiri: <span class="value" style="color: ${data.averageReturn_15m > 0 ? 'var(--value-positive)' : 'var(--value-negative)'};">${data.averageReturn_15m}%</span></p>
+                                </div>
+                                <div class="backtest-card" style="padding:10px; margin-top:10px;">
+                                     <p>İyi/Kötü: 
+                                        <span class="value" style="color: var(--value-positive);">+${data.bestReturn_15m}%</span> / 
+                                        <span class="value" style="color: var(--value-negative);">${data.worstReturn_15m}%</span>
+                                     </p>
+                                </div>
                             </div>
-                            <div class="backtest-card">
-                                <h5>Başarı Oranı</h5>
-                                <p><span class="value">${successRate}%</span></p>
+
+                            <div>
+                                <h5 style="color: var(--accent-yellow);">1 Saat Sonrası</h5>
+                                 <div class="backtest-card" style="padding:10px; margin-top:10px;">
+                                    <p>Başarı Oranı: <span class="value">${successRate1h}%</span></p>
+                                </div>
+                                <div class="backtest-card" style="padding:10px; margin-top:10px;">
+                                    <p>Ort. Getiri: <span class="value" style="color: ${data.averageReturn_1h > 0 ? 'var(--value-positive)' : 'var(--value-negative)'};">${data.averageReturn_1h}%</span></p>
+                                </div>
+                                <div class="backtest-card" style="padding:10px; margin-top:10px;">
+                                     <p>İyi/Kötü: 
+                                        <span class="value" style="color: var(--value-positive);">+${data.bestReturn_1h}%</span> / 
+                                        <span class="value" style="color: var(--value-negative);">${data.worstReturn_1h}%</span>
+                                     </p>
+                                </div>
                             </div>
-                            <div class="backtest-card">
-                                <h5>Ortalama Getiri (1s)</h5>
-                                <p><span class="value" style="color: ${data.averageReturn > 0 ? 'var(--value-positive)' : 'var(--value-negative)'};">${data.averageReturn}%</span></p>
-                            </div>
-                            <div class="backtest-card">
-                                <h5>En İyi / Kötü Getiri</h5>
-                                <p>
-                                    <span class="value" style="color: var(--value-positive);">+${data.bestReturn}%</span> / 
-                                    <span class="value" style="color: var(--value-negative);">${data.worstReturn}%</span>
-                                </p>
-                            </div>
+
                         </div>
                     </div>
                     `;
@@ -1482,7 +1499,7 @@
                 const result = await checkAlarmStatus({ alarm, coin: coinToCheck });
                 const { currentStatus, historicalTriggers } = result.data;
 
-                let contentHTML = `<h4><i class="fas fa-clock"></i> Anlık Değerler (${coinToCheck.replace("USDT","")})</h4>`;
+                let contentHTML = `<h4><i class="fas fa-clock"></i> Anlık Değerler (Son Kapanan Mum)</h4>`;
                 contentHTML += `<table class="status-table">
                     <tr><td>Fiyat Değişimi (15dk)</td><td style="color:${currentStatus.priceChange >= 0 ? 'var(--value-positive)' : 'var(--value-negative)'}">${currentStatus.priceChange.toFixed(2)}%</td></tr>
                     <tr><td>Son Mum Hacmi</td><td>${formatVolume(currentStatus.currentVolume)}</td></tr>
@@ -1491,17 +1508,18 @@
                     <tr><td>MACD Histogram</td><td style="color:${currentStatus.currentMacd.histogram >= 0 ? 'var(--value-positive)' : 'var(--value-negative)'}">${currentStatus.currentMacd.histogram.toFixed(6)}</td></tr>
                 </table>`;
 
-                contentHTML += `<h4 style="margin-top: 25px;"><i class="fas fa-history"></i> Geçmiş Tetiklenmeler (1 Saat Sonrası Değişim)</h4>`;
+                contentHTML += `<h4 style="margin-top: 25px;"><i class="fas fa-history"></i> Geçmiş Tetiklenmeler</h4>`;
                 if (historicalTriggers.length > 0) {
+                     // YENİ: İki farklı zaman dilimi için başlıklar
                      contentHTML += `<div class="table-wrapper" style="max-height: 250px;"><table><thead>
-                        <tr><th>Tarih</th><th>Fiyat</th><th>1s Sonra Fiyat</th><th>Değişim</th></tr>
+                        <tr><th>Tarih</th><th>Fiyat</th><th>Değişim (15dk)</th><th>Değişim (1s)</th></tr>
                      </thead><tbody>`;
                      historicalTriggers.forEach(trigger => {
                          contentHTML += `<tr>
                             <td>${trigger.timestamp}</td>
                             <td>${formatPrice(trigger.price)}</td>
-                            <td>${formatPrice(trigger.priceAfter1h)}</td>
-                            <td style="color:${trigger.pctChange >= 0 ? 'var(--value-positive)' : 'var(--value-negative)'}">${trigger.pctChange.toFixed(2)}%</td>
+                            <td style="color:${trigger.pctChange_15m >= 0 ? 'var(--value-positive)' : 'var(--value-negative)'}">${trigger.pctChange_15m.toFixed(2)}%</td>
+                            <td style="color:${trigger.pctChange_1h >= 0 ? 'var(--value-positive)' : 'var(--value-negative)'}">${trigger.pctChange_1h.toFixed(2)}%</td>
                          </tr>`;
                      });
                      contentHTML += `</tbody></table></div>`;
