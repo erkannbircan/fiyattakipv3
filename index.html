@@ -1444,8 +1444,7 @@ async function saveAlarm() {
     }
 }
 
-        
-        async function runBacktest(alarmId) {
+async function runBacktest(alarmId) {
             const alarm = userAlarms.find(a => a.id === alarmId);
             if (!alarm) return;
 
@@ -1453,74 +1452,71 @@ async function saveAlarm() {
             const container = document.getElementById('backtest-results-container');
             container.innerHTML = `<div style="text-align: center; padding: 20px;"><div class="loading"></div></div>`;
             showPanel('backtestPanel');
-
             
-        //... runBacktest fonksiyonu içinde
-try {
-    const runBacktestOnBackend = functions.httpsCallable('runBacktest');
-    // Artık sadece alarmı göndermek yeterli, backend coin listesini kendisi bulacak.
-    const result = await runBacktestOnBackend({ alarm: alarm });
-    
-    let resultsHTML = '';
-    const totalCandles = 1000; // Backend'de ayarlanan mum sayısı
-
-    for (const coin in result.data) {
-        const data = result.data[coin];
-        const successRate15m = (data.totalSignals > 0) ? ((data.positiveSignals_15m / data.totalSignals) * 100).toFixed(1) : "0";
-        const successRate1h = (data.totalSignals > 0) ? ((data.positiveSignals_1h / data.totalSignals) * 100).toFixed(1) : "0";
-        
-        // "Konuşkan Raporlama" için HTML oluşturma
-        let statsHTML = '';
-        if (alarm.conditions.volume?.enabled) {
-            statsHTML += `<p>Hacim Koşulu: <span class="value">${data.conditionStats.volumeMet} kez</span> (${((data.conditionStats.volumeMet / totalCandles) * 100).toFixed(1)}%)</p>`;
-        }
-        if (alarm.conditions.macd?.enabled) {
-            statsHTML += `<p>MACD Koşulu: <span class="value">${data.conditionStats.macdMet} kez</span> (${((data.conditionStats.macdMet / totalCandles) * 100).toFixed(1)}%)</p>`;
-        }
-        if (alarm.trendFilterEnabled) {
-             statsHTML += `<p>Trend Filtresi: <span class="value">${data.conditionStats.trendMet} kez</span> (${((data.conditionStats.trendMet / totalCandles) * 100).toFixed(1)}%)</p>`;
-        }
-        if (alarm.conditions.fibonacci?.enabled) {
-             statsHTML += `<p>Fibonacci Filtresi: <span class="value">${data.conditionStats.fibonacciMet} kez</span> (${((data.conditionStats.fibonacciMet / totalCandles) * 100).toFixed(1)}%)</p>`;
-        }
-
-
-        resultsHTML += `
-        <div class="backtest-card">
-            <h4 style="color:var(--text-primary); margin-bottom: 15px;">${coin.replace("USDT","")} Sonuçları (Toplam Sinyal: ${data.totalSignals})</h4>
-            <div class="backtest-results-grid">
+            try {
+                const runBacktestOnBackend = functions.httpsCallable('runBacktest');
+                const result = await runBacktestOnBackend({ alarm: alarm });
                 
-                <div class="backtest-card" style="grid-column: 1 / -1;">
-                    <div class="backtest-results-grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <div>
-                            <h5 style="color: var(--accent-blue);">15 Dakika Sonrası</h5>
-                            <p>Başarı Oranı: <span class="value">${successRate15m}%</span></p>
-                            <p>Ort. Getiri: <span class="value" style="color: ${data.averageReturn_15m > 0 ? 'var(--value-positive)' : 'var(--value-negative)'};">${data.averageReturn_15m}%</span></p>
-                            <p>İyi/Kötü: <span class="value" style="color: var(--value-positive);">+${data.bestReturn_15m}%</span> / <span class="value" style="color: var(--value-negative);">${data.worstReturn_15m}%</span></p>
-                        </div>
-                        <div>
-                            <h5 style="color: var(--accent-yellow);">1 Saat Sonrası</h5>
-                            <p>Başarı Oranı: <span class="value">${successRate1h}%</span></p>
-                            <p>Ort. Getiri: <span class="value" style="color: ${data.averageReturn_1h > 0 ? 'var(--value-positive)' : 'var(--value-negative)'};">${data.averageReturn_1h}%</span></p>
-                            <p>İyi/Kötü: <span class="value" style="color: var(--value-positive);">+${data.bestReturn_1h}%</span> / <span class="value" style="color: var(--value-negative);">${data.worstReturn_1h}%</span></p>
+                let resultsHTML = '';
+                const totalCandles = 1000; 
+
+                for (const coin in result.data) {
+                    const data = result.data[coin];
+                    const successRate15m = (data.totalSignals > 0) ? ((data.positiveSignals_15m / data.totalSignals) * 100).toFixed(1) : "0";
+                    const successRate1h = (data.totalSignals > 0) ? ((data.positiveSignals_1h / data.totalSignals) * 100).toFixed(1) : "0";
+                    
+                    let statsHTML = '';
+                    if (alarm.conditions.volume?.enabled) {
+                        statsHTML += `<p>Hacim Koşulu: <span class="value">${data.conditionStats.volumeMet} kez</span> (${((data.conditionStats.volumeMet / totalCandles) * 100).toFixed(1)}%)</p>`;
+                    }
+                    if (alarm.conditions.macd?.enabled) {
+                        statsHTML += `<p>MACD Koşulu: <span class="value">${data.conditionStats.macdMet} kez</span> (${((data.conditionStats.macdMet / totalCandles) * 100).toFixed(1)}%)</p>`;
+                    }
+                    if (alarm.trendFilterEnabled) {
+                         statsHTML += `<p>Trend Filtresi: <span class="value">${data.conditionStats.trendMet} kez</span> (${((data.conditionStats.trendMet / totalCandles) * 100).toFixed(1)}%)</p>`;
+                    }
+                    if (alarm.conditions.fibonacci?.enabled) {
+                         statsHTML += `<p>Fibonacci Filtresi: <span class="value">${data.conditionStats.fibonacciMet} kez</span> (${((data.conditionStats.fibonacciMet / totalCandles) * 100).toFixed(1)}%)</p>`;
+                    }
+
+                    resultsHTML += `
+                    <div class="backtest-card">
+                        <h4 style="color:var(--text-primary); margin-bottom: 15px;">${coin.replace("USDT","")} Sonuçları (Toplam Sinyal: ${data.totalSignals})</h4>
+                        <div class="backtest-results-grid">
+                            <div class="backtest-card" style="grid-column: 1 / -1;">
+                                <div class="backtest-results-grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+                                    <div>
+                                        <h5 style="color: var(--accent-blue);">15 Dakika Sonrası</h5>
+                                        <p>Başarı Oranı: <span class="value">${successRate15m}%</span></p>
+                                        <p>Ort. Getiri: <span class="value" style="color: ${data.averageReturn_15m > 0 ? 'var(--value-positive)' : 'var(--value-negative)'};">${data.averageReturn_15m}%</span></p>
+                                        <p>İyi/Kötü: <span class="value" style="color: var(--value-positive);">+${data.bestReturn_15m}%</span> / <span class="value" style="color: var(--value-negative);">${data.worstReturn_15m}%</span></p>
+                                    </div>
+                                    <div>
+                                        <h5 style="color: var(--accent-yellow);">1 Saat Sonrası</h5>
+                                        <p>Başarı Oranı: <span class="value">${successRate1h}%</span></p>
+                                        <p>Ort. Getiri: <span class="value" style="color: ${data.averageReturn_1h > 0 ? 'var(--value-positive)' : 'var(--value-negative)'};">${data.averageReturn_1h}%</span></p>
+                                        <p>İyi/Kötü: <span class="value" style="color: var(--value-positive);">+${data.bestReturn_1h}%</span> / <span class="value" style="color: var(--value-negative);">${data.worstReturn_1h}%</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="backtest-card" style="grid-column: 1 / -1;">
+                                <h5 style="color: #c56cf0;">Koşul İstatistikleri (~${totalCandles} Mumda)</h5>
+                                <div style="margin-top: 10px;">${statsHTML}</div>
+                                <small style="color: var(--text-secondary); display: block; margin-top: 10px;">Bu bölüm, hangi koşulun ne kadar sık sağlandığını gösterir. Eğer sinyal sayısı "0" ise, buradaki düşük yüzdeler hangi kuralın çok katı olduğunu anlamanıza yardımcı olabilir.</small>
+                            </div>
                         </div>
                     </div>
-                </div>
+                    `;
+                }
 
-                <div class="backtest-card" style="grid-column: 1 / -1;">
-                    <h5 style="color: #c56cf0;">Koşul İstatistikleri (~${totalCandles} Mumda)</h5>
-                    <div style="margin-top: 10px;">${statsHTML}</div>
-                    <small style="color: var(--text-secondary); display: block; margin-top: 10px;">Bu bölüm, hangi koşulun ne kadar sık sağlandığını gösterir. Eğer sinyal sayısı "0" ise, buradaki düşük yüzdeler hangi kuralın çok katı olduğunu anlamanıza yardımcı olabilir.</small>
-                </div>
+                container.innerHTML = resultsHTML || `<p style="text-align:center; color: var(--text-secondary);">Seçilen strateji için son ~10 günde hiç sinyal bulunamadı. Lütfen koşulları daha az katı yapmayı deneyin.</p>`;
 
-            </div>
-        </div>
-        `;
-    }
-
-    container.innerHTML = resultsHTML || `<p style="text-align:center; color: var(--text-secondary);">Seçilen strateji için son ~10 günde hiç sinyal bulunamadı. Lütfen koşulları daha az katı yapmayı deneyin.</p>`;
-
-} catch(error) { //...
+            } catch (error) {
+                console.error("Backtest hatası:", error);
+                container.innerHTML = `<p style="color:var(--accent-red)">Backtest çalıştırılırken bir hata oluştu: ${error.message}</p>`;
+            }
+        } // <--- EKSİK OLAN KAPATMA PARANTEZİ BURADAYDI!
+        
         async function showAlarmStatus(alarmId) {
             const alarm = userAlarms.find(a => a.id === alarmId);
             if (!alarm) return;
