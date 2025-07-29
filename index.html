@@ -425,111 +425,103 @@
         <div id="analysisContent" class="panel-content"></div>
     </div>
 
-    <div id="alarmSettingsPanel" class="panel">
-        <div class="panel-header">
-            <h3 id="alarmPanelTitle">Alarm Kuralları</h3>
-            <div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div>
-        </div>
-        <div class="panel-content">
-            <input type="hidden" id="alarmIdInput">
-            <div class="settings-section">
-  <h4>Zaman Dilimi ve Trend Filtreleri</h4>
-  <div class="alarm-rule-grid">
-    <label for="alarmTimeframe">Ana Zaman Dilimi</label>
-    <select id="alarmTimeframe">
-      <option value="15m" selected>15 Dakika</option>
-      <option value="1h">1 Saat</option>
-      <option value="4h">4 Saat</option>
-    </select>
-
-    <div class="filter-item" style="grid-column: 1 / -1;">
-        <input type="checkbox" id="alarmTrendFilterEnabled">
-        <label for="alarmTrendFilterEnabled">Gelişmiş Trend Filtresini Aktif Et</label>
+<div id="alarmSettingsPanel" class="panel">
+    <div class="panel-header">
+        <h3 id="alarmPanelTitle">Alarm Kuralları</h3>
+        <div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div>
     </div>
-    
-    <label for="alarmADXThreshold" title="Trendin ne kadar güçlü olduğunu belirtir. 25'in üzeri genellikle güçlü bir trend olarak kabul edilir.">Trend Gücü (ADX) Eşiği</label>
-    <input type="number" id="alarmADXThreshold" min="0" max="50" value="25">
-  </div>
-</div>
-
-<div class="settings-section">
-  <h4>Fibonacci ve Risk (Geliştirme Aşamasında)</h4>
-  <div class="alarm-rule-grid">
-    <div class="filter-item">
-      <input type="checkbox" id="alarmFibCondition" disabled>
-      <label for="alarmFibCondition" style="color: var(--text-secondary);">Fibonacci Destek/Direnç Alarmı</label>
-    </div>
-  </div>
-</div>
-            <div class="settings-section">
-                <h4>Genel</h4>
+    <div class="panel-content">
+        <input type="hidden" id="alarmIdInput">
+        
+        <div class="collapsible">
+            <div class="collapsible-header open"><span>1. Genel Ayarlar</span><i class="fas fa-chevron-down"></i></div>
+            <div class="collapsible-content open">
                 <div class="setting-item">
                     <label for="alarmNameInput">Alarm Adı</label>
-                    <input type="text" id="alarmNameInput" placeholder="Örn: Hacim + MACD Al Sinyali">
+                    <input type="text" id="alarmNameInput" placeholder="Örn: Hacim Patlaması Alarmı">
                 </div>
-            </div>
-            <div class="settings-section">
-                <h4>Uygulanacak Coinler</h4>
+                <div class="setting-item">
+                    <label for="alarmTimeframe">Ana Zaman Dilimi</label>
+                    <select id="alarmTimeframe">
+                        <option value="15m" selected>15 Dakika</option>
+                        <option value="1h">1 Saat</option>
+                        <option value="4h">4 Saat</option>
+                    </select>
+                </div>
+                <h5 style="margin-top: 20px; margin-bottom: 10px;">Uygulanacak Coinler</h5>
                 <div id="alarmCoinSelectionGrid"></div>
-                <div class="add-asset-bar" style="margin-top: 10px;">
+                <div class="add-asset-bar" style="margin-top: 10px; margin-bottom: 0;">
                     <input type="text" id="addCoinToAlarmInput" placeholder="BTC, ETH, HOOK...">
                     <button id="addCoinToAlarmBtn" style="padding: 8px 16px;"><i class="fas fa-plus"></i></button>
                 </div>
             </div>
-             <div class="settings-section">
-                <h4>Strateji Filtreleri</h4>
-                <label class="filter-item" title="Sadece fiyat 50 periyotluk EMA'nın (15dk'lık grafikte yaklaşık 12.5 saat) üzerindeyken AL sinyallerini dikkate alır. Yükseliş trendini teyit eder.">
-                    <input type="checkbox" id="alarmTrendCondition">
-                    <span>EMA Trend Filtresi (Sadece AL)</span>
-                </label>
-                <label class="filter-item" title="Sadece RSI değeri 70'in altındayken (yani piyasa aşırı ısınmamışken) AL sinyallerini dikkate alır.">
-                    <input type="checkbox" id="alarmMomentumCondition">
-                    <span>RSI Momentum Filtresi (Sadece AL)</span>
-                </label>
-            </div>
-            <div class="settings-section">
-                <h4>Koşullar</h4>
-                <div class="alarm-rule-grid">
-                    <div class="filter-item">
-                        <input type="checkbox" id="alarmVolumeCondition" checked>
-                        <label for="alarmVolumeCondition">Hacim Artışı</label>
-                    </div>
-                    <label>Ort. Hacim Mumu Sayısı</label>
-                    <input type="number" id="alarmVolumePeriod" value="5" min="2" step="1">
-                    <label>Son Mum Hacmi > Ortalama *</label>
-                    <input type="number" id="alarmVolumeMultiplier" value="2" step="0.5">
-                    
-                    <div class="filter-item" style="margin-top:15px;">
-                        <input type="checkbox" id="alarmMacdCondition" checked>
-                        <label for="alarmMacdCondition">MACD Kesişimi</label>
-                    </div>
-                    <label>Sinyal Tipi</label>
-                    <select id="alarmMacdSignalType">
-                        <option value="buy">Al (Yukarı Kesişim)</option>
-                        <option value="sell">Sat (Aşağı Kesişim)</option>
-                    </select>
+        </div>
 
-                    <div class="filter-item" style="margin-top:15px;">
-                        <input type="checkbox" id="alarmPriceCondition">
-                        <label for="alarmPriceCondition">Fiyat Değişimi</label>
+        <div class="collapsible">
+            <div class="collapsible-header open"><span>2. Alarm Koşulları (En az 1 tane seçin)</span><i class="fas fa-chevron-down"></i></div>
+            <div class="collapsible-content open">
+                <div class="settings-section" style="padding: 10px; border: 1px solid var(--border-color); border-radius: 8px;">
+                    <label class="filter-item">
+                        <input type="checkbox" id="alarmVolumeCondition" checked>
+                        <span>Hacim Artışı</span>
+                    </label>
+                    <div class="alarm-rule-grid" style="margin-top: 10px;">
+                        <label>Ort. Hacim Mumu Sayısı</label>
+                        <input type="number" id="alarmVolumePeriod" value="20" min="2" step="1">
+                        <label>Son Mum Hacmi > Ortalama *</label>
+                        <input type="number" id="alarmVolumeMultiplier" value="2" step="0.5">
                     </div>
-                    <label>Fiyat Yükselişi > (%)</label>
-                    <input type="number" id="alarmPriceChange" value="0.5" step="0.1">
+                </div>
+                <div class="settings-section" style="margin-top: 15px; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px;">
+                    <label class="filter-item">
+                        <input type="checkbox" id="alarmMacdCondition" checked>
+                        <span>MACD Kesişimi</span>
+                    </label>
+                    <div class="alarm-rule-grid" style="margin-top: 10px;">
+                        <label>Sinyal Tipi</label>
+                        <select id="alarmMacdSignalType">
+                            <option value="buy">Al (Yukarı Kesişim)</option>
+                            <option value="sell">Sat (Aşağı Kesişim)</option>
+                        </select>
+                    </div>
+                </div>
+                 <input type="checkbox" id="alarmPriceCondition" style="display: none;">
+            </div>
+        </div>
+        
+        <div class="collapsible">
+            <div class="collapsible-header"><span>3. Gelişmiş Filtreler (Opsiyonel)</span><i class="fas fa-chevron-down"></i></div>
+            <div class="collapsible-content">
+                <div class="settings-section" style="padding: 10px; border: 1px solid var(--border-color); border-radius: 8px;">
+                     <label class="filter-item" title="Sinyalin sadece piyasada belirli bir güçte trend varken çalışmasını sağlar. Kararsız piyasalardaki hatalı sinyalleri filtreler.">
+                        <input type="checkbox" id="alarmTrendFilterEnabled">
+                        <span>Güçlü Trend Filtresini Aktif Et</span>
+                    </label>
+                    <div class="alarm-rule-grid" style="margin-top: 10px;">
+                       <label for="alarmADXThreshold" title="Trendin ne kadar güçlü olduğunu belirtir. 25'in üzeri genellikle güçlü bir trend olarak kabul edilir.">Trend Gücü (ADX) Eşiği</label>
+                       <input type="number" id="alarmADXThreshold" min="0" max="50" value="25">
+                    </div>
+                </div>
+                <div class="settings-section" style="margin-top: 15px; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px;">
+                    <label class="filter-item" title="Sinyalin sadece fiyat önemli bir Fibonacci destek seviyesinin üzerindeyken çalışmasını sağlar. Bu, genellikle bir düşüşün son bulduğuna ve yükselişin devam edebileceğine dair bir işarettir.">
+                        <input type="checkbox" id="alarmFibCondition">
+                        <span>Fibonacci 0.618 Desteğini Onayla</span>
+                    </label>
                 </div>
             </div>
-             <div class="pivot-dictionary" style="font-size: 0.85rem; line-height: 1.5; margin-top:0;">
-                <h5><i class="fas fa-info-circle"></i> Koşullar Nasıl Çalışır?</h5>
-                <p>Tüm alarmlar, arka planda her 2 dakikada bir, en son **tamamlanmış 15 dakikalık mum** üzerinden kontrol edilir.</p>
-                <p><span>Hacim Artışı:</span> En son kapanan 15dk'lık mumun hacmini, ondan önceki (sizin belirlediğiniz) X adet mumun ortalama hacmiyle karşılaştırır. <b>Güncelleme:</b> Bu kural artık son mumun, bir önceki mumdan da belirlediğiniz oranda büyük olmasını gerektirir.</p>
-                <p><span>MACD Kesişimi:</span> MACD çizgisinin Sinyal çizgisini kestiği anı yakalar. 'Al' yukarı kesişim, 'Sat' aşağı kesişimdir.</p>
-                <p><span>Fiyat Değişimi:</span> Son kapanan 15dk'lık mumun, bir önceki 15dk'lık muma göre yaptığı yüzdelik artışı kontrol eder.</p>
-             </div>
-             <div class="button-group" style="margin-top:20px;">
-                <button id="testAlarmBtn" style="background-color: #373c4a;"><i class="fab fa-telegram-plane"></i> Test Et</button>
-                <button id="saveAlarmBtn"><i class="fas fa-save"></i> Kaydet</button>
-             </div>
         </div>
+
+         <div class="pivot-dictionary" style="font-size: 0.85rem; line-height: 1.5; margin-top: 20px;">
+            <h5><i class="fas fa-info-circle"></i> Nasıl Çalışır?</h5>
+            <p>Sistem, belirlediğiniz koşulların **hepsi aynı anda** gerçekleştiğinde alarm gönderir. Sadece tek bir koşul seçerek (örneğin sadece Hacim Artışı) basit bir alarm kurabilirsiniz.</p>
+            <p><span>Gelişmiş Filtreler:</span> Bunlar opsiyoneldir. Eğer bir filtreyi aktif ederseniz, alarmın tetiklenmesi için hem ana koşulların hem de filtrenin sağlanması gerekir. Bu, hatalı sinyal olasılığını azaltır.</p>
+         </div>
+         <div class="button-group" style="margin-top:20px;">
+            <button id="testAlarmBtn" style="background-color: #373c4a;"><i class="fab fa-telegram-plane"></i> Test Et</button>
+            <button id="saveAlarmBtn"><i class="fas fa-save"></i> Kaydet</button>
+         </div>
     </div>
+</div>
 
     <div id="alarmStatusPanel" class="panel" style="width: clamp(500px, 90vw, 800px);">
         <div class="panel-header">
@@ -1359,37 +1351,38 @@
                 container.appendChild(tag);
             });
         }
-
-      // Eskisini silip bunu yapıştırın
 function openAlarmPanel(alarm = null) {
     document.getElementById('alarmIdInput').value = alarm ? alarm.id : '';
     document.getElementById('alarmNameInput').value = alarm ? alarm.name : '';
     document.getElementById('alarmPanelTitle').textContent = alarm ? 'Alarmı Düzenle' : 'Yeni Alarm Oluştur';
     
-    tempAlarmCoins = alarm && alarm.coins ? [...alarm.coins] : [...cryptoPairs];
+    tempAlarmCoins = alarm && alarm.coins && alarm.coins.length > 0 ? [...alarm.coins] : [...cryptoPairs];
     renderAlarmCoinTags();
 
-    // Yeni ve Gelişmiş Ayarları Yükle
-    document.getElementById('alarmTimeframe').value = alarm?.timeframe || '15m';
-    document.getElementById('alarmTrendFilterEnabled').checked = alarm?.trendFilterEnabled ?? false;
-    document.getElementById('alarmADXThreshold').value = alarm?.adxThreshold || 25;
+    // Alarm yoksa (yeni oluşturuluyorsa) varsayılan değerleri kullan, varsa kayıttaki değerleri yükle
+    const isNewAlarm = !alarm;
+    const conditions = alarm?.conditions || {};
 
-    // Temel Koşulları Yükle
-    const conditions = alarm ? alarm.conditions : {};
-    document.getElementById('alarmVolumeCondition').checked = conditions.volume?.enabled ?? true;
+    // Genel Ayarlar
+    document.getElementById('alarmTimeframe').value = alarm?.timeframe || '15m';
+
+    // Koşullar
+    document.getElementById('alarmVolumeCondition').checked = conditions.volume?.enabled ?? isNewAlarm; // Yeni alarmda varsayılan olarak seçili
     document.getElementById('alarmVolumePeriod').value = conditions.volume?.period ?? 20;
     document.getElementById('alarmVolumeMultiplier').value = conditions.volume?.multiplier ?? 2;
     
-    document.getElementById('alarmMacdCondition').checked = conditions.macd?.enabled ?? true;
+    document.getElementById('alarmMacdCondition').checked = conditions.macd?.enabled ?? isNewAlarm; // Yeni alarmda varsayılan olarak seçili
     document.getElementById('alarmMacdSignalType').value = conditions.macd?.signalType ?? 'buy';
 
-    document.getElementById('alarmPriceCondition').checked = conditions.price?.enabled ?? false;
-    document.getElementById('alarmPriceChange').value = conditions.price?.percentage ?? 0.5;
+    // Gelişmiş Filtreler
+    document.getElementById('alarmTrendFilterEnabled').checked = alarm?.trendFilterEnabled ?? false; // Varsayılan olarak kapalı
+    document.getElementById('alarmADXThreshold').value = alarm?.adxThreshold || 25;
+    document.getElementById('alarmFibCondition').checked = conditions.fibonacci?.enabled ?? false; // Varsayılan olarak kapalı
 
     showPanel('alarmSettingsPanel');
 }
 
-        // Eskisini silip bunu yapıştırın
+
 async function saveAlarm() {
     const alarmId = document.getElementById('alarmIdInput').value;
     const alarmName = document.getElementById('alarmNameInput').value;
@@ -1397,35 +1390,39 @@ async function saveAlarm() {
         showNotification("Alarm adı boş bırakılamaz.", false);
         return;
     }
+
+    const volumeEnabled = document.getElementById('alarmVolumeCondition').checked;
+    const macdEnabled = document.getElementById('alarmMacdCondition').checked;
+
+    if (!volumeEnabled && !macdEnabled) {
+        showNotification("En az bir alarm koşulu (Hacim veya MACD) seçmelisiniz.", false);
+        return;
+    }
     
-    // YENİ: Gelişmiş ayarları da objeye ekle
     const newAlarm = {
         id: alarmId || `alarm_${new Date().getTime()}`,
         name: alarmName,
         coins: tempAlarmCoins,
-        isActive: alarmId ? userAlarms.find(a => a.id === alarmId).isActive : true,
-        
-        // Ana zaman dilimi
+        isActive: alarmId ? (userAlarms.find(a => a.id === alarmId)?.isActive ?? true) : true,
         timeframe: document.getElementById('alarmTimeframe').value,
         
-        // Gelişmiş Trend Filtreleri
+        // Gelişmiş Filtreler
         trendFilterEnabled: document.getElementById('alarmTrendFilterEnabled').checked,
         adxThreshold: parseInt(document.getElementById('alarmADXThreshold').value),
 
-        // Temel Koşullar
+        // Koşullar
         conditions: {
             volume: {
-                enabled: document.getElementById('alarmVolumeCondition').checked,
+                enabled: volumeEnabled,
                 period: parseInt(document.getElementById('alarmVolumePeriod').value),
                 multiplier: parseFloat(document.getElementById('alarmVolumeMultiplier').value)
             },
             macd: {
-                enabled: document.getElementById('alarmMacdCondition').checked,
+                enabled: macdEnabled,
                 signalType: document.getElementById('alarmMacdSignalType').value
             },
-            price: {
-                enabled: document.getElementById('alarmPriceCondition').checked,
-                percentage: parseFloat(document.getElementById('alarmPriceChange').value)
+            fibonacci: { // YENİ: Fibonacci koşulunu kaydet
+                enabled: document.getElementById('alarmFibCondition').checked
             }
         }
     };
@@ -1446,6 +1443,7 @@ async function saveAlarm() {
         showNotification("Alarm kaydedilemedi.", false);
     }
 }
+
         
         async function runBacktest(alarmId) {
             const alarm = userAlarms.find(a => a.id === alarmId);
@@ -1455,68 +1453,74 @@ async function saveAlarm() {
             const container = document.getElementById('backtest-results-container');
             container.innerHTML = `<div style="text-align: center; padding: 20px;"><div class="loading"></div></div>`;
             showPanel('backtestPanel');
+
             
-            try {
-                const runBacktestOnBackend = functions.httpsCallable('runBacktest');
-                const result = await runBacktestOnBackend({ alarm: alarm, coins: alarm.coins || cryptoPairs });
+        //... runBacktest fonksiyonu içinde
+try {
+    const runBacktestOnBackend = functions.httpsCallable('runBacktest');
+    // Artık sadece alarmı göndermek yeterli, backend coin listesini kendisi bulacak.
+    const result = await runBacktestOnBackend({ alarm: alarm });
+    
+    let resultsHTML = '';
+    const totalCandles = 1000; // Backend'de ayarlanan mum sayısı
+
+    for (const coin in result.data) {
+        const data = result.data[coin];
+        const successRate15m = (data.totalSignals > 0) ? ((data.positiveSignals_15m / data.totalSignals) * 100).toFixed(1) : "0";
+        const successRate1h = (data.totalSignals > 0) ? ((data.positiveSignals_1h / data.totalSignals) * 100).toFixed(1) : "0";
+        
+        // "Konuşkan Raporlama" için HTML oluşturma
+        let statsHTML = '';
+        if (alarm.conditions.volume?.enabled) {
+            statsHTML += `<p>Hacim Koşulu: <span class="value">${data.conditionStats.volumeMet} kez</span> (${((data.conditionStats.volumeMet / totalCandles) * 100).toFixed(1)}%)</p>`;
+        }
+        if (alarm.conditions.macd?.enabled) {
+            statsHTML += `<p>MACD Koşulu: <span class="value">${data.conditionStats.macdMet} kez</span> (${((data.conditionStats.macdMet / totalCandles) * 100).toFixed(1)}%)</p>`;
+        }
+        if (alarm.trendFilterEnabled) {
+             statsHTML += `<p>Trend Filtresi: <span class="value">${data.conditionStats.trendMet} kez</span> (${((data.conditionStats.trendMet / totalCandles) * 100).toFixed(1)}%)</p>`;
+        }
+        if (alarm.conditions.fibonacci?.enabled) {
+             statsHTML += `<p>Fibonacci Filtresi: <span class="value">${data.conditionStats.fibonacciMet} kez</span> (${((data.conditionStats.fibonacciMet / totalCandles) * 100).toFixed(1)}%)</p>`;
+        }
+
+
+        resultsHTML += `
+        <div class="backtest-card">
+            <h4 style="color:var(--text-primary); margin-bottom: 15px;">${coin.replace("USDT","")} Sonuçları (Toplam Sinyal: ${data.totalSignals})</h4>
+            <div class="backtest-results-grid">
                 
-                let resultsHTML = '';
-                for (const coin in result.data) {
-                    const data = result.data[coin];
-                    const successRate15m = (data.totalSignals > 0) ? ((data.positiveSignals_15m / data.totalSignals) * 100).toFixed(1) : 0;
-                    const successRate1h = (data.totalSignals > 0) ? ((data.positiveSignals_1h / data.totalSignals) * 100).toFixed(1) : 0;
-                    
-                    // YENİ: İki zaman dilimini de gösteren detaylı kart
-                    resultsHTML += `
-                    <div class="backtest-card">
-                        <h4 style="color:var(--text-primary); margin-bottom: 15px;">${coin.replace("USDT","")} Sonuçları (Sinyal Sayısı: ${data.totalSignals})</h4>
-                        <div class="backtest-results-grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
-                            
-                            <div>
-                                <h5 style="color: var(--accent-blue);">15 Dakika Sonrası</h5>
-                                <div class="backtest-card" style="padding:10px; margin-top:10px;">
-                                    <p>Başarı Oranı: <span class="value">${successRate15m}%</span></p>
-                                </div>
-                                <div class="backtest-card" style="padding:10px; margin-top:10px;">
-                                    <p>Ort. Getiri: <span class="value" style="color: ${data.averageReturn_15m > 0 ? 'var(--value-positive)' : 'var(--value-negative)'};">${data.averageReturn_15m}%</span></p>
-                                </div>
-                                <div class="backtest-card" style="padding:10px; margin-top:10px;">
-                                     <p>İyi/Kötü: 
-                                        <span class="value" style="color: var(--value-positive);">+${data.bestReturn_15m}%</span> / 
-                                        <span class="value" style="color: var(--value-negative);">${data.worstReturn_15m}%</span>
-                                     </p>
-                                </div>
-                            </div>
-
-                            <div>
-                                <h5 style="color: var(--accent-yellow);">1 Saat Sonrası</h5>
-                                 <div class="backtest-card" style="padding:10px; margin-top:10px;">
-                                    <p>Başarı Oranı: <span class="value">${successRate1h}%</span></p>
-                                </div>
-                                <div class="backtest-card" style="padding:10px; margin-top:10px;">
-                                    <p>Ort. Getiri: <span class="value" style="color: ${data.averageReturn_1h > 0 ? 'var(--value-positive)' : 'var(--value-negative)'};">${data.averageReturn_1h}%</span></p>
-                                </div>
-                                <div class="backtest-card" style="padding:10px; margin-top:10px;">
-                                     <p>İyi/Kötü: 
-                                        <span class="value" style="color: var(--value-positive);">+${data.bestReturn_1h}%</span> / 
-                                        <span class="value" style="color: var(--value-negative);">${data.worstReturn_1h}%</span>
-                                     </p>
-                                </div>
-                            </div>
-
+                <div class="backtest-card" style="grid-column: 1 / -1;">
+                    <div class="backtest-results-grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <h5 style="color: var(--accent-blue);">15 Dakika Sonrası</h5>
+                            <p>Başarı Oranı: <span class="value">${successRate15m}%</span></p>
+                            <p>Ort. Getiri: <span class="value" style="color: ${data.averageReturn_15m > 0 ? 'var(--value-positive)' : 'var(--value-negative)'};">${data.averageReturn_15m}%</span></p>
+                            <p>İyi/Kötü: <span class="value" style="color: var(--value-positive);">+${data.bestReturn_15m}%</span> / <span class="value" style="color: var(--value-negative);">${data.worstReturn_15m}%</span></p>
+                        </div>
+                        <div>
+                            <h5 style="color: var(--accent-yellow);">1 Saat Sonrası</h5>
+                            <p>Başarı Oranı: <span class="value">${successRate1h}%</span></p>
+                            <p>Ort. Getiri: <span class="value" style="color: ${data.averageReturn_1h > 0 ? 'var(--value-positive)' : 'var(--value-negative)'};">${data.averageReturn_1h}%</span></p>
+                            <p>İyi/Kötü: <span class="value" style="color: var(--value-positive);">+${data.bestReturn_1h}%</span> / <span class="value" style="color: var(--value-negative);">${data.worstReturn_1h}%</span></p>
                         </div>
                     </div>
-                    `;
-                }
+                </div>
 
-                container.innerHTML = resultsHTML || `<p style="text-align:center; color: var(--text-secondary);">Seçilen coinler için backtest sonucu bulunamadı.</p>`;
+                <div class="backtest-card" style="grid-column: 1 / -1;">
+                    <h5 style="color: #c56cf0;">Koşul İstatistikleri (~${totalCandles} Mumda)</h5>
+                    <div style="margin-top: 10px;">${statsHTML}</div>
+                    <small style="color: var(--text-secondary); display: block; margin-top: 10px;">Bu bölüm, hangi koşulun ne kadar sık sağlandığını gösterir. Eğer sinyal sayısı "0" ise, buradaki düşük yüzdeler hangi kuralın çok katı olduğunu anlamanıza yardımcı olabilir.</small>
+                </div>
 
-            } catch(error) {
-                console.error("Backtest hatası:", error);
-                container.innerHTML = `<p style="color:var(--accent-red)">Backtest çalıştırılırken bir hata oluştu: ${error.message}</p>`;
-            }
-        }
-        
+            </div>
+        </div>
+        `;
+    }
+
+    container.innerHTML = resultsHTML || `<p style="text-align:center; color: var(--text-secondary);">Seçilen strateji için son ~10 günde hiç sinyal bulunamadı. Lütfen koşulları daha az katı yapmayı deneyin.</p>`;
+
+} catch(error) { //...
         async function showAlarmStatus(alarmId) {
             const alarm = userAlarms.find(a => a.id === alarmId);
             if (!alarm) return;
