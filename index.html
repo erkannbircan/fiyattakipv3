@@ -216,7 +216,7 @@
         #backtest-results-container { display: flex; flex-direction: column; gap: 20px; }
 
 
-        @media (max-width: 768px) {
+    @media (max-width: 768px) {
             th, td { padding: 12px 6px; font-size: 0.85rem; }
             .app-header .header-left h1 { font-size: 1.4rem; }
             .add-asset-bar { flex-direction: column; }
@@ -226,6 +226,14 @@
             #alarmsListContainer { grid-template-columns: 1fr; }
             .alarm-rule-grid { grid-template-columns: 1fr; }
             .alarm-rule-grid input, .alarm-rule-grid select { justify-self: start; }
+            
+            /* --- YENİ EKLENEN MOBİL UYUMLULUK KODU --- */
+            #backtestPanel .backtest-results-grid {
+                grid-template-columns: 1fr; /* Kartları alt alta dizer */
+            }
+             #backtestPanel .backtest-card .backtest-results-grid {
+                grid-template-columns: 1fr; /* İç içe geçmiş gridleri de düzeltir */
+            }
         }
     </style>
 </head>
@@ -303,14 +311,30 @@
             <div id="crypto-ai-content" class="tab-content">
                 <div class="collapsible">
                     <div class="collapsible-header open"><span>Analiz Filtreleri</span><i class="fas fa-chevron-down"></i></div>
-                    <div class="collapsible-content open">
-                        <div class="interval-filters" id="cryptoIntervalFilters" style="margin-bottom: 20px;">
-                             <button class="interval-btn" data-interval="1h">1 Saat</button>
-                             <button class="interval-btn active" data-interval="4h">4 Saat</button>
-                             <button class="interval-btn" data-interval="1d">1 Gün</button>
+                <div class="collapsible-content open">
+                        <div class="settings-section">
+                            <h4>1. Analiz Zaman Dilimi</h4>
+                            <div class="interval-filters" id="cryptoIntervalFilters">
+                                 <button class="interval-btn" data-interval="1h">1 Saat</button>
+                                 <button class="interval-btn active" data-interval="4h">4 Saat</button>
+                                 <button class="interval-btn" data-interval="1d">1 Gün</button>
+                            </div>
                         </div>
-                        <div id="crypto-indicator-filters-grid" class="filters-grid"></div>
-                        <div class="analysis-actions">
+                        <div class="settings-section">
+                            <h4>2. Analiz Stratejisi Seçin</h4>
+                             <div class="pivot-filters" id="strategyPresetFilters">
+                                <button class="strategy-btn" data-preset="momentum" title="Kısa vadeli fiyat hareketlerinden faydalanır. (RSI, StochRSI, MACD)">⚡ Momentum</button>
+                                <button class="strategy-btn" data-preset="trend" title="Piyasanın genel yönünü takip eder. (EMA, SMA, Ichimoku)">🌊 Trend Takibi</button>
+                                <button class="strategy-btn" data-preset="volatility" title="Fiyat sıkışmalarını ve patlamalarını arar. (Bollinger, ATR)">💥 Volatilite</button>
+                                <button class="strategy-btn active" data-preset="all" title="Tüm temel indikatörleri kullanır.">🌐 Genel Bakış</button>
+                                <button class="strategy-btn" data-preset="custom" title="Aşağıdan kendi indikatörlerinizi seçin.">⚙️ Özel</button>
+                            </div>
+                        </div>
+                        <div class="settings-section" id="customIndicatorSection" style="display:none;">
+                            <h4>3. Özel İndikatör Seçimi</h4>
+                            <div id="crypto-indicator-filters-grid" class="filters-grid"></div>
+                        </div>
+                         <div class="analysis-actions">
                             <button id="updateCryptoAnalysisBtn"><i class="fas fa-check"></i> Analizi Güncelle</button>
                         </div>
                     </div>
@@ -563,6 +587,14 @@
     const functions = firebase.app().functions('europe-west1');
 
     // --- GLOBAL STATE ---
+    // --- STRATEJİ PRESETLERİ ---
+    const STRATEGY_PRESETS = {
+        momentum: { rsi: true, stochRsi: true, macd: true, volume: true },
+        trend: { ema: true, sma: true, ichimoku: true, macd: true },
+        volatility: { bollinger: true, atr: true, volume: true },
+        all: { rsi: true, macd: true, ema: true, bollinger: true, fibonacci: true },
+        custom: {} // Kullanıcının seçimine bırakır
+    };
     let currentUserRole = null, coinLimit = 10, settings = {}, autoRefreshTimer = null, pageInitialized = false;
     let allCryptoData = [], userAlarms = [];
     let currentSort = { key: null, order: 'default' };
@@ -1605,6 +1637,31 @@ async function runBacktest(alarmId) {
         });
 
         trackerPage.addEventListener('click', async (e) => {
+
+            const strategyBtn = e.target.closest('.strategy-btn');
+            if(strategyBtn) {
+                document.querySelector('#strategyPresetFilters button.active')?.classList.remove('active');
+                strategyBtn.classList.add('active');
+                
+                const preset = strategyBtn.dataset.preset;
+                const customIndicatorSection = document.getElementById('customIndicatorSection');
+                const indicatorCheckboxes = document.querySelectorAll(`#crypto-indicator-filters-grid input`);
+
+                if (preset === 'custom') {
+                    customIndicatorSection.style.display = 'block';
+                } else {
+                    customIndicatorSection.style.display = 'none';
+                    const activeIndicators = STRATEGY_PRESETS[preset];
+                    
+                    indicatorCheckboxes.forEach(checkbox => {
+                        const indicatorKey = checkbox.dataset.indicator;
+                        // `activeIndicators` içinde anahtar varsa (ve değeri true ise) `checked` yap, yoksa `false` yap.
+                        checkbox.checked = activeIndicators.hasOwnProperty(indicatorKey) && activeIndicators[indicatorKey];
+                    });
+                }
+                return;
+            }
+            
             const collapsibleHeader = e.target.closest('.collapsible-header');
             if (collapsibleHeader) { 
                 collapsibleHeader.classList.toggle('open'); 
