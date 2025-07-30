@@ -1546,7 +1546,7 @@ async function runBacktest(alarmId) {
                 console.error("Backtest hatası:", error);
                 container.innerHTML = `<p style="color:var(--accent-red)">Backtest çalıştırılırken bir hata oluştu: ${error.message}</p>`;
             }
-        } // <--- EKSİK OLAN KAPATMA PARANTEZİ BURADAYDI!
+        } // <--- EKSİK OLAN PARANTEZ BURAYA EKLENDİ!
         
         async function showAlarmStatus(alarmId) {
             const alarm = userAlarms.find(a => a.id === alarmId);
