@@ -235,7 +235,7 @@
                 grid-template-columns: 1fr; /* İç içe geçmiş gridleri de düzeltir */
             }
         }
-        /* --- YENİ EKLENEN MOBİL UYUMLULUK KODU --- */
+    /* --- YENİ EKLENEN KAPSAMLI MOBİL UYUMLULUK KODU --- */
         @media (max-width: 768px) {
             /* Madde 4: Genel sayfa kaymasını engellemek ve filtreleri düzenlemek */
             .tracker-container {
@@ -248,6 +248,20 @@
             .pivot-filters, .interval-filters {
                 display: grid; /* Butonların daha düzenli durmasını sağlar */
             }
+            
+            /* ---- TÜM POP-UP PENCERELER İÇİN GENEL KURAL ---- */
+            .panel {
+                width: 95vw !important; /* Tüm pop-up'ların genişliğini ekranın %95'i yap */
+                max-width: 95vw !important; /* Genişliği sabitle */
+            }
+
+            /* Madde 4: AI Yorumlama Pop-up'ı (#analysisPanel) için özel düzenleme */
+            #analysisPanel .analysis-grid {
+                grid-template-columns: 1fr; /* Analiz verilerini alt alta sırala */
+            }
+            #analysisPanel .panel-content {
+                padding: 15px; /* İç boşlukları azalt */
+            }
 
             /* Madde 6: Backtest sonuçları kartlarını ekrana sığdır */
             #backtestPanel .backtest-results-grid {
@@ -258,16 +272,18 @@
             }
 
             /* Madde 10: Alarm durumu pop-up'ını ekrana sığdır */
-            #alarmStatusPanel {
-                width: 95vw; /* Genişliği ekranın %95'i yap */
-                max-width: 500px; /* Maksimum genişliği sınırla */
-            }
             #alarmStatusPanel .status-table td {
                 padding: 8px 5px; /* Tablo içindeki boşlukları azalt */
                 font-size: 0.8rem;
-                white-space: normal; /* Uzun yazıların aşağı kaymasını sağla */
+                white-space: normal; /* Uzun yazıların bir alt satıra geçmesini sağla */
+                word-break: break-word; /* Çok uzun kelimeleri kır */
+            }
+            #alarmStatusPanel .table-wrapper {
+                 max-height: 350px; /* Tablonun dikeyde çok uzamasını engelle */
             }
         }
+     
+       
     </style>
 </head>
 <body>
@@ -1694,17 +1710,18 @@ async function runBacktest(alarmId) {
                 }
                 return;
             }
-      const collapsibleHeader = e.target.closest('.collapsible-header');
+  const collapsibleHeader = e.target.closest('.collapsible-header');
             if (collapsibleHeader) {
-                // Tıklanan başlığın kendisini ve ikonunu güncelleyelim
-                collapsibleHeader.classList.toggle('open');
-                
-                // Başlığın hemen altındaki içerik bölümünü bulalım
-                const content = collapsibleHeader.nextElementSibling;
-
-                // Eğer bu bir içerik bölümüyse, onu da açıp kapatalım
-                if (content && content.classList.contains('collapsible-content')) {
-                    content.classList.toggle('open');
+                // Tıklanan başlığın en yakınındaki ana ".collapsible" kutusunu bul
+                const parentCollapsible = collapsibleHeader.closest('.collapsible');
+                if (parentCollapsible) {
+                    // Bu kutunun içindeki içerik alanını bul
+                    const content = parentCollapsible.querySelector('.collapsible-content');
+                    if (content) {
+                        // Hem başlığın hem de içeriğin sınıflarını güncelle
+                        collapsibleHeader.classList.toggle('open');
+                        content.classList.toggle('open');
+                    }
                 }
                 return; // Başka bir işlem yapmadan çık
             }
