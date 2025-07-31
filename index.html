@@ -235,6 +235,39 @@
                 grid-template-columns: 1fr; /* İç içe geçmiş gridleri de düzeltir */
             }
         }
+        /* --- YENİ EKLENEN MOBİL UYUMLULUK KODU --- */
+        @media (max-width: 768px) {
+            /* Madde 4: Genel sayfa kaymasını engellemek ve filtreleri düzenlemek */
+            .tracker-container {
+                padding: 10px; /* Kenar boşluklarını azalt */
+            }
+            .filters-grid, .pivot-filters, .interval-filters {
+                grid-template-columns: 1fr 1fr; /* Filtreleri iki sütuna indirge */
+                gap: 10px;
+            }
+            .pivot-filters, .interval-filters {
+                display: grid; /* Butonların daha düzenli durmasını sağlar */
+            }
+
+            /* Madde 6: Backtest sonuçları kartlarını ekrana sığdır */
+            #backtestPanel .backtest-results-grid {
+                grid-template-columns: 1fr; /* Kartları alt alta dizer */
+            }
+             #backtestPanel .backtest-card .backtest-results-grid {
+                grid-template-columns: 1fr; /* İç içe geçmiş gridleri de düzeltir */
+            }
+
+            /* Madde 10: Alarm durumu pop-up'ını ekrana sığdır */
+            #alarmStatusPanel {
+                width: 95vw; /* Genişliği ekranın %95'i yap */
+                max-width: 500px; /* Maksimum genişliği sınırla */
+            }
+            #alarmStatusPanel .status-table td {
+                padding: 8px 5px; /* Tablo içindeki boşlukları azalt */
+                font-size: 0.8rem;
+                white-space: normal; /* Uzun yazıların aşağı kaymasını sağla */
+            }
+        }
     </style>
 </head>
 <body>
@@ -1661,15 +1694,19 @@ async function runBacktest(alarmId) {
                 }
                 return;
             }
-            
-            const collapsibleHeader = e.target.closest('.collapsible-header');
-            if (collapsibleHeader) { 
-                collapsibleHeader.classList.toggle('open'); 
+      const collapsibleHeader = e.target.closest('.collapsible-header');
+            if (collapsibleHeader) {
+                // Tıklanan başlığın kendisini ve ikonunu güncelleyelim
+                collapsibleHeader.classList.toggle('open');
+                
+                // Başlığın hemen altındaki içerik bölümünü bulalım
                 const content = collapsibleHeader.nextElementSibling;
-                if(content?.classList.contains('collapsible-content')) {
+
+                // Eğer bu bir içerik bölümüyse, onu da açıp kapatalım
+                if (content && content.classList.contains('collapsible-content')) {
                     content.classList.toggle('open');
                 }
-                return; 
+                return; // Başka bir işlem yapmadan çık
             }
 
             const tabLink = e.target.closest('.tab-link');
