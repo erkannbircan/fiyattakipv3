@@ -95,12 +95,6 @@
         .panel-controls { display: flex; gap: 10px; }
         .panel-btn { background: none; color: var(--text-secondary); cursor: pointer; border: none; font-size: 1.2rem; padding: 5px; }
         .panel-content { padding: 20px 30px; overflow-y: auto; flex-grow: 1; }
-        .collapsible { margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; }
-        .collapsible-header { padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; background-color: var(--bg-tertiary); }
-        .collapsible-header .fas { transition: transform 0.3s ease; }
-        .collapsible-header.open .fas { transform: rotate(180deg); }
-        .collapsible-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out, padding 0.4s ease; padding: 0 15px; background-color: var(--bg-secondary); }
-        .collapsible-content.open { max-height: 4000px; padding: 15px; border-top: 1px solid var(--border-color); }
         .notification { position: fixed; bottom: 25px; left: 25px; transform: translateX(-150%); background-color: var(--bg-tertiary); color: var(--text-primary); padding: 14px 25px; border-radius: 8px; z-index: 1003; border: 1px solid var(--border-color); opacity: 0; visibility: hidden; transition: all 0.4s ease; }
         .notification.show { opacity: 1; transform: translateX(0); visibility: visible; }
         .tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 25px; overflow-x: auto; }
@@ -250,36 +244,41 @@
             }
             
             /* ---- TÜM POP-UP PENCERELER İÇİN GENEL KURAL ---- */
+    /* --- NİHAİ VE GÜÇLÜ MOBİL UYUMLULUK KODU --- */
+        @media (max-width: 768px) {
+            /* Tüm pop-up pencereler için genel kural */
             .panel {
-                width: 95vw !important; /* Tüm pop-up'ların genişliğini ekranın %95'i yap */
-                max-width: 95vw !important; /* Genişliği sabitle */
+                width: 95vw !important;
+                max-width: 95vw !important;
+                padding: 0 !important;
+            }
+            .panel-header {
+                padding: 12px 15px !important;
+            }
+            .panel-content {
+                padding: 15px !important;
             }
 
-            /* Madde 4: AI Yorumlama Pop-up'ı (#analysisPanel) için özel düzenleme */
+            /* Madde 4: AI Yorumlama Pop-up'ı (#analysisPanel) */
             #analysisPanel .analysis-grid {
-                grid-template-columns: 1fr; /* Analiz verilerini alt alta sırala */
-            }
-            #analysisPanel .panel-content {
-                padding: 15px; /* İç boşlukları azalt */
+                grid-template-columns: 1fr !important; /* Tek sütuna indirge */
             }
 
-            /* Madde 6: Backtest sonuçları kartlarını ekrana sığdır */
+            /* Madde 6: Backtest sonuçları Pop-up'ı (#backtestPanel) */
             #backtestPanel .backtest-results-grid {
-                grid-template-columns: 1fr; /* Kartları alt alta dizer */
+                grid-template-columns: 1fr !important; /* Kartları alt alta diz */
             }
-             #backtestPanel .backtest-card .backtest-results-grid {
-                grid-template-columns: 1fr; /* İç içe geçmiş gridleri de düzeltir */
+            #backtestPanel .backtest-card .backtest-results-grid {
+                grid-template-columns: 1fr !important;
+            }
+            #backtestPanel .backtest-card {
+                padding: 10px;
             }
 
-            /* Madde 10: Alarm durumu pop-up'ını ekrana sığdır */
+            /* Madde 10: Alarm durumu Pop-up'ı (#alarmStatusPanel) */
             #alarmStatusPanel .status-table td {
-                padding: 8px 5px; /* Tablo içindeki boşlukları azalt */
-                font-size: 0.8rem;
-                white-space: normal; /* Uzun yazıların bir alt satıra geçmesini sağla */
-                word-break: break-word; /* Çok uzun kelimeleri kır */
-            }
-            #alarmStatusPanel .table-wrapper {
-                 max-height: 350px; /* Tablonun dikeyde çok uzamasını engelle */
+                white-space: normal !important; /* Yazıların alt satıra kaymasını sağla */
+                word-break: break-word !important; /* Uzun kelimeleri kır */
             }
         }
      
@@ -561,9 +560,9 @@
                  <input type="checkbox" id="alarmPriceCondition" style="display: none;">
             </div>
         </div>
-        <div class="collapsible">
-            <div class="collapsible-header"><span>3. Gelişmiş Filtreler (Opsiyonel)</span><i class="fas fa-chevron-down"></i></div>
-            <div class="collapsible-content">
+         <div>
+            <h5 style="margin-top: 20px; margin-bottom: 15px; color: var(--text-secondary);">3. Gelişmiş Filtreler (Opsiyonel)</h5>
+            <div>
                 <div style="padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 15px;">
                      <label class="filter-item" title="Sinyalin sadece piyasada belirli bir güçte trend varken çalışmasını sağlar. Kararsız piyasalardaki hatalı sinyalleri filtreler.">
                         <input type="checkbox" id="alarmTrendFilterEnabled">
