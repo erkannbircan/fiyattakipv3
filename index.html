@@ -281,6 +281,20 @@
                 word-break: break-word !important; /* Uzun kelimeleri kır */
             }
         }
+            /* --- AI Analiz Paneli Tasarım Güncellemesi --- */
+        #analysisPanel .panel-content {
+            max-height: 80vh; /* Panelin yüksekliğini ekranın %80'i ile sınırla */
+            overflow-y: auto; /* Yükseklik aşılırsa kaydırma çubuğu ekle */
+        }
+        
+        /* Masaüstü için çoklu sütun görünümü (ekran 768px'den büyükse) */
+        @media (min-width: 769px) {
+            #analysisPanel .panel-content {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); /* Esnek sütunlar */
+                gap: 20px;
+            }
+        }
      
        
     </style>
