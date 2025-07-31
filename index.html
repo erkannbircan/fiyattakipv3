@@ -1619,53 +1619,51 @@ async function runBacktest(alarmId) {
             }
         } // <--- EKSİK OLAN PARANTEZ BURAYA EKLENDİ!
         
-        async function showAlarmStatus(alarmId) {
+       async function showAlarmStatus(alarmId) {
             const alarm = userAlarms.find(a => a.id === alarmId);
             if (!alarm) return;
             
-            const coinToCheck = (alarm.coins && alarm.coins.length > 0) ? alarm.coins[0] : cryptoPairs[0];
-            if (!coinToCheck) {
-                showNotification("Alarmda veya ana listede kontrol edilecek coin bulunamadı.", false);
-                return;
-            }
-
             const panelContent = document.getElementById('alarmStatusContent');
-            document.getElementById('alarmStatusTitle').textContent = `${coinToCheck.replace("USDT", "")} için "${alarm.name}" Durumu`;
+            document.getElementById('alarmStatusTitle').textContent = `"${alarm.name}" Anlık Durumu`;
             panelContent.innerHTML = '<div style="text-align:center; padding: 40px;"><div class="loading" style="width:30px; height:30px;"></div></div>';
             showPanel('alarmStatusPanel');
 
             try {
                 const checkAlarmStatus = functions.httpsCallable('checkAlarmStatus');
-                const result = await checkAlarmStatus({ alarm, coin: coinToCheck });
-                const { currentStatus, historicalTriggers } = result.data;
+                const result = await checkAlarmStatus({ alarm }); // Sadece alarm objesini gönder
+                const { statuses } = result.data;
 
-                let contentHTML = `<h4><i class="fas fa-clock"></i> Anlık Değerler (Son Kapanan Mum)</h4>`;
-                contentHTML += `<table class="status-table">
-                    <tr><td>Fiyat Değişimi (15dk)</td><td style="color:${currentStatus.priceChange >= 0 ? 'var(--value-positive)' : 'var(--value-negative)'}">${currentStatus.priceChange.toFixed(2)}%</td></tr>
-                    <tr><td>Son Mum Hacmi</td><td>${formatVolume(currentStatus.currentVolume)}</td></tr>
-                    <tr><td>Ortalama Hacim (${alarm.conditions.volume.period} Mum)</td><td>${formatVolume(currentStatus.avgVolume)}</td></tr>
-                    <tr><td>Hacim Oranı</td><td style="font-weight:bold; color:${currentStatus.volumeRatio > alarm.conditions.volume.multiplier ? 'var(--value-positive)' : ''}">${currentStatus.volumeRatio.toFixed(2)}x</td></tr>
-                    <tr><td>MACD Histogram</td><td style="color:${currentStatus.currentMacd.histogram >= 0 ? 'var(--value-positive)' : 'var(--value-negative)'}">${currentStatus.currentMacd.histogram.toFixed(6)}</td></tr>
-                </table>`;
+                let contentHTML = '<div class="indicator-cards-container" style="padding-top:0;">'; // Kart yapısını kullanalım
 
-                contentHTML += `<h4 style="margin-top: 25px;"><i class="fas fa-history"></i> Geçmiş Tetiklenmeler</h4>`;
-                if (historicalTriggers.length > 0) {
-                     // YENİ: İki farklı zaman dilimi için başlıklar
-                     contentHTML += `<div class="table-wrapper" style="max-height: 250px;"><table><thead>
-                        <tr><th>Tarih</th><th>Fiyat</th><th>Değişim (15dk)</th><th>Değişim (1s)</th></tr>
-                     </thead><tbody>`;
-                     historicalTriggers.forEach(trigger => {
-                         contentHTML += `<tr>
-                            <td>${trigger.timestamp}</td>
-                            <td>${formatPrice(trigger.price)}</td>
-                            <td style="color:${trigger.pctChange_15m >= 0 ? 'var(--value-positive)' : 'var(--value-negative)'}">${trigger.pctChange_15m.toFixed(2)}%</td>
-                            <td style="color:${trigger.pctChange_1h >= 0 ? 'var(--value-positive)' : 'var(--value-negative)'}">${trigger.pctChange_1h.toFixed(2)}%</td>
-                         </tr>`;
-                     });
-                     contentHTML += `</tbody></table></div>`;
-                } else {
-                    contentHTML += `<p style="color:var(--text-secondary); margin-top: 10px;">Son 1000 mum içinde bu alarm hiç tetiklenmedi.</p>`;
-                }
+                statuses.forEach(item => {
+                    if (item.error) {
+                        contentHTML += `<div class="indicator-card"><h4>${item.coin.replace("USDT", "")}</h4><p style="color:var(--accent-red)">Durum alınamadı: ${item.error}</p></div>`;
+                        return;
+                    }
+                    
+                    const renderStatus = (label, isMet) => {
+                        const icon = isMet ? '<i class="fas fa-check-circle" style="color: var(--value-positive);"></i>' : '<i class="fas fa-times-circle" style="color: var(--value-negative);"></i>';
+                        const text = isMet ? 'SAĞLANDI' : 'BEKLENİYOR';
+                        return `<div class="indicator-item"><span class="label">${label}</span><span class="value">${icon} ${text}</span></div>`;
+                    };
+
+                    contentHTML += `
+                        <div class="indicator-card">
+                            <div class="indicator-card-header" style="margin-bottom: 10px; padding-bottom: 10px;">
+                                <h4>${item.coin.replace("USDT", "")}</h4>
+                                <span style="font-size: 1.1rem; font-weight: 600;">$${formatPrice(item.currentPrice)}</span>
+                            </div>
+                            <div class="indicator-details-grid" style="gap: 10px;">
+                                ${alarm.conditions.volume?.enabled ? renderStatus('Hacim Artışı', item.status.volume) : ''}
+                                ${alarm.conditions.macd?.enabled ? renderStatus('MACD Kesişimi', item.status.macd) : ''}
+                                ${alarm.trendFilterEnabled ? renderStatus('Güçlü Trend', item.status.trend) : ''}
+                                ${alarm.conditions.fibonacci?.enabled ? renderStatus('Fibonacci Destek', item.status.fibonacci) : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                contentHTML += '</div>';
                 panelContent.innerHTML = contentHTML;
 
             } catch (error) {
@@ -1673,7 +1671,6 @@ async function runBacktest(alarmId) {
                 panelContent.innerHTML = `<p style="color:var(--accent-red); text-align:center;">Durum bilgisi alınamadı: ${error.message}</p>`;
             }
         }
-
 
         // --- EVENT LISTENERS ---
         document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); auth.signOut(); });
