@@ -596,10 +596,12 @@
             </div>
         </div>
 
-         <div class="pivot-dictionary" style="font-size: 0.85rem; line-height: 1.5; margin-top: 20px;">
-            <h5><i class="fas fa-info-circle"></i> Nasıl Çalışır?</h5>
-            <p>Sistem, belirlediğiniz koşulların **hepsi aynı anda** gerçekleştiğinde alarm gönderir. Sadece tek bir koşul seçerek (örneğin sadece Hacim Artışı) basit bir alarm kurabilirsiniz.</p>
-            <p><span>Gelişmiş Filtreler:</span> Bunlar opsiyoneldir. Eğer bir filtreyi aktif ederseniz, alarmın tetiklenmesi için hem ana koşulların hem de filtrenin sağlanması gerekir. Bu, hatalı sinyal olasılığını azaltır.</p>
+        <div class="pivot-dictionary" style="font-size: 0.85rem; line-height: 1.6; margin-top: 20px;">
+            <h5><i class="fas fa-info-circle"></i> Filtre Açıklamaları</h5>
+            <p><strong>Hacim Artışı:</strong> Belirlenen periyottaki (örn: son 20 mum) ortalama işlem hacminin, belirlediğiniz kat kadar (örn: 2 kat) üzerine çıkan ani hacim patlamalarını yakalar. Güçlü bir hareketin başlangıcı olabilir.</p>
+            <p><strong>MACD Kesişimi:</strong> İki hareketli ortalama arasındaki ilişkiyi ölçer. "Al" sinyali, momentumun pozitife döndüğünü; "Sat" sinyali ise negatife döndüğünü gösterir. Trend dönüşlerini yakalamak için kullanılır.</p>
+            <p><strong>Güçlü Trend Filtresi (ADX):</strong> Piyasanın yönlü bir trend içinde olup olmadığını (yatay ve kararsız olmadığını) kontrol eder. ADX değeri ne kadar yüksekse, trend o kadar güçlüdür. Bu filtre, kararsız piyasadaki hatalı sinyalleri engellemeye yardımcı olur.</p>
+            <p><strong>Fibonacci 0.618 Desteğini Onayla:</strong> Fibonacci analizinde 0.618 seviyesi, bir düşüşün son bulabileceği ve yükselişin devam edebileceği "altın oran" olarak kabul edilen çok güçlü bir destek seviyesidir. Bu filtre, sinyalin bu kritik desteğin üzerinde gelmesini sağlayarak düşüş riskini azaltır.</p>
          </div>
          <div class="button-group" style="margin-top:20px;">
             <button id="testAlarmBtn" style="background-color: #373c4a;"><i class="fab fa-telegram-plane"></i> Test Et</button>
@@ -1571,7 +1573,14 @@ async function runBacktest(alarmId) {
                     if (alarm.conditions.fibonacci?.enabled) {
                          statsHTML += `<p>Fibonacci Filtresi: <span class="value">${data.conditionStats.fibonacciMet} kez</span> (${((data.conditionStats.fibonacciMet / totalCandles) * 100).toFixed(1)}%)</p>`;
                     }
-
+                    // ADX verisi varsa ortalamasını alıp gösterelim
+                    let adxInfo = '';
+                    if (data.signalDetails && data.signalDetails.length > 0) {
+                        // Örnek: " (Ort. ADX: 27.5)" gibi bir metin oluştur
+                        const adxValues = data.signalDetails.map(d => parseFloat(d.adx.match(/(\d+\.\d+)/)[0]));
+                        const avgAdx = adxValues.reduce((a, b) => a + b, 0) / adxValues.length;
+                        adxInfo = ` (Ort. ADX: ${avgAdx.toFixed(1)})`;
+                    }
                     resultsHTML += `
                     <div class="backtest-card">
                         <h4 style="color:var(--text-primary); margin-bottom: 15px;">${coin.replace("USDT","")} Sonuçları (Toplam Sinyal: ${data.totalSignals})</h4>
