@@ -806,6 +806,7 @@
                     await initializeTrackerPage(userData);
                 }
                 showPage('tracker-page');
+                updateAdminUI();
 
             } catch (err) {
                 console.error("Auth/Firestore Error:", err);
@@ -825,7 +826,6 @@
         const limits = { admin: {coin: Infinity}, qualified: {coin: 20}, new_user: {coin: 10} };
         coinLimit = limits[currentUserRole]?.coin ?? 10;
         document.getElementById('userEmail').textContent = auth.currentUser.email;
-        updateAdminUI();
     }
 
     function updateAdminUI() {
