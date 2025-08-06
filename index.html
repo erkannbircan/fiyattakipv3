@@ -2118,55 +2118,6 @@
                 }
             });
             
-            document.getElementById('updateCryptoAnalysisBtn').addEventListener('click', () => updateAnalysisSettings('crypto'));
-            document.getElementById('analyzeAllCryptoBtn').addEventListener('click', () => getGeminiAnalysis('crypto'));
-            document.getElementById('crypto-indicator-cards-container').addEventListener('click', (e) => {
-                const target = e.target.closest('.ai-btn');
-                if (target) getGeminiAnalysis(target.dataset.type, target.dataset.pair);
-            });
-            
-            document.getElementById('saveAlarmBtn').addEventListener('click', saveAlarm);
-            document.getElementById('addCoinToAlarmBtn').addEventListener('click', () => {
-                const input = document.getElementById('addCoinToAlarmInput');
-                const newCoins = input.value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
-                newCoins.forEach(coinSymbol => {
-                    const newPair = coinSymbol.endsWith('USDT') ? coinSymbol : coinSymbol + 'USDT';
-                    if (newPair && !tempAlarmCoins.includes(newPair)) {
-                        tempAlarmCoins.push(newPair);
-                    }
-                });
-                renderAlarmCoinTags();
-                input.value = '';
-            });
-            document.getElementById('alarmCoinSelectionGrid').addEventListener('click', (e) => {
-                if(e.target.classList.contains('remove-coin-tag')) {
-                    const coinToRemove = e.target.dataset.coin;
-                    tempAlarmCoins = tempAlarmCoins.filter(c => c !== coinToRemove);
-                    renderAlarmCoinTags();
-                }
-            });
-            document.getElementById('testAlarmBtn').addEventListener('click', async (e) => {
-                const btn = e.currentTarget;
-                const chatId = document.getElementById('telegramPhoneInput').value;
-                if(!chatId) {
-                    showNotification("Lütfen önce Ayarlar'dan Telegram Chat ID'nizi kaydedin.", false);
-                    return;
-                }
-                showLoading(btn);
-                try {
-                    const sendTestNotification = functions.httpsCallable('sendTestNotification');
-                    await sendTestNotification({ chatId: chatId });
-                    showNotification("Test bildirimi başarıyla gönderildi!", true);
-                } catch (error) {
-                    console.error("Test bildirimi hatası:", error);
-                    showNotification(`Bildirim gönderilemedi: ${error.message}`, false);
-                } finally {
-                    hideLoading(btn);
-                }
-            });
-
-            document.getElementById('portfolioSelect').addEventListener('change', (e) => setActivePortfolio(e.target.value));
-
             document.getElementById('savePortfolioBtn').addEventListener('click', async () => {
                 const action = document.getElementById('portfolioActionInput').value;
                 const newName = document.getElementById('portfolioNameInput').value.trim();
@@ -2201,26 +2152,7 @@
                 document.getElementById('fibValue2Container').style.display = (e.target.value === 'between') ? 'block' : 'none';
             });
 
-            sortableInstance = new Sortable(document.getElementById('cryptoPriceTable'), {
-                handle: '.drag-handle',
-                animation: 150,
-                onEnd: (evt) => {
-                    const [movedItem] = userPortfolios[activePortfolio].splice(evt.oldIndex, 1);
-                    userPortfolios[activePortfolio].splice(evt.newIndex, 0, movedItem);
-                    savePortfoliosToFirestore();
-                }
-            });
-
-            sortableInstanceAi = new Sortable(document.getElementById('cryptoAiPriceTable'), {
-                handle: '.drag-handle',
-                animation: 150,
-                onEnd: (evt) => {
-                    const [movedItem] = cryptoAiPairs.splice(evt.oldIndex, 1);
-                    cryptoAiPairs.splice(evt.newIndex, 0, movedItem);
-                    if (userDocRef) { userDocRef.update({ coins_ai: cryptoAiPairs }); }
-                }
-            });
-            
+            // --- INITIAL RENDER ---
             renderIndicatorFilters();
             renderDictionary();
             renderAlarms();
