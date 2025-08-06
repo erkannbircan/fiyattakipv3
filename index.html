@@ -780,6 +780,19 @@
     document.getElementById('loginBtn').addEventListener('click', () => auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).catch(err => document.getElementById("error-message").textContent = err.message));
     document.getElementById('signupBtn').addEventListener('click', () => auth.createUserWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).catch(err => document.getElementById("error-message").textContent = err.message));
     
+    function setRoleAndLimits(role) {
+        currentUserRole = role;
+        const limits = { admin: {coin: Infinity}, qualified: {coin: 20}, new_user: {coin: 10} };
+        coinLimit = limits[currentUserRole]?.coin ?? 10;
+        document.getElementById('userEmail').textContent = auth.currentUser.email;
+    }
+
+    function updateAdminUI() {
+        const isAdmin = currentUserRole === 'admin';
+        document.getElementById('analyzeAllCryptoBtn').style.display = isAdmin ? 'flex' : 'none';
+        document.getElementById('alarms-tab').style.display = isAdmin ? 'block' : 'none';
+    }
+
     auth.onAuthStateChanged(async user => {
         if (user) {
             userDocRef = db.collection('users').doc(user.uid);
@@ -806,7 +819,7 @@
                     await initializeTrackerPage(userData);
                 }
                 showPage('tracker-page');
-                updateAdminUI();
+                updateAdminUI(); // Doğru yer burası
 
             } catch (err) {
                 console.error("Auth/Firestore Error:", err);
@@ -820,19 +833,6 @@
             if(autoRefreshTimer) clearInterval(autoRefreshTimer);
         }
     });
-
-    function setRoleAndLimits(role) {
-        currentUserRole = role;
-        const limits = { admin: {coin: Infinity}, qualified: {coin: 20}, new_user: {coin: 10} };
-        coinLimit = limits[currentUserRole]?.coin ?? 10;
-        document.getElementById('userEmail').textContent = auth.currentUser.email;
-    }
-
-    function updateAdminUI() {
-        const isAdmin = currentUserRole === 'admin';
-        document.getElementById('analyzeAllCryptoBtn').style.display = isAdmin ? 'flex' : 'none';
-        document.getElementById('alarms-tab').style.display = isAdmin ? 'block' : 'none';
-    }
     
     async function initializeTrackerPage(userData) {
         pageInitialized = true;
@@ -1617,7 +1617,14 @@
             document.getElementById('alarmMacdSignalType').value = conditions.macd?.signalType ?? 'buy';
             document.getElementById('alarmTrendFilterEnabled').checked = alarm?.trendFilterEnabled ?? false;
             document.getElementById('alarmADXThreshold').value = alarm?.adxThreshold || 25;
-            document.getElementById('alarmFibCondition').checked = conditions.fibonacci?.enabled ?? false;
+
+            const fibCond = conditions.fibonacci || {};
+            document.getElementById('alarmFibCondition').checked = fibCond.enabled ?? false;
+            document.getElementById('alarmFibOperator').value = fibCond.operator || 'above';
+            document.getElementById('alarmFibValue1').value = fibCond.values?.[0] || '618';
+            document.getElementById('alarmFibValue2').value = fibCond.values?.[1] || '500';
+
+            document.getElementById('fibValue2Container').style.display = (document.getElementById('alarmFibOperator').value === 'between') ? 'block' : 'none';
             showPanel('alarmSettingsPanel');
         }
 
@@ -1637,6 +1644,12 @@
                 return;
             }
             
+            const fibOperator = document.getElementById('alarmFibOperator').value;
+            let fibValues = [document.getElementById('alarmFibValue1').value];
+            if (fibOperator === 'between') {
+                fibValues.push(document.getElementById('alarmFibValue2').value);
+            }
+
             const newAlarm = {
                 id: alarmId || `alarm_${new Date().getTime()}`,
                 name: alarmName,
@@ -1657,7 +1670,9 @@
                         signalType: document.getElementById('alarmMacdSignalType').value
                     },
                     fibonacci: {
-                        enabled: document.getElementById('alarmFibCondition').checked
+                        enabled: document.getElementById('alarmFibCondition').checked,
+                        operator: fibOperator,
+                        values: fibValues
                     }
                 }
             };
@@ -1812,7 +1827,7 @@
                                 ${renderStatus('Hacim Tutarı', item.status.volumeAmount, alarm.conditions.volume?.enabled && alarm.conditions.volume?.amount > 0)}
                                 ${renderStatus('MACD Kesişimi', item.status.macd, alarm.conditions.macd?.enabled)}
                                 ${renderStatus('Güçlü Trend', item.status.trend, alarm.trendFilterEnabled)}
-                                ${renderStatus('Fibonacci Destek', item.status.fibonacci, alarm.conditions.fibonacci?.enabled)}
+                                ${renderStatus('Fibonacci', item.status.fibonacci, alarm.conditions.fibonacci?.enabled)}
                             </div>
                         </div>
                     `;
@@ -1863,108 +1878,253 @@
             }
             sortAndRenderTable();
         });
-// openAlarmPanel ve saveAlarm fonksiyonlarını güncelle
-        function openAlarmPanel(alarm = null) {
-            document.getElementById('alarmIdInput').value = alarm ? alarm.id : '';
-            document.getElementById('alarmNameInput').value = alarm ? alarm.name : '';
-            document.getElementById('alarmPanelTitle').textContent = alarm ? 'Alarmı Düzenle' : 'Yeni Alarm Oluştur';
-            
-            tempAlarmCoins = alarm && alarm.coins && alarm.coins.length > 0 ? [...alarm.coins] : [...userPortfolios[activePortfolio]];
-            renderAlarmCoinTags();
 
-            const isNewAlarm = !alarm;
-            const conditions = alarm?.conditions || {};
+        trackerPage.addEventListener('click', async (e) => {
+            // Sinyal Analizini Çalıştırma
+            if (e.target.closest('#runSignalAnalysisBtn')) {
+                const btn = e.target.closest('#runSignalAnalysisBtn');
+                showLoading(btn);
 
-            document.getElementById('alarmTimeframe').value = alarm?.timeframe || '15m';
-            document.getElementById('alarmVolumeCondition').checked = conditions.volume?.enabled ?? isNewAlarm;
-            document.getElementById('alarmVolumePeriod').value = conditions.volume?.period ?? 20;
-            document.getElementById('alarmVolumeMultiplier').value = conditions.volume?.multiplier ?? 2;
-            document.getElementById('alarmVolumeAmount').value = conditions.volume?.amount ?? 0;
-            document.getElementById('alarmMacdCondition').checked = conditions.macd?.enabled ?? isNewAlarm;
-            document.getElementById('alarmMacdSignalType').value = conditions.macd?.signalType ?? 'buy';
-            document.getElementById('alarmTrendFilterEnabled').checked = alarm?.trendFilterEnabled ?? false;
-            document.getElementById('alarmADXThreshold').value = alarm?.adxThreshold || 25;
+                const coinInput = document.getElementById('signalAnalysisCoins').value;
+                const coins = coinInput.split(',').map(s => s.trim().toUpperCase()).filter(Boolean).map(s => s.endsWith('USDT') ? s : s + 'USDT');
+                
+                if(coins.length === 0) {
+                    showNotification("Lütfen en az bir coin girin.", false);
+                    hideLoading(btn);
+                    return;
+                }
 
-            // Yeni Fibonacci Arayüzünü Doldurma
-            const fibCond = conditions.fibonacci || {};
-            document.getElementById('alarmFibCondition').checked = fibCond.enabled ?? false;
-            document.getElementById('alarmFibOperator').value = fibCond.operator || 'above';
-            document.getElementById('alarmFibValue1').value = fibCond.values?.[0] || '618';
-            document.getElementById('alarmFibValue2').value = fibCond.values?.[1] || '500';
+                const params = {
+                    coins: coins,
+                    timeframe: document.getElementById('signalAnalysisTimeframe').value,
+                    changePercent: parseFloat(document.getElementById('signalAnalysisChange').value),
+                    direction: document.getElementById('signalAnalysisDirection').value,
+                    days: parseInt(document.getElementById('signalAnalysisPeriod').value)
+                };
 
-            // "Arasında" seçiliyse ikinci inputu göster
-            document.getElementById('fibValue2Container').style.display = (document.getElementById('alarmFibOperator').value === 'between') ? 'block' : 'none';
+                const resultContainer = document.getElementById('signalAnalysisResultContainer');
+                resultContainer.innerHTML = '<div class="loading" style="margin: 20px auto; display:block;"></div>';
 
-            showPanel('alarmSettingsPanel');
-        }
-
-        async function saveAlarm() {
-            const alarmId = document.getElementById('alarmIdInput').value;
-            const alarmName = document.getElementById('alarmNameInput').value;
-            if (!alarmName) {
-                showNotification("Alarm adı boş bırakılamaz.", false);
+                try {
+                    const findSignalDNA = functions.httpsCallable('findSignalDNA');
+                    const result = await findSignalDNA(params);
+                    const data = result.data;
+                    
+                    let html = '';
+                    for(const coin in data) {
+                        const res = data[coin];
+                        html += `<div class="backtest-card" style="margin-bottom:15px;"><h4>${coin.replace("USDT","")} Analiz Sonuçları</h4>`;
+                        if(res.error) {
+                            html += `<p style="color:var(--accent-red)">Hata: ${res.error}</p>`;
+                        } else if(res.totalEvents === 0) {
+                            html += `<p>Belirtilen koşullarda (${params.direction === 'up' ? '+' : '-'}${params.changePercent}%) hiç olay bulunamadı.</p>`;
+                        } else {
+                            html += `
+                                <p>Bu koşul, son ${params.days} günde <strong>${res.totalEvents}</strong> kez gerçekleşti.</p>
+                                <p>Sinyal sonrası ortalama performans:</p>
+                                <ul style="font-size: 0.9rem; padding-left: 20px;">
+                                    <li>1 periyot sonra: <strong style="color: ${res.avgReturn1 > 0 ? 'var(--value-positive)' : 'var(--value-negative)'};">${res.avgReturn1.toFixed(2)}%</strong></li>
+                                    <li>4 periyot sonra: <strong style="color: ${res.avgReturn4 > 0 ? 'var(--value-positive)' : 'var(--value-negative)'};">${res.avgReturn4.toFixed(2)}%</strong> (Başarı: %${res.winRate4.toFixed(0)})</li>
+                                </ul>
+                                <div style="border-top: 1px solid var(--border-color); padding-top:10px; margin-top:10px;">
+                                    <strong>💡 Erken Yakalama Tavsiyesi:</strong><br>
+                                    Bu büyük hareketler olmadan hemen önce, MACD histogram değeri ortalama <strong>${res.avgMomentumHisto.toFixed(6)}</strong> seviyesindeydi.
+                                    Yükselişi erken yakalamak için bir MACD alarmı kurarken, histogramın bu değere yaklaştığı veya bu değeri geçtiği anı (örneğin sıfır çizgisini geçtiği anı) bir tetikleyici olarak kullanmak, başarı şansınızı artırabilir.
+                                </div>
+                            `;
+                        }
+                        html += `</div>`;
+                    }
+                    resultContainer.innerHTML = html;
+                } catch (error) {
+                    console.error("Sinyal analizi hatası:", error);
+                    resultContainer.innerHTML = `<p style="color:var(--accent-red)">Analiz sırasında bir hata oluştu: ${error.message}</p>`;
+                } finally {
+                    hideLoading(btn);
+                }
                 return;
             }
 
-            const volumeEnabled = document.getElementById('alarmVolumeCondition').checked;
-            const macdEnabled = document.getElementById('alarmMacdCondition').checked;
-
-            if (!volumeEnabled && !macdEnabled) {
-                showNotification("En az bir alarm koşulu (Hacim veya MACD) seçmelisiniz.", false);
+            // GÜNCELLENDİ: Portföy yönetimi
+            if (e.target.closest('#newPortfolioBtn')) {
+                document.getElementById('portfolioModalTitle').textContent = 'Yeni Liste Oluştur';
+                document.getElementById('portfolioModalLabel').textContent = 'Yeni Listenin Adı';
+                document.getElementById('portfolioNameInput').value = '';
+                document.getElementById('portfolioActionInput').value = 'new';
+                document.getElementById('portfolio-error-message').textContent = '';
+                showPanel('portfolioModal');
                 return;
             }
-            
-            // Yeni Fibonacci verilerini topla
-            const fibOperator = document.getElementById('alarmFibOperator').value;
-            let fibValues = [document.getElementById('alarmFibValue1').value];
-            if (fibOperator === 'between') {
-                fibValues.push(document.getElementById('alarmFibValue2').value);
+            if (e.target.closest('#renamePortfolioBtn')) {
+                document.getElementById('portfolioModalTitle').textContent = 'Listeyi Yeniden Adlandır';
+                document.getElementById('portfolioModalLabel').textContent = 'Yeni Ad';
+                document.getElementById('portfolioNameInput').value = activePortfolio;
+                document.getElementById('portfolioActionInput').value = 'rename';
+                document.getElementById('originalPortfolioNameInput').value = activePortfolio;
+                document.getElementById('portfolio-error-message').textContent = '';
+                showPanel('portfolioModal');
+                return;
+            }
+            if (e.target.closest('#deletePortfolioBtn')) {
+                if (Object.keys(userPortfolios).length <= 1) {
+                    showNotification("Son listeyi silemezsiniz!", false);
+                    return;
+                }
+                if (confirm(`"${activePortfolio}" listesini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
+                    delete userPortfolios[activePortfolio];
+                    const newActive = Object.keys(userPortfolios)[0];
+                    await setActivePortfolio(newActive);
+                    savePortfoliosToFirestore();
+                    showNotification(`"${activePortfolio}" listesi silindi.`, true);
+                }
+                return;
             }
 
-            const newAlarm = {
-                id: alarmId || `alarm_${new Date().getTime()}`,
-                name: alarmName,
-                coins: tempAlarmCoins,
-                isActive: alarmId ? (userAlarms.find(a => a.id === alarmId)?.isActive ?? true) : true,
-                timeframe: document.getElementById('alarmTimeframe').value,
-                trendFilterEnabled: document.getElementById('alarmTrendFilterEnabled').checked,
-                adxThreshold: parseInt(document.getElementById('alarmADXThreshold').value),
-                conditions: {
-                    volume: {
-                        enabled: volumeEnabled,
-                        period: parseInt(document.getElementById('alarmVolumePeriod').value),
-                        multiplier: parseFloat(document.getElementById('alarmVolumeMultiplier').value),
-                        amount: parseFloat(document.getElementById('alarmVolumeAmount').value) || 0
-                    },
-                    macd: {
-                        enabled: macdEnabled,
-                        signalType: document.getElementById('alarmMacdSignalType').value
-                    },
-                    fibonacci: {
-                        enabled: document.getElementById('alarmFibCondition').checked,
-                        operator: fibOperator,
-                        values: fibValues
+            const strategyBtn = e.target.closest('.strategy-btn');
+            if(strategyBtn) {
+                document.querySelector('#strategyPresetFilters button.active')?.classList.remove('active');
+                strategyBtn.classList.add('active');
+                
+                const preset = strategyBtn.dataset.preset;
+                const customIndicatorSection = document.getElementById('customIndicatorSection');
+                const indicatorCheckboxes = document.querySelectorAll(`#crypto-indicator-filters-grid input`);
+
+                if (preset === 'custom') {
+                    customIndicatorSection.style.display = 'block';
+                } else {
+                    customIndicatorSection.style.display = 'none';
+                    const activeIndicators = STRATEGY_PRESETS[preset];
+                    
+                    indicatorCheckboxes.forEach(checkbox => {
+                        const indicatorKey = checkbox.dataset.indicator;
+                        checkbox.checked = activeIndicators.hasOwnProperty(indicatorKey) && activeIndicators[indicatorKey];
+                    });
+                }
+                return;
+            }
+            const collapsibleHeader = e.target.closest('.collapsible-header');
+            if (collapsibleHeader) {
+                const parentCollapsible = collapsibleHeader.closest('.collapsible');
+                if (parentCollapsible) {
+                    const content = parentCollapsible.querySelector('.collapsible-content');
+                    if (content) {
+                        collapsibleHeader.classList.toggle('open');
+                        content.classList.toggle('open');
                     }
                 }
-            };
-
-            if (alarmId) {
-                userAlarms = userAlarms.map(a => a.id === alarmId ? newAlarm : a);
-            } else {
-                userAlarms.push(newAlarm);
+                return;
             }
 
-            try {
-                await userDocRef.update({ alarms: userAlarms });
-                showNotification("Alarm başarıyla kaydedildi.", true);
-                renderAlarms();
-                closeAllPanels();
-            } catch (error) {
-                console.error("Alarm kaydedilirken hata:", error);
-                showNotification("Alarm kaydedilemedi.", false);
+            const tabLink = e.target.closest('.tab-link');
+            if(tabLink && !tabLink.classList.contains('active')) {
+                document.querySelector('.tab-link.active')?.classList.remove('active');
+                document.querySelector('.tab-content.active')?.classList.remove('active');
+                tabLink.classList.add('active');
+                document.getElementById(`${tabLink.dataset.tab}-content`)?.classList.add('active');
+                return;
             }
-        }
 
+            const assetActionTarget = e.target.closest('.asset-cell, .clickable-pct, .remove-btn, .remove-btn-ai');
+            if(assetActionTarget) {
+                const { pair, type, col } = assetActionTarget.dataset;
+                if (!pair) return;
+                const assetData = allCryptoData.find(c => c.pair === pair);
+
+                if (assetActionTarget.classList.contains('asset-cell')) { 
+                    showChart(pair, type); 
+                }
+                else if (assetActionTarget.classList.contains('clickable-pct')) {
+                    if (assetData && !assetData.error) {
+                        const colData = assetData[`col${col}`];
+                        if (colData && typeof colData.pct === 'number') {
+                            const periodName = settings.columns[col].name;
+                            const pctChange = colData.pct.toFixed(2);
+                            
+                            document.getElementById('detailPanelTitle').textContent = `${assetData.pair.replace('USDT','')} - ${periodName} Değişim Detayı`;
+                            document.getElementById('detailPanelContent').innerHTML = translations[settings.lang].lowest_price_detail(
+                                periodName,
+                                formatPrice(colData.lowestPrice), 
+                                colData.lowestDate,
+                                formatPrice(assetData.latestPrice),
+                                pctChange
+                            );
+                            showPanel('detailPanel');
+                        }
+                    }
+                } else if (assetActionTarget.classList.contains('remove-btn')) {
+                    userPortfolios[activePortfolio] = userPortfolios[activePortfolio].filter(p => p !== pair);
+                    savePortfoliosToFirestore();
+                    fetchAllDataAndRender();
+                } else if (assetActionTarget.classList.contains('remove-btn-ai')) {
+                    const pairToRemove = assetActionTarget.dataset.pair;
+                    cryptoAiPairs = cryptoAiPairs.filter(p => p !== pairToRemove);
+                    if (userDocRef) { userDocRef.update({ coins_ai: cryptoAiPairs }); }
+                    fetchAiDataAndRender();
+                }
+            }
+
+            const pivotFilterBtn = e.target.closest('#cryptoPivotFilters button');
+            if(pivotFilterBtn) {
+                 settings.cryptoPivotFilter = pivotFilterBtn.dataset.filter;
+                 if (userDocRef) userDocRef.update({ 'settings.cryptoPivotFilter': settings.cryptoPivotFilter });
+                 document.querySelector('#cryptoPivotFilters button.active').classList.remove('active');
+                 pivotFilterBtn.classList.add('active');
+                 renderSupportResistance('crypto', allCryptoData);
+                 return;
+            }
+            const intervalFilterBtn = e.target.closest('#cryptoIntervalFilters button');
+            if(intervalFilterBtn && !intervalFilterBtn.classList.contains('active')) {
+                document.querySelector('#cryptoIntervalFilters button.active').classList.remove('active');
+                intervalFilterBtn.classList.add('active');
+            }
+             const recommendationFilterBtn = e.target.closest('#cryptoRecommendationFilters button');
+            if(recommendationFilterBtn) {
+                 currentRecommendationFilter = recommendationFilterBtn.dataset.filter;
+                 document.querySelector('#cryptoRecommendationFilters button.active').classList.remove('active');
+                 recommendationFilterBtn.classList.add('active');
+                 renderIndicatorCards('crypto');
+                 return;
+            }
+
+            if (e.target.closest('#createNewAlarmBtn')) {
+                if (!settings.telegramPhone) {
+                    showNotification("Lütfen önce Ayarlar menüsünden Telegram Chat ID'nizi kaydedin.", false);
+                    return;
+                }
+                openAlarmPanel(null);
+            }
+            
+            const alarmCard = e.target.closest('.alarm-card');
+            if(alarmCard) {
+                const alarmId = alarmCard.dataset.alarmId;
+                if(e.target.closest('.edit-alarm-btn')) {
+                    const alarm = userAlarms.find(a => a.id === alarmId);
+                    openAlarmPanel(alarm);
+                }
+                if(e.target.closest('.delete-alarm-btn')) {
+                    if(confirm("Bu alarmı silmek istediğinizden emin misiniz?")) {
+                        userAlarms = userAlarms.filter(a => a.id !== alarmId);
+                        await userDocRef.update({ alarms: userAlarms });
+                        renderAlarms();
+                        showNotification("Alarm silindi.", true);
+                    }
+                }
+                if (e.target.matches('.alarm-status-toggle')) {
+                    const alarm = userAlarms.find(a => a.id === alarmId);
+                    alarm.isActive = e.target.checked;
+                    await userDocRef.update({ alarms: userAlarms });
+                    showNotification(`Alarm ${alarm.isActive ? 'aktif' : 'pasif'} edildi.`, true);
+                }
+                 if(e.target.closest('.backtest-alarm-btn')) {
+                    runBacktest(alarmId);
+                }
+                 if (e.target.closest('.check-alarm-status-btn')) {
+                    showAlarmStatus(alarmId);
+                }
+            }
+        });
+
+        // --- İLK ÇALIŞTIRMADA BİR KEZ ÇAĞRILACAK EVENT LISTENERS ---
         document.getElementById('updateCryptoAnalysisBtn').addEventListener('click', () => updateAnalysisSettings('crypto'));
         document.getElementById('analyzeAllCryptoBtn').addEventListener('click', () => getGeminiAnalysis('crypto'));
         document.getElementById('crypto-indicator-cards-container').addEventListener('click', (e) => {
@@ -2011,6 +2171,9 @@
                 hideLoading(btn);
             }
         });
+
+        document.getElementById('portfolioSelect').addEventListener('change', (e) => setActivePortfolio(e.target.value));
+
         document.getElementById('savePortfolioBtn').addEventListener('click', async () => {
             const action = document.getElementById('portfolioActionInput').value;
             const newName = document.getElementById('portfolioNameInput').value.trim();
@@ -2045,8 +2208,6 @@
             document.getElementById('fibValue2Container').style.display = (e.target.value === 'between') ? 'block' : 'none';
         });
 
-        document.getElementById('portfolioSelect').addEventListener('change', (e) => setActivePortfolio(e.target.value));
-
         sortableInstance = new Sortable(document.getElementById('cryptoPriceTable'), {
             handle: '.drag-handle',
             animation: 150,
@@ -2075,10 +2236,8 @@
         renderPortfolioSelect();
         await fetchAllDataAndRender();
         await fetchAiDataAndRender();
-        updateAdminUI();
+        // updateAdminUI(); // Bu çağrı artık onAuthStateChanged içinde
     }
 </script>
-   
-
 </body>
 </html>
