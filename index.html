@@ -381,82 +381,56 @@
                 </div>
             </div>
 
-            <div id="crypto-ai-content" class="tab-content">
-                <div class="add-asset-bar">
-                    <input type="text" id="newCoinInput-ai" placeholder="AI Analizi için coin ekleyin: BTC, ETH, SOL...">
-                    <button id="addCoinBtn-ai"><i class="fas fa-plus"></i> <span data-lang="add">Ekle</span></button>
+          <div id="alarms-content" class="tab-content">
+    <div class="collapsible" style="margin-bottom: 25px;">
+        <div class="collapsible-header">
+            <span>⚙️ Strateji Keşif Aracı (Sinyal Analizi)</span>
+            <i class="fas fa-chevron-down"></i>
+        </div>
+        <div class="collapsible-content">
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0;">
+                Geçmiş verileri analiz ederek en kârlı alarm koşullarını bulun. 
+                Örn: "BTC, son 1 ayda %5 arttığı anlarda hangi koşullar ortaktı?"
+            </p>
+            <div class="settings-section">
+                <div class="setting-item">
+                    <label for="signalAnalysisCoins">Analiz Edilecek Coin(ler)</label>
+                    <input type="text" id="signalAnalysisCoins" placeholder="BTC, ETH, SOL... (virgülle ayırın)">
                 </div>
-                <div class="table-controls">
-                    <button id="toggleSortBtn-ai"><i class="fas fa-sort"></i> Sırala</button>
-                </div>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th class="drag-handle-col hidden"><i class="fas fa-grip-lines"></i></th>
-                                <th><span data-lang="coin">Coin</span></th>
-                                <th>Fiyat</th>
-                                <th>Tavsiye</th>
-                                <th>Özet</th>
-                                <th data-lang="delete">Sil</th>
-                            </tr>
-                        </thead>
-                        <tbody id="cryptoAiPriceTable"></tbody> </table>
-                </div>
-
-                <hr style="border-color: var(--border-color); margin: 25px 0;">
-
-                <div class="collapsible">
-                    <div class="collapsible-header open"><span>Analiz Filtreleri</span><i class="fas fa-chevron-down"></i></div>
-                    <div class="collapsible-content open">
-                        <div class="settings-section">
-                            <h4>1. Analiz Zaman Dilimi</h4>
-                            <div class="interval-filters" id="cryptoIntervalFilters">
-                                 <button class="interval-btn" data-interval="1h">1 Saat</button>
-                                 <button class="interval-btn active" data-interval="4h">4 Saat</button>
-                                 <button class="interval-btn" data-interval="1d">1 Gün</button>
-                            </div>
-                        </div>
-                        <div class="settings-section">
-                            <h4>2. Analiz Stratejisi Seçin</h4>
-                             <div class="pivot-filters" id="strategyPresetFilters">
-                                <button class="strategy-btn" data-preset="momentum" title="Kısa vadeli fiyat hareketlerinden faydalanır. (RSI, StochRSI, MACD)">⚡ Momentum</button>
-                                <button class="strategy-btn" data-preset="trend" title="Piyasanın genel yönünü takip eder. (EMA, SMA, Ichimoku)">🌊 Trend Takibi</button>
-                                <button class="strategy-btn" data-preset="volatility" title="Fiyat sıkışmalarını ve patlamalarını arar. (Bollinger, ATR)">💥 Volatilite</button>
-                                <button class="strategy-btn active" data-preset="all" title="Tüm temel indikatörleri kullanır.">🌐 Genel Bakış</button>
-                                <button class="strategy-btn" data-preset="custom" title="Aşağıdan kendi indikatörlerinizi seçin.">⚙️ Özel</button>
-                            </div>
-                        </div>
-                        <div class="settings-section" id="customIndicatorSection" style="display:none;">
-                            <h4>3. Özel İndikatör Seçimi</h4>
-                            <div id="crypto-indicator-filters-grid" class="filters-grid"></div>
-                        </div>
-                         <div class="analysis-actions">
-                            <button id="updateCryptoAnalysisBtn"><i class="fas fa-check"></i> Analizi Güncelle</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="global-analysis-header">
-                    <h3>Otomatik Analiz Sonuçları</h3>
-                    <div class="global-analysis-controls">
-                         <div class="pivot-filters" id="cryptoRecommendationFilters">
-                            <button class="active" data-filter="all">Tümü</button>
-                            <button data-filter="buy">Al</button>
-                            <button data-filter="sell">Sat</button>
-                            <button data-filter="hold">Tut</button>
-                        </div>
-                        <button id="analyzeAllCryptoBtn" class="ai-btn" title="Tüm listeyi Gemini ile yorumla"><i class="fas fa-magic-sparkles"></i> Toplu Yorumla</button>
-                    </div>
-                </div>
-                <div id="crypto-indicator-cards-container" class="indicator-cards-container"></div>
-                 <div class="collapsible" style="margin-top: 30px;">
-                    <div class="collapsible-header">
-                        <span>İndikatör Sözlüğü</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                    <div class="collapsible-content" id="dictionaryContent"></div>
+                <div class="alarm-rule-grid">
+                    <label for="signalAnalysisTimeframe">Zaman Dilimi</label>
+                    <select id="signalAnalysisTimeframe">
+                        <option value="15m">15 Dakika</option>
+                        <option value="1h" selected>1 Saat</option>
+                        <option value="4h">4 Saat</option>
+                        <option value="1d">1 Gün</option>
+                    </select>
+                    <label for="signalAnalysisChange">Fiyat Değişimi Eşiği (%)</label>
+                    <input type="number" id="signalAnalysisChange" value="5" step="1">
+                    <label for="signalAnalysisDirection">Değişim Yönü</label>
+                    <select id="signalAnalysisDirection">
+                        <option value="up">Artış (+%)</option>
+                        <option value="down">Azalış (-%)</option>
+                    </select>
+                    <label for="signalAnalysisPeriod">Geçmiş Veri Periyodu</label>
+                     <select id="signalAnalysisPeriod">
+                        <option value="7">Son 1 Hafta</option>
+                        <option value="30" selected>Son 1 Ay</option>
+                        <option value="90">Son 3 Ay</option>
+                    </select>
                 </div>
             </div>
+            <div class="analysis-actions">
+                <button id="runSignalAnalysisBtn"><i class="fas fa-search-dollar"></i> Analizi Başlat</button>
+            </div>
+            <div id="signalAnalysisResultContainer" style="margin-top: 20px;"></div>
+        </div>
+    </div>
+    <div class="add-asset-bar">
+        <button id="createNewAlarmBtn" style="width: 100%; justify-content: center;"><i class="fas fa-plus"></i> Yeni Alarm Oluştur</button>
+    </div>
+    <div id="alarmsListContainer"></div>
+</div>
 
             <div id="crypto-pivot-content" class="tab-content">
                 <div class="pivot-filters" id="cryptoPivotFilters">
@@ -717,7 +691,22 @@
             </div>
         </div>
     </div>
-
+   <div id="portfolioModal" class="panel" style="width: clamp(300px, 90vw, 450px);">
+        <div class="panel-header">
+            <h3 id="portfolioModalTitle"></h3>
+            <div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div>
+        </div>
+        <div class="panel-content">
+            <div class="input-group">
+                <label for="portfolioNameInput" id="portfolioModalLabel"></label>
+                <input type="text" id="portfolioNameInput">
+            </div>
+            <input type="hidden" id="portfolioActionInput">
+            <input type="hidden" id="originalPortfolioNameInput">
+            <div id="portfolio-error-message" style="color: var(--accent-red); margin-top: 15px; min-height: 20px;"></div>
+            <button id="savePortfolioBtn" style="width: 100%; padding: 12px; font-size: 1rem;" class="login-container button">Kaydet</button>
+        </div>
+    </div>
 
     <div id="modalOverlay" class="modal-overlay"></div>
     <div class="notification" id="notification"></div>
@@ -1907,41 +1896,37 @@
         });
 
         trackerPage.addEventListener('click', async (e) => {
-
-            // Portföy yönetimi
-            if(e.target.closest('#newPortfolioBtn')) {
-                const newName = prompt("Yeni listenin adını girin:", "Yeni Listem");
-                if (newName && !userPortfolios[newName]) {
-                    userPortfolios[newName] = [];
-                    await setActivePortfolio(newName);
-                    savePortfoliosToFirestore();
-                } else if(newName) {
-                    alert("Bu isimde bir liste zaten var!");
-                }
+// GÜNCELLENDİ: Portföy yönetimi
+            if (e.target.closest('#newPortfolioBtn')) {
+                document.getElementById('portfolioModalTitle').textContent = 'Yeni Liste Oluştur';
+                document.getElementById('portfolioModalLabel').textContent = 'Yeni Listenin Adı';
+                document.getElementById('portfolioNameInput').value = '';
+                document.getElementById('portfolioActionInput').value = 'new';
+                document.getElementById('portfolio-error-message').textContent = '';
+                showPanel('portfolioModal');
                 return;
             }
-            if(e.target.closest('#deletePortfolioBtn')) {
-                if(Object.keys(userPortfolios).length <= 1) {
-                    alert("Son listeyi silemezsiniz!");
+            if (e.target.closest('#renamePortfolioBtn')) {
+                document.getElementById('portfolioModalTitle').textContent = 'Listeyi Yeniden Adlandır';
+                document.getElementById('portfolioModalLabel').textContent = 'Yeni Ad';
+                document.getElementById('portfolioNameInput').value = activePortfolio;
+                document.getElementById('portfolioActionInput').value = 'rename';
+                document.getElementById('originalPortfolioNameInput').value = activePortfolio;
+                document.getElementById('portfolio-error-message').textContent = '';
+                showPanel('portfolioModal');
+                return;
+            }
+            if (e.target.closest('#deletePortfolioBtn')) {
+                if (Object.keys(userPortfolios).length <= 1) {
+                    showNotification("Son listeyi silemezsiniz!", false);
                     return;
                 }
-                if(confirm(`"${activePortfolio}" listesini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
+                if (confirm(`"${activePortfolio}" listesini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
                     delete userPortfolios[activePortfolio];
                     const newActive = Object.keys(userPortfolios)[0];
                     await setActivePortfolio(newActive);
                     savePortfoliosToFirestore();
-                }
-                return;
-            }
-            if(e.target.closest('#renamePortfolioBtn')) {
-                const newName = prompt("Yeni adı girin:", activePortfolio);
-                 if (newName && newName !== activePortfolio && !userPortfolios[newName]) {
-                    userPortfolios[newName] = userPortfolios[activePortfolio];
-                    delete userPortfolios[activePortfolio];
-                    await setActivePortfolio(newName);
-                    savePortfoliosToFirestore();
-                } else if(newName) {
-                     alert("Geçersiz veya zaten kullanımda olan bir isim girdiniz.");
+                    showNotification(`"${activePortfolio}" listesi silindi.`, true);
                 }
                 return;
             }
@@ -1971,6 +1956,8 @@
                 const resultContainer = document.getElementById('signalAnalysisResultContainer');
                 resultContainer.innerHTML = '<div class="loading" style="margin: 20px auto; display:block;"></div>';
 
+               if (e.target.closest('#runSignalAnalysisBtn')) {
+                // ... (buton ve parametre alma kodları aynı kalacak) ...
                 try {
                     const findSignalDNA = functions.httpsCallable('findSignalDNA');
                     const result = await findSignalDNA(params);
@@ -1985,19 +1972,18 @@
                         } else if(res.totalEvents === 0) {
                             html += `<p>Belirtilen koşullarda (${params.direction === 'up' ? '+' : '-'}${params.changePercent}%) hiç olay bulunamadı.</p>`;
                         } else {
-                            const mostCommonFib = Object.entries(res.fibDistribution).sort((a,b) => b[1] - a[1])[0];
-                            const recommendationParts = [];
-                            
-                            if(res.avgVolume > 500000) recommendationParts.push(`yüksek hacimle (ortalama <strong>${formatVolume(res.avgVolume)}</strong>)`);
-                            if(res.avgAdx > 25) recommendationParts.push(`güçlü bir trend (ortalama ADX <strong>${res.avgAdx.toFixed(1)}</strong>) varken`);
-                            if(mostCommonFib) recommendationParts.push(`fiyat çoğunlukla <strong>${mostCommonFib[0]}</strong> bölgesindeyken`);
-
                             html += `
-                                <p>Belirtilen koşul, son ${params.days} günde <strong>${res.totalEvents}</strong> kez gerçekleşti.</p>
-                                <p style="border-top: 1px solid var(--border-color); padding-top:10px; margin-top:10px;">
-                                    <strong>💡 Tavsiye:</strong> Bu hareketler genellikle ${recommendationParts.join(', ')} gerçekleşiyor.
-                                    Bu bilgilere göre bir alarm kurmak, başarı oranını artırabilir. Örneğin, Hacim koşulunu <strong>${formatVolume(res.avgVolume / 2)}</strong> üzerine, Trend Filtresini (ADX) <strong>25</strong> üzerine ayarlayabilirsiniz.
-                                </p>
+                                <p>Bu koşul, son ${params.days} günde <strong>${res.totalEvents}</strong> kez gerçekleşti.</p>
+                                <p>Sinyal sonrası ortalama performans:</p>
+                                <ul style="font-size: 0.9rem; padding-left: 20px;">
+                                    <li>1 periyot sonra: <strong style="color: ${res.avgReturn1 > 0 ? 'var(--value-positive)' : 'var(--value-negative)'};">${res.avgReturn1.toFixed(2)}%</strong></li>
+                                    <li>4 periyot sonra: <strong style="color: ${res.avgReturn4 > 0 ? 'var(--value-positive)' : 'var(--value-negative)'};">${res.avgReturn4.toFixed(2)}%</strong> (Başarı: %${res.winRate4.toFixed(0)})</li>
+                                </ul>
+                                <div style="border-top: 1px solid var(--border-color); padding-top:10px; margin-top:10px;">
+                                    <strong>💡 Erken Yakalama Tavsiyesi:</strong><br>
+                                    Bu büyük hareketler olmadan hemen önce, MACD histogram değeri ortalama <strong>${res.avgMomentumHisto.toFixed(6)}</strong> seviyesindeydi.
+                                    Yükselişi erken yakalamak için bir MACD alarmı kurarken, histogramın bu değere yaklaştığı veya bu değeri geçtiği anı (örneğin sıfır çizgisini geçtiği anı) bir tetikleyici olarak kullanmak, başarı şansınızı artırabilir.
+                                </div>
                             `;
                         }
                         html += `</div>`;
@@ -2202,6 +2188,35 @@
             } finally {
                 hideLoading(btn);
             }
+        });
+        document.getElementById('savePortfolioBtn').addEventListener('click', async () => {
+            const action = document.getElementById('portfolioActionInput').value;
+            const newName = document.getElementById('portfolioNameInput').value.trim();
+            const originalName = document.getElementById('originalPortfolioNameInput').value;
+            const errorDiv = document.getElementById('portfolio-error-message');
+
+            if (!newName) {
+                errorDiv.textContent = 'Liste adı boş olamaz.';
+                return;
+            }
+            if (userPortfolios[newName] && newName !== originalName) {
+                errorDiv.textContent = 'Bu isimde bir liste zaten var.';
+                return;
+            }
+
+            if (action === 'new') {
+                userPortfolios[newName] = [];
+                await setActivePortfolio(newName);
+                savePortfoliosToFirestore();
+                showNotification(`"${newName}" listesi oluşturuldu.`, true);
+            } else if (action === 'rename') {
+                userPortfolios[newName] = userPortfolios[originalName];
+                delete userPortfolios[originalName];
+                await setActivePortfolio(newName);
+                savePortfoliosToFirestore();
+                showNotification(`Liste "${originalName}" -> "${newName}" olarak değiştirildi.`, true);
+            }
+            closeAllPanels();
         });
 
         document.getElementById('portfolioSelect').addEventListener('change', (e) => setActivePortfolio(e.target.value));
