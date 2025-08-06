@@ -1,4 +1,4 @@
-<script>
+
     document.addEventListener('DOMContentLoaded', () => {
         const firebaseConfig = {
             apiKey: "AIzaSyA3flTu3Jz9E1D1U_DympYE7B4I4FDxj88",
@@ -1483,4 +1483,4 @@
         document.getElementById('loginBtn').addEventListener('click', () => auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).catch(err => document.getElementById("error-message").textContent = err.message));
         document.getElementById('signupBtn').addEventListener('click', () => auth.createUserWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).catch(err => document.getElementById("error-message").textContent = err.message));
     });
-</script>
+
