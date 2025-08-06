@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fiyat Takipçisi (AI Analizli)</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-functions-compat.js"></script>
+
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+    
+</head>
+
+    
+</head>
+<body>
+    
+    <div id="app-loader" class="page" style="justify-content: center; align-items: center; display: flex;">
+        <div class="loading" style="width: 40px; height: 40px; border-width: 4px;"></div>
+    </div>
+
+    <div id="login-page" class="page" style="display: none;">
+        <div class="login-container">
+            <h1><i class="fas fa-chart-line"></i> Fiyat Takipçisi</h1>
+            <p data-lang="login_prompt">Devam etmek için giriş yapın veya yeni hesap oluşturun.</p>
+            <div class="input-group"><label for="email" data-lang="email">E-posta</label><input type="email" id="email" autocomplete="email"></div>
+            <div class="input-group"><label for="password" data-lang="password">Şifre</label><input type="password" id="password" autocomplete="current-password"></div>
+            <div id="error-message"></div>
+            <div class="button-group">
+                <button id="loginBtn" data-lang="login">Giriş Yap</button>
+                <button id="signupBtn" data-lang="signup" style="background-color: #373c4a;">Kayıt Ol</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tracker-page" class="page" style="display: none;">
+        <div class="tracker-container">
+            <header class="app-header">
+                 <div class="header-left"><h1><i class="fas fa-chart-line"></i> <span data-lang="app_title">Fiyat Takipçisi</span></h1></div>
+                <div class="header-right">
+                    <div class="main-actions">
+                        <button id="refreshBtn" title="Yenile"><i class="fas fa-sync-alt"></i></button>
+                        <button id="settingsBtn" title="Ayarlar"><i class="fas fa-cog"></i></button>
+                    </div>
+                    <div class="user-menu">
+                        <button id="userMenuBtn"><i class="fas fa-user-circle"></i> <span id="userEmail"></span></button>
+                        <div class="dropdown-content">
+                            <a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> <span data-lang="logout">Çıkış Yap</span></a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="tabs">
+                <div class="tab-link active" data-tab="crypto">Kripto</div>
+                <div class="tab-link" data-tab="crypto-ai">Kripto AI</div>
+                <div class="tab-link" data-tab="crypto-pivot">AI Pivot</div>
+                <div class="tab-link" data-tab="alarms" id="alarms-tab" style="display: none;">Alarmlar</div>
+            </div>
+
+            <div id="crypto-content" class="tab-content active">
+                 <div class="app-header" style="border-bottom: none; padding-bottom: 0; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label for="portfolioSelect" style="color: var(--text-secondary);">Aktif Liste:</label>
+                        <select id="portfolioSelect" class="setting-item" style="margin-bottom: 0;"></select>
+                    </div>
+                    <div class="header-right">
+                        <button id="renamePortfolioBtn" class="table-controls button" style="background-color: var(--bg-tertiary);"><i class="fas fa-edit"></i> Yeniden Adlandır</button>
+                        <button id="newPortfolioBtn" class="table-controls button"><i class="fas fa-plus"></i> Yeni Liste</button>
+                        <button id="deletePortfolioBtn" class="table-controls button" style="background-color: var(--accent-red);"><i class="fas fa-trash"></i> Listeyi Sil</button>
+                    </div>
+                </div>
+                 <div class="add-asset-bar">
+                    <input type="text" id="newCoinInput" placeholder="BTC, ETH, SOL...">
+                    <button id="addCoinBtn"><i class="fas fa-plus"></i> <span data-lang="add">Ekle</span></button>
+                </div>
+                <div class="table-controls">
+                    <button id="toggleSortBtn"><i class="fas fa-sort"></i> Sırala</button>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="drag-handle-col hidden"><i class="fas fa-grip-lines"></i></th>
+                                <th class="sortable" data-sort-key="pair"><span data-lang="coin">Coin</span><span class="sort-indicator"></span></th>
+                                <th class="sortable" data-sort-key="latestPrice"><span data-lang="price">Fiyat</span><span class="sort-indicator"></span></th>
+                                <th id="col1_header_crypto" class="sortable" data-sort-key="col1"></th>
+                                <th id="col2_header_crypto" class="sortable" data-sort-key="col2"></th>
+                                <th id="col3_header_crypto" class="sortable" data-sort-key="col3"></th>
+                                <th data-lang="delete">Sil</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cryptoPriceTable"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="crypto-ai-content" class="tab-content">
+                <div class="add-asset-bar">
+                    <input type="text" id="newCoinInput-ai" placeholder="BTC, ETH, SOL...">
+                    <button id="addCoinBtn-ai"><i class="fas fa-plus"></i> <span data-lang="add">Ekle</span></button>
+                </div>
+                <div class="table-controls">
+                    <button id="toggleSortBtn-ai"><i class="fas fa-sort"></i> Sırala</button>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="drag-handle-col hidden"><i class="fas fa-grip-lines"></i></th>
+                                <th class="sortable" data-sort-key="pair"><span data-lang="coin">Coin</span><span class="sort-indicator"></span></th>
+                                <th class="sortable" data-sort-key="latestPrice"><span data-lang="price">Fiyat</span><span class="sort-indicator"></span></th>
+                                <th class="sortable" data-sort-key="recommendation">Tavsiye</th>
+                                <th class="sortable" data-sort-key="recommendationSummary">AI Özet</th>
+                                <th data-lang="delete">Sil</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cryptoAiPriceTable"></tbody>
+                    </table>
+                </div>
+
+                <div class="global-analysis-header" style="margin-top: 30px;">
+                    <h3><i class="fas fa-magic-sparkles" style="color:var(--accent-blue)"></i> Global AI Analizi</h3>
+                    <div class="global-analysis-controls">
+                        <div class="interval-filters" id="cryptoIntervalFilters">
+                             <button class="active" data-interval="4h">4S</button>
+                             <button data-interval="1h">1S</button>
+                             <button data-interval="15m">15D</button>
+                        </div>
+                        <div class="interval-filters" id="cryptoRecommendationFilters">
+                            <button class="active" data-filter="all">Tümü</button>
+                            <button data-filter="buy">Al</button>
+                            <button data-filter="sell">Sat</button>
+                            <button data-filter="hold">Tut</button>
+                        </div>
+                        <button class="ai-btn" id="analyzeAllCryptoBtn" style="display: none;" title="Tüm listeyi yapay zeka ile yorumla">
+                            <i class="fas fa-brain"></i> Hepsini Yorumla
+                        </button>
+                    </div>
+                </div>
+
+                <div class="settings-section" style="margin-top: 20px;">
+                     <div class="collapsible">
+                        <div class="collapsible-header">
+                            <span>Gösterilecek İndikatörleri Seç</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="collapsible-content">
+                             <div class="filters-grid" id="crypto-indicator-filters-grid">
+                                </div>
+                             <div class="analysis-actions">
+                                 <button id="updateCryptoAnalysisBtn"><i class="fas fa-check"></i> Analiz Ayarlarını Güncelle</button>
+                             </div>
+                        </div>
+                     </div>
+                </div>
+                <div id="crypto-indicator-cards-container" class="indicator-cards-container"></div>
+                 <div class="collapsible" style="margin-top: 25px;">
+                    <div class="collapsible-header"><span>Terimler Sözlüğü</span><i class="fas fa-chevron-down"></i></div>
+                    <div class="collapsible-content" id="dictionaryContent"></div>
+                </div>
+            </div>
+
+<div id="alarms-content" class="tab-content">
+    <div class="collapsible" style="margin-bottom: 25px;">
+        <div class="collapsible-header">
+            <span>⚙️ Strateji Keşif Aracı (Sinyal Analizi)</span>
+            <i class="fas fa-chevron-down"></i>
+        </div>
+        <div class="collapsible-content">
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0;">
+                Geçmiş verileri analiz ederek en kârlı alarm koşullarını bulun.
+                Örn: "BTC, son 1 ayda %5 arttığı anlarda hangi koşullar ortaktı?"
+            </p>
+            <div class="settings-section">
+                <div class="setting-item">
+                    <label for="signalAnalysisCoins">Analiz Edilecek Coin(ler)</label>
+                    <input type="text" id="signalAnalysisCoins" placeholder="BTC, ETH, SOL... (virgülle ayırın)">
+                </div>
+                <div class="alarm-rule-grid">
+                    <label for="signalAnalysisTimeframe">Zaman Dilimi</label>
+                    <select id="signalAnalysisTimeframe">
+                        <option value="15m">15 Dakika</option>
+                        <option value="1h" selected>1 Saat</option>
+                        <option value="4h">4 Saat</option>
+                        <option value="1d">1 Gün</option>
+                    </select>
+                    <label for="signalAnalysisChange">Fiyat Değişimi Eşiği (%)</label>
+                    <input type="number" id="signalAnalysisChange" value="5" step="1">
+                    <label for="signalAnalysisDirection">Değişim Yönü</label>
+                    <select id="signalAnalysisDirection">
+                        <option value="up">Artış (+%)</option>
+                        <option value="down">Azalış (-%)</option>
+                    </select>
+                    <label for="signalAnalysisPeriod">Geçmiş Veri Periyodu</label>
+                     <select id="signalAnalysisPeriod">
+                        <option value="7">Son 1 Hafta</option>
+                        <option value="30" selected>Son 1 Ay</option>
+                        <option value="90">Son 3 Ay</option>
+                    </select>
+                </div>
+            </div>
+            <div class="analysis-actions">
+                <button id="runSignalAnalysisBtn"><i class="fas fa-search-dollar"></i> Analizi Başlat</button>
+            </div>
+            <div id="signalAnalysisResultContainer" style="margin-top: 20px;"></div>
+        </div>
+    </div>
+    <div class="add-asset-bar">
+        <button id="createNewAlarmBtn" style="width: 100%; justify-content: center;"><i class="fas fa-plus"></i> Yeni Alarm Oluştur</button>
+    </div>
+    <div id="alarmsListContainer"></div>
+</div>
+
+            <div id="crypto-pivot-content" class="tab-content">
+                <div class="pivot-filters" id="cryptoPivotFilters">
+                    <button class="active" data-filter="all">Tümü</button>
+                    <button data-filter="above">Pivot Üstü</button>
+                    <button data-filter="below">Pivot Altı</button>
+                </div>
+                <div id="crypto-pivot-container" class="pivot-container"></div>
+                 <div id="pivot-dictionary-container"></div>
+            </div>
+
+            <div class="update-time"><i class="far fa-clock"></i>&nbsp;<span data-lang="last_update">Son güncelleme</span>: <span id="updateTime"></span></div>
+        </div>
+    </div>
+
+    <div id="settingsPanel" class="panel">
+        <div class="panel-header">
+            <h3 data-lang="settings">Ayarlar</h3>
+            <div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div>
+        </div>
+        <div class="panel-content">
+            <div class="settings-section">
+                <h4 data-lang="general_settings">Genel Ayarlar</h4>
+                <div class="setting-item"><label data-lang="language">Dil</label><select id="langSelect"><option value="tr">Türkçe</option><option value="en">English</option></select></div>
+                <div class="setting-item"><label data-lang="auto_refresh">Otomatik Yenileme</label><input type="checkbox" id="autoRefreshToggle"></div>
+                <div class="setting-item"><label data-lang="refresh_interval">Yenileme Aralığı (sn)</label><input type="number" id="refreshInterval" min="10" step="10"></div>
+                <div class="setting-item"><label>Telegram Chat ID</label><input type="text" id="telegramPhoneInput" placeholder="123456789"></div>
+                <div class="telegram-info">
+                    Telegram bildirimlerini almak için:
+                    <ol style="padding-left: 20px; margin-top: 5px; margin-bottom: 0;">
+                        <li>Telegram'da <a href="https://t.me/fiyattakipv3_bot" target="_blank" rel="noopener noreferrer"><b>fiyattakipv3_bot</b></a>'u bulun.</li>
+                        <li>Bota <code>/start</code> komutunu gönderin.</li>
+                        <li>Botun size verdiği ID numarasını yukarıdaki kutucuğa yapıştırın.</li>
+                    </ol>
+                </div>
+            </div>
+            <div class="settings-section">
+                <h4 data-lang="column_settings">Kolon Ayarları</h4>
+                <div class="setting-item"><label>Kolon 1 Adı</label><input type="text" id="col1_name_input"></div>
+                <div class="setting-item"><label>Gün Sayısı</label><input type="number" id="col1_days_input" min="1"></div>
+                <div class="setting-item"><label>Pozitif Eşik (%)</label><input type="number" id="col1_threshold_input" min="0"></div><hr>
+                <div class="setting-item"><label>Kolon 2 Adı</label><input type="text" id="col2_name_input"></div>
+                <div class="setting-item"><label>Gün Sayısı</label><input type="number" id="col2_days_input" min="1"></div>
+                <div class="setting-item"><label>Pozitif Eşik (%)</label><input type="number" id="col2_threshold_input" min="0"></div><hr>
+                <div class="setting-item"><label>Kolon 3 Adı</label><input type="text" id="col3_name_input"></div>
+                <div class="setting-item"><label>Gün Sayısı</label><input type="number" id="col3_days_input" min="1"></div>
+                <div class="setting-item"><label>Pozitif Eşik (%)</label><input type="number" id="col3_threshold_input" min="0"></div>
+            </div>
+            <div class="settings-section">
+                <h4 data-lang="color_settings">Renk Ayarları</h4>
+                <div class="setting-item"><label data-lang="high_positive_color">Yüksek Pozitif Renk</label><div class="color-input-wrapper"><input type="color" id="high_color_input"><span class="color-preview" id="high_color_preview"></span></div></div>
+                <div class="setting-item"><label data-lang="low_positive_color">Düşük Pozitif Renk</label><div class="color-input-wrapper"><input type="color" id="low_color_input"><span class="color-preview" id="low_color_preview"></span></div></div>
+            </div>
+            <button id="saveSettingsBtn" data-lang="save_settings">Ayarları Kaydet</button>
+        </div>
+    </div>
+
+    <div id="detailPanel" class="panel">
+         <div class="panel-header">
+            <h3 id="detailPanelTitle"></h3>
+             <div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div>
+        </div>
+        <div class="panel-content" id="detailPanelContent"></div>
+    </div>
+
+    <div id="chartPanel" class="panel">
+        <div class="panel-header">
+            <h3 id="chartPanelTitle"></h3>
+            <div class="panel-controls"><button class="panel-btn close-btn" title="Kapat"><i class="fas fa-times"></i></button></div>
+        </div>
+        <div id="chartContainer"></div>
+    </div>
+
+    <div id="analysisPanel" class="panel">
+        <div class="panel-header">
+            <h3>AI Analizi</h3>
+            <div class="panel-controls"><button class="panel-btn close-btn" title="Kapat"><i class="fas fa-times"></i></button></div>
+        </div>
+        <div id="analysisContent" class="panel-content"></div>
+    </div>
+
+<div id="alarmSettingsPanel" class="panel">
+    <div class="panel-header">
+        <h3 id="alarmPanelTitle">Alarm Kuralları</h3>
+        <div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div>
+    </div>
+    <div class="panel-content">
+        <input type="hidden" id="alarmIdInput">
+        
+        <div class="collapsible">
+            <div class="collapsible-header open"><span>1. Genel Ayarlar</span><i class="fas fa-chevron-down"></i></div>
+            <div class="collapsible-content open">
+                <div class="setting-item">
+                    <label for="alarmNameInput">Alarm Adı</label>
+                    <input type="text" id="alarmNameInput" placeholder="Örn: Hacim Patlaması Alarmı">
+                </div>
+                <div class="setting-item">
+                    <label for="alarmTimeframe">Ana Zaman Dilimi</label>
+                    <select id="alarmTimeframe">
+                        <option value="15m" selected>15 Dakika</option>
+                        <option value="1h">1 Saat</option>
+                        <option value="4h">4 Saat</option>
+                    </select>
+                </div>
+                <h5 style="margin-top: 20px; margin-bottom: 10px;">Uygulanacak Coinler</h5>
+                <div id="alarmCoinSelectionGrid"></div>
+                <div class="add-asset-bar" style="margin-top: 10px; margin-bottom: 0;">
+                    <input type="text" id="addCoinToAlarmInput" placeholder="BTC, ETH, HOOK...">
+                    <button id="addCoinToAlarmBtn" style="padding: 8px 16px;"><i class="fas fa-plus"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="collapsible">
+            <div class="collapsible-header open"><span>2. Alarm Koşulları (En az 1 tane seçin)</span><i class="fas fa-chevron-down"></i></div>
+            <div class="collapsible-content open">
+                <div class="settings-section" style="padding: 10px; border: 1px solid var(--border-color); border-radius: 8px;">
+                    <label class="filter-item">
+                        <input type="checkbox" id="alarmVolumeCondition" checked>
+                        <span>Hacim Artışı</span>
+                    </label>
+                    <div class="alarm-rule-grid" style="margin-top: 10px;">
+                        <label>Ort. Hacim Mumu Sayısı</label>
+                        <input type="number" id="alarmVolumePeriod" value="20" min="2" step="1">
+                        <label>Son Mum Hacmi > Ortalama *</label>
+                        <input type="number" id="alarmVolumeMultiplier" value="2" step="0.5">
+                        <label title="Opsiyonel. Sadece hacim bu dolar tutarını geçerse sinyal gönder. Örn: 500000">Min. Hacim Tutarı ($)</label>
+                        <input type="number" id="alarmVolumeAmount" value="0" step="100000" min="0">
+                    </div>
+                </div>
+                <div class="settings-section" style="margin-top: 15px; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px;">
+                    <label class="filter-item">
+                        <input type="checkbox" id="alarmMacdCondition" checked>
+                        <span>MACD Kesişimi</span>
+                    </label>
+                    <div class="alarm-rule-grid" style="margin-top: 10px;">
+                        <label>Sinyal Tipi</label>
+                        <select id="alarmMacdSignalType">
+                            <option value="buy">Al (Yukarı Kesişim)</option>
+                            <option value="sell">Sat (Aşağı Kesişim)</option>
+                        </select>
+                    </div>
+                </div>
+                 <input type="checkbox" id="alarmPriceCondition" style="display: none;">
+            </div>
+        </div>
+         <div>
+            <h5 style="margin-top: 20px; margin-bottom: 15px; color: var(--text-secondary);">3. Gelişmiş Filtreler (Opsiyonel)</h5>
+            <div>
+                <div style="padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 15px;">
+                     <label class="filter-item" title="Sinyalin sadece piyasada belirli bir güçte trend varken çalışmasını sağlar. Kararsız piyasalardaki hatalı sinyalleri filtreler.">
+                        <input type="checkbox" id="alarmTrendFilterEnabled">
+                        <span>Güçlü Trend Filtresini Aktif Et</span>
+                    </label>
+                    <div class="alarm-rule-grid" style="margin-top: 10px;">
+                       <label for="alarmADXThreshold" title="Trendin ne kadar güçlü olduğunu belirtir. 25'in üzeri genellikle güçlü bir trend olarak kabul edilir.">Trend Gücü (ADX) Eşiği</label>
+                       <input type="number" id="alarmADXThreshold" min="0" max="50" value="25">
+                    </div>
+                </div>
+                <div style="padding: 10px; border: 1px solid var(--border-color); border-radius: 8px;">
+                    <label class="filter-item">
+                        <input type="checkbox" id="alarmFibCondition">
+                        <span>Fibonacci Filtresini Aktif Et</span>
+                    </label>
+                    <div class="alarm-rule-grid" style="margin-top: 10px;" id="fibonacci-controls" >
+                        <label>Koşul</label>
+                        <select id="alarmFibOperator">
+                            <option value="above">Üzerinde (>)</option>
+                            <option value="below">Altında (<)</option>
+                            <option value="between">Arasında</option>
+                        </select>
+                        <label id="fibValue1Label">Seviye</label>
+                        <select id="alarmFibValue1">
+                            <option value="236">0.236</option>
+                            <option value="382">0.382</option>
+                            <option value="500">0.500</option>
+                            <option value="618" selected>0.618</option>
+                        </select>
+                        <div id="fibValue2Container" style="display: none; grid-column: 1 / -1;">
+                            <div class="alarm-rule-grid">
+                                <label>ve bu Seviye</label>
+                                <select id="alarmFibValue2">
+                                    <option value="236">0.236</option>
+                                    <option value="382">0.382</option>
+                                    <option value="500" selected>0.500</option>
+                                    <option value="618">0.618</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="pivot-dictionary" style="font-size: 0.85rem; line-height: 1.6; margin-top: 20px;">
+            <h5><i class="fas fa-info-circle"></i> Filtre Açıklamaları</h5>
+            <p><strong>Hacim Artışı:</strong> Belirlenen periyottaki (örn: son 20 mum) ortalama işlem hacminin, belirlediğiniz kat kadar (örn: 2 kat) üzerine çıkan ani hacim patlamalarını yakalar. Güçlü bir hareketin başlangıcı olabilir.</p>
+            <p><strong>MACD Kesişimi:</strong> İki hareketli ortalama arasındaki ilişkiyi ölçer. "Al" sinyali, momentumun pozitife döndüğünü; "Sat" sinyali ise negatife döndüğünü gösterir. Trend dönüşlerini yakalamak için kullanılır.</p>
+            <p><strong>Güçlü Trend Filtresi (ADX):</strong> Piyasanın yönlü bir trend içinde olup olmadığını (yatay ve kararsız olmadığını) kontrol eder. ADX değeri ne kadar yüksekse, trend o kadar güçlüdür. Bu filtre, kararsız piyasadaki hatalı sinyalleri engellemeye yardımcı olur.</p>
+            <p><strong>Fibonacci 0.618 Desteğini Onayla:</strong> Fibonacci analizinde 0.618 seviyesi, bir düşüşün son bulabileceği ve yükselişin devam edebileceği "altın oran" olarak kabul edilen çok güçlü bir destek seviyesidir. Bu filtre, sinyalin bu kritik desteğin üzerinde gelmesini sağlayarak düşüş riskini azaltır.</p>
+         </div>
+         <div class="button-group" style="margin-top:20px;">
+            <button id="testAlarmBtn" style="background-color: #373c4a;"><i class="fab fa-telegram-plane"></i> Test Et</button>
+            <button id="saveAlarmBtn"><i class="fas fa-save"></i> Kaydet</button>
+         </div>
+    </div>
+</div>
+
+    <div id="alarmStatusPanel" class="panel" style="width: clamp(500px, 90vw, 800px);">
+        <div class="panel-header">
+            <h3 id="alarmStatusTitle">Alarm Durumu</h3>
+            <div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div>
+        </div>
+        <div class="panel-content" id="alarmStatusContent"></div>
+    </div>
+
+    <div id="backtestPanel" class="panel" style="width: clamp(500px, 90vw, 900px);">
+        <div class="panel-header">
+            <h3>Backtest Sonuçları</h3>
+            <div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div>
+        </div>
+        <div class="panel-content">
+            <h4 id="backtestAlarmName"></h4>
+            <p>Bu panel, seçilen alarm stratejisinin geçmiş <strong>1000 mum (yaklaşık 10 gün)</strong> üzerindeki performansını her bir coin için ayrı ayrı gösterir. Sonuçlar, sinyal geldikten <strong>15 dakika ve 1 saat sonraki</strong> fiyat değişimlerine dayanmaktadır.</p>
+            <div id="backtest-results-container">
+                <div style="text-align: center; padding: 20px;"><div class="loading"></div></div>
+            </div>
+        </div>
+    </div>
+   <div id="portfolioModal" class="panel" style="width: clamp(300px, 90vw, 450px);">
+        <div class="panel-header">
+            <h3 id="portfolioModalTitle"></h3>
+            <div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div>
+        </div>
+        <div class="panel-content">
+            <div class="input-group">
+                <label for="portfolioNameInput" id="portfolioModalLabel"></label>
+                <input type="text" id="portfolioNameInput">
+            </div>
+            <input type="hidden" id="portfolioActionInput">
+            <input type="hidden" id="originalPortfolioNameInput">
+            <div id="portfolio-error-message" style="color: var(--accent-red); margin-top: 15px; min-height: 20px;"></div>
+            <button id="savePortfolioBtn" style="width: 100%; padding: 12px; font-size: 1rem;" class="login-container button">Kaydet</button>
+        </div>
+    </div>
+
+    <div id="modalOverlay" class="modal-overlay"></div>
+    <div class="notification" id="notification"></div>
+     <script src="script.js"></script>
+
+</body>
+</html>
+</body>
+</html>
