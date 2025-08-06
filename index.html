@@ -721,7 +721,6 @@
 
     <div id="modalOverlay" class="modal-overlay"></div>
     <div class="notification" id="notification"></div>
-
 <script>
     const firebaseConfig = {
         apiKey: "AIzaSyA3flTu3Jz9E1D1U_DympYE7B4I4FDxj88",
@@ -737,23 +736,22 @@
     const functions = firebase.app().functions('europe-west1');
 
     // --- GLOBAL STATE ---
-    // --- STRATEJİ PRESETLERİ ---
     const STRATEGY_PRESETS = {
         momentum: { rsi: true, stochRsi: true, macd: true, volume: true },
         trend: { ema: true, sma: true, ichimoku: true, macd: true },
         volatility: { bollinger: true, atr: true, volume: true },
         all: { rsi: true, macd: true, ema: true, bollinger: true, fibonacci: true },
-        custom: {} // Kullanıcının seçimine bırakır
+        custom: {}
     };
     let currentUserRole = null, coinLimit = 10, settings = {}, autoRefreshTimer = null, pageInitialized = false;
     let allCryptoData = [], userAlarms = [];
     let currentSort = { key: null, order: 'default' };
     let userPortfolios = {}; 
     let activePortfolio = 'Varsayılan';
-    let cryptoAiPairs = []; // AI sayfası için ayrı coin listesi
+    let cryptoAiPairs = [];
     let userDocRef = null;
     let sortableInstance = null;
-    let sortableInstanceAi = null; // AI tablosu için ayrı sıralama yöneticisi
+    let sortableInstanceAi = null;
     let currentRecommendationFilter = 'all';
     let tempAlarmCoins = [];
     const notification = document.getElementById("notification"), modalOverlay = document.getElementById('modalOverlay');
@@ -887,13 +885,11 @@
             userPortfolios = userData.portfolios;
             activePortfolio = userData.activePortfolio || Object.keys(userPortfolios)[0];
         } else {
-            // İlk kez kullanan kullanıcı için varsayılan yapıyı oluştur
             userPortfolios = { "Varsayılan": ["BTCUSDT", "ETHUSDT", "SOLUSDT"] };
             activePortfolio = "Varsayılan";
         }
-        cryptoAiPairs = userData.coins_ai || ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"]; // AI için ayrı liste
+        cryptoAiPairs = userData.coins_ai || ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"];
 
-        const savePortfoliosToFirestore = () => { if (userDocRef) { userDocRef.update({ portfolios: userPortfolios }).catch(error => console.error("Firebase portföy kaydetme hatası:", error)); } };
         const formatPrice = (price) => {
             const num = parseFloat(price);
             if (isNaN(num)) return 'N/A';
@@ -1116,7 +1112,7 @@
         function updateAllTableRows(type, data) {
             const tableBody = document.getElementById(`${type}PriceTable`);
             tableBody.innerHTML = '';
-            const isSorting = !document.querySelector('.drag-handle-col.hidden');
+            const isSorting = !document.querySelector('#crypto-content .drag-handle-col.hidden');
             
             const formatPct = (pct) => {
                 if(typeof pct === 'number') {
@@ -1232,8 +1228,6 @@
 
             const formatVal = (val) => (typeof val === 'number' ? val.toFixed(2) : val);
 
-            // --- PUANLAMA MANTIĞI ---
-
             // RSI
             if (activeIndicators.rsi && indicators.rsi !== null) {
                 if (indicators.rsi <= 30) { buyScore += 2; summaryPoints.buy.push(`RSI(${formatVal(indicators.rsi)}) aşırı satım bölgesinde`); }
@@ -1241,21 +1235,18 @@
                 if (indicators.rsi >= 70) { sellScore += 2; summaryPoints.sell.push(`RSI(${formatVal(indicators.rsi)}) aşırı alım bölgesinde`); }
                 else if (indicators.rsi > 55) { sellScore += 1; summaryPoints.sell.push(`RSI(${formatVal(indicators.rsi)}) yüksek seviyede`); }
             }
-
             // Stochastic RSI
             if (activeIndicators.stochRsi && indicators.stochRsi) {
                 if(indicators.stochRsi.k <= 20) { buyScore += 2; summaryPoints.buy.push(`StochRSI(${formatVal(indicators.stochRsi.k)}) aşırı satımda`); } 
                 if(indicators.stochRsi.k >= 80) { sellScore += 2; summaryPoints.sell.push(`StochRSI(${formatVal(indicators.stochRsi.k)}) aşırı alımda`); }
             }
-            
             // Bollinger Bands
             if (activeIndicators.bollinger && indicators.bollinger) {
                 if (latestPrice < indicators.bollinger.lower) { buyScore += 2; summaryPoints.buy.push("Fiyat alt Bollinger bandının altında"); } 
                 else if (latestPrice > indicators.bollinger.upper) { sellScore += 2; summaryPoints.sell.push("Fiyat üst Bollinger bandının üzerinde"); }
-                else if (latestPrice < indicators.bollinger.middle) { sellScore += 0.5; } // Ortalamanın altı hafif negatif
-                else if (latestPrice > indicators.bollinger.middle) { buyScore += 0.5; } // Ortalamanın üstü hafif pozitif
+                else if (latestPrice < indicators.bollinger.middle) { sellScore += 0.5; }
+                else if (latestPrice > indicators.bollinger.middle) { buyScore += 0.5; }
             }
-
             // MACD
             if (activeIndicators.macd && indicators.macd) {
                 if (indicators.macd.histogram > 0) {
@@ -1266,7 +1257,6 @@
                     summaryPoints.sell.push("MACD histogramı negatif");
                 }
             }
-            
             // Moving Averages (EMA/SMA)
             if (activeIndicators.ema && activeIndicators.sma && indicators.ema && indicators.sma) {
                 if (indicators.ema > indicators.sma) {
@@ -1277,7 +1267,6 @@
                     summaryPoints.sell.push("EMA, SMA'nın altında (düşüş trendi)");
                 }
             }
-
             // Ichimoku Cloud
             if (activeIndicators.ichimoku && indicators.ichimoku) {
                 const { tenkanSen, kijunSen, senkouSpanA, senkouSpanB } = indicators.ichimoku;
@@ -1296,19 +1285,16 @@
                 if (tenkanSen > kijunSen) { buyScore += 1; summaryPoints.buy.push("Tenkan/Kijun kesişimi pozitif"); }
                 else { sellScore += 1; summaryPoints.sell.push("Tenkan/Kijun kesişimi negatif"); }
             }
-            
             // Fibonacci
             if (activeIndicators.fibonacci && indicators.fibonacci) {
                 if (latestPrice < indicators.fibonacci.level_618) { sellScore += 0.5; summaryPoints.sell.push("Fiyat kritik 0.618 Fibonacci desteğinin altında"); }
                 else { buyScore += 0.5; summaryPoints.buy.push("Fiyat kritik 0.618 Fibonacci desteğinin üzerinde"); }
             }
 
-            // --- KARAR MEKANİZMASI ---
             let recommendation, color, category;
             const finalScore = buyScore - sellScore;
             const conflictLevel = Math.min(buyScore, sellScore);
 
-            // Eğer güçlü çelişki varsa (hem al hem sat sinyalleri güçlüyse) TUT tavsiyesi verilir.
             if (conflictLevel >= 3) {
                 recommendation = "Tut";
                 color = "var(--hold)";
@@ -1321,7 +1307,6 @@
                 else { recommendation = "Tut"; color = "var(--hold)"; category = "hold"; }
             }
 
-            // --- ÖZET OLUŞTURMA ---
             let summary = "";
             if (summaryPoints.buy.length > 0) {
                 summary += `<b>⬆ Al Sinyalleri (${summaryPoints.buy.length}):</b> ${summaryPoints.buy.join(', ')}. `;
@@ -1336,7 +1321,6 @@
                 summary = "Aktif indikatörlere göre belirgin bir sinyal bulunamadı.";
             }
 
-
             return { recommendation, color, summary, category };
         }
 
@@ -1344,7 +1328,7 @@
             const container = document.getElementById('crypto-indicator-cards-container');
             container.innerHTML = '';
             const activeIndicators = settings[`${type}AnalysisIndicators`];
-            const sourceData = data || allCryptoData; // Eğer data parametresi verilmişse onu, yoksa global datayı kullan
+            const sourceData = data || allCryptoData;
 
             sourceData.forEach(asset => {
                 if (currentRecommendationFilter !== 'all' && asset.recommendationCategory !== currentRecommendationFilter) {
@@ -1507,7 +1491,11 @@
         }
 
         // --- YENİ EKLENEN FONKSİYONLAR ---
-        // Portföy menüsünü doldurur
+        function savePortfoliosToFirestore() {
+            if (userDocRef) {
+                userDocRef.update({ portfolios: userPortfolios }).catch(error => console.error("Firebase portföy kaydetme hatası:", error));
+            }
+        }
         function renderPortfolioSelect() {
             const select = document.getElementById('portfolioSelect');
             select.innerHTML = '';
@@ -1521,23 +1509,12 @@
                 select.appendChild(option);
             }
         }
-
-        // Aktif portföyü değiştirir
         async function setActivePortfolio(name) {
             activePortfolio = name;
             if(userDocRef) { await userDocRef.update({ activePortfolio: name }); }
             renderPortfolioSelect();
-            await fetchAllDataAndRender(); // Verileri yeniden yükle
+            await fetchAllDataAndRender();
         }
-
-        // Firestore'daki portföy verisini kaydeder
-        function savePortfoliosToFirestore() {
-            if (userDocRef) {
-                userDocRef.update({ portfolios: userPortfolios }).catch(error => console.error("Firebase portföy kaydetme hatası:", error));
-            }
-        }
-
-        // Kripto AI Sayfası için Veri Çekme ve Render Etme
         async function fetchAiDataAndRender() {
             renderLoadingSkeletons('crypto-ai', cryptoAiPairs, document.getElementById('cryptoAiPriceTable'));
             const aiData = await Promise.all(cryptoAiPairs.map(fetchCryptoData));
@@ -1552,11 +1529,9 @@
                 }
             });
             
-            updateAiTableRows(aiData); // Ayrı bir render fonksiyonu kullanıyoruz
-            renderIndicatorCards('crypto', aiData); // Kartlar yine bu veriyi kullanabilir
+            updateAiTableRows(aiData);
+            renderIndicatorCards('crypto', aiData);
         }
-        
-        // Kripto AI Tablosunu Güncelleme Fonksiyonu
         function updateAiTableRows(data) {
             const tableBody = document.getElementById('cryptoAiPriceTable');
             tableBody.innerHTML = '';
@@ -1583,17 +1558,14 @@
                 tableBody.appendChild(row);
             });
         }
-        
-        // Kripto AI için coin ekleme fonksiyonu
         const addNewAssetAi = async () => {
             const input = document.getElementById('newCoinInput-ai');
             const assetList = cryptoAiPairs;
-            const limit = coinLimit; // Limiti ortak kullanabiliriz veya farklı bir limit tanımlayabiliriz.
+            const limit = coinLimit;
 
             const newAssetSymbols = input.value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
             if (newAssetSymbols.length === 0) return;
             
-            // Limit kontrolü
             if (limit !== Infinity && (assetList.length + newAssetSymbols.length) > limit) {
                 showNotification(translations[settings.lang].role_info(currentUserRole, limit, 'coin'), false);
                 return;
@@ -1606,16 +1578,14 @@
                     continue;
                 }
                 try {
-                    // Binance'de varlık kontrolü
                     await axios.get(`https://api.binance.com/api/v3/ticker/price?symbol=${newPair}`);
                     assetList.push(newPair);
                 } catch (error) {
                     showNotification(translations[settings.lang].invalid_asset(symbol), false);
                 }
             }
-            // Firestore'a kaydet
             if (userDocRef) { userDocRef.update({ coins_ai: cryptoAiPairs }); }
-            fetchAiDataAndRender(); // Sadece AI tablosunu yenile
+            fetchAiDataAndRender();
             input.value = '';
         };
 
@@ -1669,90 +1639,89 @@
                 container.appendChild(tag);
             });
         }
-function openAlarmPanel(alarm = null) {
-    document.getElementById('alarmIdInput').value = alarm ? alarm.id : '';
-    document.getElementById('alarmNameInput').value = alarm ? alarm.name : '';
-    document.getElementById('alarmPanelTitle').textContent = alarm ? 'Alarmı Düzenle' : 'Yeni Alarm Oluştur';
-    
-    tempAlarmCoins = alarm && alarm.coins && alarm.coins.length > 0 ? [...alarm.coins] : [...userPortfolios[activePortfolio]]; // Aktif portföyü kullan
-    renderAlarmCoinTags();
+        function openAlarmPanel(alarm = null) {
+            document.getElementById('alarmIdInput').value = alarm ? alarm.id : '';
+            document.getElementById('alarmNameInput').value = alarm ? alarm.name : '';
+            document.getElementById('alarmPanelTitle').textContent = alarm ? 'Alarmı Düzenle' : 'Yeni Alarm Oluştur';
+            
+            tempAlarmCoins = alarm && alarm.coins && alarm.coins.length > 0 ? [...alarm.coins] : [...userPortfolios[activePortfolio]];
+            renderAlarmCoinTags();
 
-    const isNewAlarm = !alarm;
-    const conditions = alarm?.conditions || {};
+            const isNewAlarm = !alarm;
+            const conditions = alarm?.conditions || {};
 
-    document.getElementById('alarmTimeframe').value = alarm?.timeframe || '15m';
-    document.getElementById('alarmVolumeCondition').checked = conditions.volume?.enabled ?? isNewAlarm;
-    document.getElementById('alarmVolumePeriod').value = conditions.volume?.period ?? 20;
-    document.getElementById('alarmVolumeMultiplier').value = conditions.volume?.multiplier ?? 2;
-    document.getElementById('alarmVolumeAmount').value = conditions.volume?.amount ?? 0;
-    document.getElementById('alarmMacdCondition').checked = conditions.macd?.enabled ?? isNewAlarm;
-    document.getElementById('alarmMacdSignalType').value = conditions.macd?.signalType ?? 'buy';
-    document.getElementById('alarmTrendFilterEnabled').checked = alarm?.trendFilterEnabled ?? false;
-    document.getElementById('alarmADXThreshold').value = alarm?.adxThreshold || 25;
-    document.getElementById('alarmFibCondition').checked = conditions.fibonacci?.enabled ?? false;
-    showPanel('alarmSettingsPanel');
-}
+            document.getElementById('alarmTimeframe').value = alarm?.timeframe || '15m';
+            document.getElementById('alarmVolumeCondition').checked = conditions.volume?.enabled ?? isNewAlarm;
+            document.getElementById('alarmVolumePeriod').value = conditions.volume?.period ?? 20;
+            document.getElementById('alarmVolumeMultiplier').value = conditions.volume?.multiplier ?? 2;
+            document.getElementById('alarmVolumeAmount').value = conditions.volume?.amount ?? 0;
+            document.getElementById('alarmMacdCondition').checked = conditions.macd?.enabled ?? isNewAlarm;
+            document.getElementById('alarmMacdSignalType').value = conditions.macd?.signalType ?? 'buy';
+            document.getElementById('alarmTrendFilterEnabled').checked = alarm?.trendFilterEnabled ?? false;
+            document.getElementById('alarmADXThreshold').value = alarm?.adxThreshold || 25;
+            document.getElementById('alarmFibCondition').checked = conditions.fibonacci?.enabled ?? false;
+            showPanel('alarmSettingsPanel');
+        }
 
+        async function saveAlarm() {
+            const alarmId = document.getElementById('alarmIdInput').value;
+            const alarmName = document.getElementById('alarmNameInput').value;
+            if (!alarmName) {
+                showNotification("Alarm adı boş bırakılamaz.", false);
+                return;
+            }
 
-async function saveAlarm() {
-    const alarmId = document.getElementById('alarmIdInput').value;
-    const alarmName = document.getElementById('alarmNameInput').value;
-    if (!alarmName) {
-        showNotification("Alarm adı boş bırakılamaz.", false);
-        return;
-    }
+            const volumeEnabled = document.getElementById('alarmVolumeCondition').checked;
+            const macdEnabled = document.getElementById('alarmMacdCondition').checked;
 
-    const volumeEnabled = document.getElementById('alarmVolumeCondition').checked;
-    const macdEnabled = document.getElementById('alarmMacdCondition').checked;
+            if (!volumeEnabled && !macdEnabled) {
+                showNotification("En az bir alarm koşulu (Hacim veya MACD) seçmelisiniz.", false);
+                return;
+            }
+            
+            const newAlarm = {
+                id: alarmId || `alarm_${new Date().getTime()}`,
+                name: alarmName,
+                coins: tempAlarmCoins,
+                isActive: alarmId ? (userAlarms.find(a => a.id === alarmId)?.isActive ?? true) : true,
+                timeframe: document.getElementById('alarmTimeframe').value,
+                trendFilterEnabled: document.getElementById('alarmTrendFilterEnabled').checked,
+                adxThreshold: parseInt(document.getElementById('alarmADXThreshold').value),
+                conditions: {
+                    volume: {
+                        enabled: volumeEnabled,
+                        period: parseInt(document.getElementById('alarmVolumePeriod').value),
+                        multiplier: parseFloat(document.getElementById('alarmVolumeMultiplier').value),
+                        amount: parseFloat(document.getElementById('alarmVolumeAmount').value) || 0
+                    },
+                    macd: {
+                        enabled: macdEnabled,
+                        signalType: document.getElementById('alarmMacdSignalType').value
+                    },
+                    fibonacci: {
+                        enabled: document.getElementById('alarmFibCondition').checked
+                    }
+                }
+            };
 
-    if (!volumeEnabled && !macdEnabled) {
-        showNotification("En az bir alarm koşulu (Hacim veya MACD) seçmelisiniz.", false);
-        return;
-    }
-    
-    const newAlarm = {
-        id: alarmId || `alarm_${new Date().getTime()}`,
-        name: alarmName,
-        coins: tempAlarmCoins,
-        isActive: alarmId ? (userAlarms.find(a => a.id === alarmId)?.isActive ?? true) : true,
-        timeframe: document.getElementById('alarmTimeframe').value,
-        trendFilterEnabled: document.getElementById('alarmTrendFilterEnabled').checked,
-        adxThreshold: parseInt(document.getElementById('alarmADXThreshold').value),
-        conditions: {
-            volume: {
-                enabled: volumeEnabled,
-                period: parseInt(document.getElementById('alarmVolumePeriod').value),
-                multiplier: parseFloat(document.getElementById('alarmVolumeMultiplier').value),
-                amount: parseFloat(document.getElementById('alarmVolumeAmount').value) || 0
-            },
-            macd: {
-                enabled: macdEnabled,
-                signalType: document.getElementById('alarmMacdSignalType').value
-            },
-            fibonacci: {
-                enabled: document.getElementById('alarmFibCondition').checked
+            if (alarmId) {
+                userAlarms = userAlarms.map(a => a.id === alarmId ? newAlarm : a);
+            } else {
+                userAlarms.push(newAlarm);
+            }
+
+            try {
+                await userDocRef.update({ alarms: userAlarms });
+                showNotification("Alarm başarıyla kaydedildi.", true);
+                renderAlarms();
+                closeAllPanels();
+            } catch (error) {
+                console.error("Alarm kaydedilirken hata:", error);
+                showNotification("Alarm kaydedilemedi.", false);
             }
         }
-    };
 
-    if (alarmId) {
-        userAlarms = userAlarms.map(a => a.id === alarmId ? newAlarm : a);
-    } else {
-        userAlarms.push(newAlarm);
-    }
-
-    try {
-        await userDocRef.update({ alarms: userAlarms });
-        showNotification("Alarm başarıyla kaydedildi.", true);
-        renderAlarms();
-        closeAllPanels();
-    } catch (error) {
-        console.error("Alarm kaydedilirken hata:", error);
-        showNotification("Alarm kaydedilemedi.", false);
-    }
-}
-
-async function runBacktest(alarmId) {
+        async function runBacktest(alarmId) {
             const alarm = userAlarms.find(a => a.id === alarmId);
             if (!alarm) return;
 
@@ -1787,10 +1756,19 @@ async function runBacktest(alarmId) {
                          statsHTML += `<p>Fibonacci Filtresi: <span class="value">${data.conditionStats.fibonacciMet} kez</span> (${((data.conditionStats.fibonacciMet / totalCandles) * 100).toFixed(1)}%)</p>`;
                     }
                     
+                    let recommendationsHTML = '';
+                    if (data.recommendations && data.recommendations.length > 0) {
+                        recommendationsHTML = `<div class="backtest-card" style="grid-column: 1 / -1; background-color: rgba(41, 98, 255, 0.1);">
+                                <h5 style="color: #64b5f6;">AI Tavsiyeleri</h5>
+                                <div style="margin-top: 10px;">${data.recommendations.map(r => `<p style="margin:4px 0;">${r}</p>`).join('')}</div>
+                            </div>`;
+                    }
+                    
                     resultsHTML += `
                     <div class="backtest-card">
                         <h4 style="color:var(--text-primary); margin-bottom: 15px;">${coin.replace("USDT","")} Sonuçları (Toplam Sinyal: ${data.totalSignals})</h4>
                         <div class="backtest-results-grid">
+                            ${recommendationsHTML}
                             <div class="backtest-card" style="grid-column: 1 / -1;">
                                 <div class="backtest-results-grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
                                     <div>
@@ -1848,7 +1826,7 @@ async function runBacktest(alarmId) {
                     }
                     
                     const renderStatus = (label, condition, isEnabled) => {
-                        if (!isEnabled) return ''; // Eğer bu koşul alarmda aktif değilse, hiç gösterme
+                        if (!isEnabled) return '';
 
                         const isMet = condition.met;
                         const icon = isMet ? '<i class="fas fa-check-circle" style="color: var(--value-positive);"></i>' : '<i class="fas fa-times-circle" style="color: var(--value-negative);"></i>';
@@ -2259,6 +2237,7 @@ async function runBacktest(alarmId) {
         updateAdminUI();
     }
 </script>
+   
 
 </body>
 </html>
