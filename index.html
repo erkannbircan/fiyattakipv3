@@ -165,15 +165,19 @@
                             <div class="discovery-grid">
                                 <div class="discovery-group">
                                     <label>Tetikleyici Olay:</label>
-                                    <select id="signalAnalysisTimeframe" title="Zaman Dilimi"><option value="15m">15D</option><option value="1h" selected>1S</option><option value="4h">4S</option><option value="1d">1G</option></select>
-                                    <input type="number" id="signalAnalysisChange" value="5" step="1" title="Fiyat Değişim Eşiği (%)">
-                                    <select id="signalAnalysisDirection" title="Değişim Yönü"><option value="up">Artış (+%)</option><option value="down">Azalış (-%)</option></select>
-                                    <select id="signalAnalysisPeriod" title="Geçmiş Veri Periyodu"><option value="7">Son 7 Gün</option><option value="30" selected>Son 30 Gün</option><option value="90">Son 90 Gün</option></select>
+                                    <div>
+                                        <select id="signalAnalysisTimeframe" title="Zaman Dilimi"><option value="15m">15D</option><option value="1h" selected>1S</option><option value="4h">4S</option><option value="1d">1G</option></select>
+                                        <input type="number" id="signalAnalysisChange" value="5" step="1" title="Fiyat Değişim Eşiği (%)">
+                                        <select id="signalAnalysisDirection" title="Değişim Yönü"><option value="up">Artış (+%)</option><option value="down">Azalış (-%)</option></select>
+                                        <select id="signalAnalysisPeriod" title="Geçmiş Veri Periyodu"><option value="7">Son 7 Gün</option><option value="30" selected>Son 30 Gün</option><option value="90">Son 90 Gün</option></select>
+                                    </div>
                                 </div>
                                 <div class="discovery-group">
                                      <label>Ek Filtreler (Opsiyonel):</label>
-                                     <input type="number" id="signalAnalysisRsi" placeholder="RSI Altında < Örn: 40">
-                                     <input type="number" id="signalAnalysisAdx" placeholder="ADX Üstünde > Örn: 25">
+                                     <div>
+                                        <input type="number" id="signalAnalysisRsi" placeholder="RSI Altında < Örn: 40">
+                                        <input type="number" id="signalAnalysisAdx" placeholder="ADX Üstünde > Örn: 25">
+                                     </div>
                                 </div>
                             </div>
                         </div>
@@ -271,16 +275,27 @@
         </div>
         <div class="panel-content">
             <input type="hidden" id="alarmIdInput">
-            <div class="collapsible">
-                </div>
             </div>
     </div>
 
     <div id="alarmStatusPanel" class="panel wide">
-       </div>
+        <div class="panel-header">
+            <h3 id="alarmStatusTitle">Alarm Durumu</h3>
+            <div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div>
+        </div>
+        <div class="panel-content" id="alarmStatusContent"></div>
+    </div>
 
     <div id="backtestPanel" class="panel wide">
-      </div>
+        <div class="panel-header">
+            <h3>Backtest Sonuçları</h3>
+            <div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div>
+        </div>
+        <div class="panel-content">
+            <h4 id="backtestAlarmName"></h4>
+            <div id="backtest-results-container"></div>
+        </div>
+    </div>
 
     <div id="portfolioModal" class="panel small">
         <div class="panel-header">
