@@ -1838,7 +1838,6 @@
                 }
             }
 
-            // --- EVENT LISTENERS (BURASI GÜVENLİ ALAN) ---
             document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); auth.signOut(); });
             document.getElementById('refreshBtn').addEventListener('click', fetchAllDataAndRender);
             document.getElementById('addCoinBtn').addEventListener('click', () => addNewAsset('crypto'));
@@ -2166,5 +2165,7 @@
         document.getElementById('signupBtn').addEventListener('click', () => auth.createUserWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value).catch(err => document.getElementById("error-message").textContent = err.message));
     });
 </script>
+</body>
+</html>
 </body>
 </html>
