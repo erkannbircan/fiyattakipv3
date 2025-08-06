@@ -380,6 +380,71 @@
                     </table>
                 </div>
             </div>
+            <div id="crypto-ai-content" class="tab-content">
+                <div class="add-asset-bar">
+                    <input type="text" id="newCoinInput-ai" placeholder="BTC, ETH, SOL...">
+                    <button id="addCoinBtn-ai"><i class="fas fa-plus"></i> <span data-lang="add">Ekle</span></button>
+                </div>
+                <div class="table-controls">
+                    <button id="toggleSortBtn-ai"><i class="fas fa-sort"></i> Sırala</button>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="drag-handle-col hidden"><i class="fas fa-grip-lines"></i></th>
+                                <th class="sortable" data-sort-key="pair"><span data-lang="coin">Coin</span><span class="sort-indicator"></span></th>
+                                <th class="sortable" data-sort-key="latestPrice"><span data-lang="price">Fiyat</span><span class="sort-indicator"></span></th>
+                                <th class="sortable" data-sort-key="recommendation">Tavsiye</th>
+                                <th class="sortable" data-sort-key="recommendationSummary">AI Özet</th>
+                                <th data-lang="delete">Sil</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cryptoAiPriceTable"></tbody>
+                    </table>
+                </div>
+
+                <div class="global-analysis-header" style="margin-top: 30px;">
+                    <h3><i class="fas fa-magic-sparkles" style="color:var(--accent-blue)"></i> Global AI Analizi</h3>
+                    <div class="global-analysis-controls">
+                        <div class="interval-filters" id="cryptoIntervalFilters">
+                             <button class="active" data-interval="4h">4S</button>
+                             <button data-interval="1h">1S</button>
+                             <button data-interval="15m">15D</button>
+                        </div>
+                        <div class="interval-filters" id="cryptoRecommendationFilters">
+                            <button class="active" data-filter="all">Tümü</button>
+                            <button data-filter="buy">Al</button>
+                            <button data-filter="sell">Sat</button>
+                            <button data-filter="hold">Tut</button>
+                        </div>
+                        <button class="ai-btn" id="analyzeAllCryptoBtn" style="display: none;" title="Tüm listeyi yapay zeka ile yorumla">
+                            <i class="fas fa-brain"></i> Hepsini Yorumla
+                        </button>
+                    </div>
+                </div>
+
+                <div class="settings-section" style="margin-top: 20px;">
+                     <div class="collapsible">
+                        <div class="collapsible-header">
+                            <span>Gösterilecek İndikatörleri Seç</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="collapsible-content">
+                             <div class="filters-grid" id="crypto-indicator-filters-grid">
+                                </div>
+                             <div class="analysis-actions">
+                                 <button id="updateCryptoAnalysisBtn"><i class="fas fa-check"></i> Analiz Ayarlarını Güncelle</button>
+                             </div>
+                        </div>
+                     </div>
+                </div>
+                <div id="crypto-indicator-cards-container" class="indicator-cards-container"></div>
+                 <div class="collapsible" style="margin-top: 25px;">
+                    <div class="collapsible-header"><span>Terimler Sözlüğü</span><i class="fas fa-chevron-down"></i></div>
+                    <div class="collapsible-content" id="dictionaryContent"></div>
+                </div>
+            </div>
 
 <div id="alarms-content" class="tab-content">
     <div class="collapsible" style="margin-bottom: 25px;">
