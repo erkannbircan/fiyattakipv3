@@ -130,7 +130,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="global-analysis-header">
                     <h3><i class="fas fa-magic-sparkles"></i> AI Analiz Sonuçları</h3>
                     <div class="global-analysis-controls">
@@ -140,9 +139,7 @@
                             <button data-filter="sell">Sat</button>
                             <button data-filter="hold">Tut</button>
                         </div>
-                        <button class="ai-btn" id="analyzeAllCryptoBtn" style="display: none;" title="Tüm listeyi yapay zeka ile yorumla">
-                            <i class="fas fa-brain"></i> Hepsini Yorumla
-                        </button>
+                        <button class="ai-btn" id="analyzeAllCryptoBtn" style="display: none;" title="Tüm listeyi yapay zeka ile yorumla"><i class="fas fa-brain"></i> Hepsini Yorumla</button>
                     </div>
                 </div>
                 <div id="crypto-indicator-cards-container" class="indicator-cards-container"></div>
@@ -155,12 +152,9 @@
                         <i class="fas fa-chevron-down"></i>
                     </div>
                     <div class="collapsible-content open" id="signal-discovery-tool">
-                        <p>Geçmiş verileri analiz ederek en kârlı alarm koşullarını bulun. Örn: "BTC, son 1 ayda %5 arttığında, bu artıştan hemen önceki ortak koşullar nelerdi?"</p>
+                        <p>Geçmiş verileri analiz ederek en kârlı alarm koşullarını bulun.</p>
                         <div class="settings-section">
-                            <div class="setting-item">
-                                <label for="signalAnalysisCoins">Analiz Edilecek Coin(ler)</label>
-                                <input type="text" id="signalAnalysisCoins" placeholder="BTC, ETH, SOL... (virgülle ayırın)">
-                            </div>
+                            <div class="setting-item"><label for="signalAnalysisCoins">Analiz Edilecek Coin(ler)</label><input type="text" id="signalAnalysisCoins" placeholder="BTC, ETH, SOL..."></div>
                             <div class="discovery-grid">
                                 <div class="discovery-group">
                                     <label>Tetikleyici Olay:</label>
@@ -180,15 +174,11 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="analysis-actions">
-                            <button id="runSignalAnalysisBtn"><i class="fas fa-search-dollar"></i> Analizi Başlat</button>
-                        </div>
+                        <div class="analysis-actions"><button id="runSignalAnalysisBtn"><i class="fas fa-search-dollar"></i> Analizi Başlat</button></div>
                         <div id="signalAnalysisResultContainer" style="margin-top: 20px;"></div>
                     </div>
                 </div>
-                <div class="add-asset-bar">
-                    <button id="createNewAlarmBtn" style="width: 100%; justify-content: center;"><i class="fas fa-plus"></i> Yeni Alarm Oluştur</button>
-                </div>
+                <div class="add-asset-bar"><button id="createNewAlarmBtn" style="width: 100%; justify-content: center;"><i class="fas fa-plus"></i> Yeni Alarm Oluştur</button></div>
                 <div id="alarmsListContainer"></div>
             </div>
 
@@ -199,7 +189,7 @@
                     <button data-filter="below">Pivot Altı</button>
                 </div>
                 <div id="crypto-pivot-container" class="pivot-container"></div>
-                 <div id="pivot-dictionary-container"></div>
+                <div id="pivot-dictionary-container"></div>
             </div>
 
             <div class="update-time"><i class="far fa-clock"></i>&nbsp;<span data-lang="last_update">Son güncelleme</span>: <span id="updateTime"></span></div>
@@ -244,51 +234,32 @@
     </div>
 
     <div id="detailPanel" class="panel">
-         <div class="panel-header">
-            <h3 id="detailPanelTitle"></h3>
-             <div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div>
-        </div>
+         <div class="panel-header"><h3 id="detailPanelTitle"></h3><div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div></div>
         <div class="panel-content" id="detailPanelContent"></div>
     </div>
 
     <div id="chartPanel" class="panel wide">
-        <div class="panel-header">
-            <h3 id="chartPanelTitle"></h3>
-            <div class="panel-controls"><button class="panel-btn close-btn" title="Kapat"><i class="fas fa-times"></i></button></div>
-        </div>
+        <div class="panel-header"><h3 id="chartPanelTitle"></h3><div class="panel-controls"><button class="panel-btn close-btn" title="Kapat"><i class="fas fa-times"></i></button></div></div>
         <div id="chartContainer"></div>
     </div>
 
     <div id="analysisPanel" class="panel wide">
-        <div class="panel-header">
-            <h3><i class="fas fa-brain"></i> AI Analizi</h3>
-            <div class="panel-controls"><button class="panel-btn close-btn" title="Kapat"><i class="fas fa-times"></i></button></div>
-        </div>
+        <div class="panel-header"><h3><i class="fas fa-brain"></i> AI Analizi</h3><div class="panel-controls"><button class="panel-btn close-btn" title="Kapat"><i class="fas fa-times"></i></button></div></div>
         <div id="analysisContent" class="panel-content"></div>
     </div>
 
     <div id="alarmSettingsPanel" class="panel">
-        <div class="panel-header">
-            <h3 id="alarmPanelTitle">Alarm Kuralları</h3>
-            <div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div>
-        </div>
-        <div class="panel-content">
-        </div>
+        <div class="panel-header"><h3 id="alarmPanelTitle">Alarm Kuralları</h3><div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div></div>
+        <div class="panel-content" id="alarmSettingsContent"></div>
     </div>
 
     <div id="alarmStatusPanel" class="panel wide">
-        <div class="panel-header">
-            <h3 id="alarmStatusTitle">Alarm Durumu</h3>
-            <div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div>
-        </div>
+        <div class="panel-header"><h3 id="alarmStatusTitle">Alarm Durumu</h3><div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div></div>
         <div class="panel-content" id="alarmStatusContent"></div>
     </div>
 
     <div id="backtestPanel" class="panel wide">
-        <div class="panel-header">
-            <h3>Backtest Sonuçları</h3>
-            <div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div>
-        </div>
+        <div class="panel-header"><h3>Backtest Sonuçları</h3><div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div></div>
         <div class="panel-content">
             <h4 id="backtestAlarmName"></h4>
             <div id="backtest-results-container"></div>
@@ -296,17 +267,10 @@
     </div>
 
     <div id="portfolioModal" class="panel small">
-        <div class="panel-header">
-            <h3 id="portfolioModalTitle"></h3>
-            <div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div>
-        </div>
+        <div class="panel-header"><h3 id="portfolioModalTitle"></h3><div class="panel-controls"><button class="panel-btn close-btn"><i class="fas fa-times"></i></button></div></div>
         <div class="panel-content">
-            <div class="input-group">
-                <label id="portfolioModalLabel" for="portfolioNameInput"></label>
-                <input type="text" id="portfolioNameInput">
-            </div>
-            <input type="hidden" id="portfolioActionInput">
-            <input type="hidden" id="originalPortfolioNameInput">
+            <div class="input-group"><label id="portfolioModalLabel" for="portfolioNameInput"></label><input type="text" id="portfolioNameInput"></div>
+            <input type="hidden" id="portfolioActionInput"><input type="hidden" id="originalPortfolioNameInput">
             <div id="portfolio-error-message"></div>
             <button id="savePortfolioBtn" class="button-primary">Kaydet</button>
         </div>
