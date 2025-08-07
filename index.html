@@ -19,9 +19,6 @@
     <link rel="stylesheet" href="style.css">
     
 </head>
-
-    
-</head>
 <body>
     
     <div id="app-loader" class="page" style="justify-content: center; align-items: center; display: flex;">
@@ -64,23 +61,21 @@
                 <div class="tab-link active" data-tab="crypto">Kripto</div>
                 <div class="tab-link" data-tab="crypto-ai">Kripto AI</div>
                 <div class="tab-link" data-tab="crypto-pivot">AI Pivot</div>
+                <div class="tab-link" data-tab="strategy-discovery" id="strategy-discovery-tab" style="display: none;">Strateji Keşfi</div>
                 <div class="tab-link" data-tab="alarms" id="alarms-tab" style="display: none;">Alarmlar</div>
+                <div class="tab-link" data-tab="alarm-reports" id="alarm-reports-tab" style="display: none;">Alarm Raporları</div>
             </div>
 
             <div id="crypto-content" class="tab-content active">
                 <div class="portfolio-controls">
-                    <div class="portfolio-tabs" id="portfolioTabs">
-                        </div>
+                    <div class="portfolio-tabs" id="portfolioTabs"></div>
                     <div class="portfolio-actions">
                          <button id="newPortfolioBtn" class="action-btn-sm" title="Yeni Liste"><i class="fas fa-plus"></i></button>
                          <button id="renamePortfolioBtn" class="action-btn-sm" title="Yeniden Adlandır"><i class="fas fa-edit"></i></button>
                          <button id="deletePortfolioBtn" class="action-btn-sm" title="Listeyi Sil"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
-                 <div class="add-asset-bar">
-                    <input type="text" id="newCoinInput" placeholder="BTC, ETH, SOL...">
-                    <button id="addCoinBtn"><i class="fas fa-plus"></i> <span data-lang="add">Ekle</span></button>
-                </div>
+                 <div id="crypto-coin-manager-container"></div>
                 <div class="table-controls">
                     <button id="toggleSortBtn"><i class="fas fa-sort"></i> Sırala</button>
                 </div>
@@ -103,48 +98,48 @@
             </div>
             
             <div id="crypto-ai-content" class="tab-content">
-                <div class="settings-section" style="margin-top: 0;">
-                     <div class="collapsible">
-                        <div class="collapsible-header open">
-                            <span><i class="fas fa-cogs"></i> AI Analiz Ayarları</span>
-                            <i class="fas fa-chevron-down"></i>
-                        </div>
-                        <div class="collapsible-content open">
-                             <h5 class="setting-subtitle">1. Analiz Stratejisi Seçin</h5>
-                             <div class="strategy-filters" id="strategyPresetFilters">
-                                 <button class="active" data-preset="momentum">⚡ Momentum</button>
-                                 <button data-preset="trend">📈 Trend</button>
-                                 <button data-preset="volatility">🌊 Volatilite</button>
-                                 <button data-preset="all">⭐ Kapsamlı</button>
-                                 <button data-preset="custom">🔧 Özel</button>
-                             </div>
-                             <div id="customIndicatorSection" style="display: none;">
-                                <h5 class="setting-subtitle">Özelleştir: Gösterilecek İndikatörler</h5>
-                                <div class="filters-grid" id="crypto-indicator-filters-grid"></div>
-                             </div>
-                             <hr class="divider">
-                             <h5 class="setting-subtitle">2. Analiz Edilecek Coinleri Yönetin</h5>
-                             <div class="add-asset-bar" style="margin-bottom: 10px;">
-                                 <input type="text" id="newCoinInput-ai" placeholder="BTC, ETH, SOL...">
-                                 <button id="addCoinBtn-ai"><i class="fas fa-plus"></i> <span data-lang="add">Ekle</span></button>
-                             </div>
-                             <div id="aiCoinSelectionGrid"></div>
-                             <hr class="divider">
-                             <div class="analysis-actions">
-                                 <button id="updateCryptoAnalysisBtn"><i class="fas fa-check"></i> Analiz Ayarlarını Güncelle</button>
-                             </div>
-                        </div>
-                     </div>
-                </div>
+                <div class="collapsible" style="margin-bottom: 25px;">
+                    <div class="collapsible-header open">
+                        <span><i class="fas fa-cogs"></i> AI Analiz Ayarları</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="collapsible-content open">
+                         <div class="ai-settings-grid">
+                            <div class="ai-settings-group">
+                                <h5 class="setting-subtitle">1. Analiz Stratejisi</h5>
+                                <div class="strategy-filters" id="strategyPresetFilters">
+                                     <button class="active" data-preset="momentum">⚡ Momentum</button>
+                                     <button data-preset="trend">📈 Trend</button>
+                                     <button data-preset="volatility">🌊 Volatilite</button>
+                                     <button data-preset="all">⭐ Kapsamlı</button>
+                                     <button data-preset="custom">🔧 Özel</button>
+                                </div>
+                                <div id="customIndicatorSection" style="display: none; margin-top: 15px;">
+                                    <h5 class="setting-subtitle" style="margin: 0 0 10px 0; border:none; padding:0;">Özel Göstergeler</h5>
+                                    <div class="filters-grid" id="crypto-indicator-filters-grid"></div>
+                                </div>
+                            </div>
+                            <div class="ai-settings-group">
+                                <h5 class="setting-subtitle">2. Zaman Aralığı</h5>
+                                 <div class="interval-filters" id="cryptoIntervalFilters">
+                                     <button class="active" data-interval="4h">4S</button>
+                                     <button data-interval="1h">1S</button>
+                                     <button data-interval="15m">15D</button>
+                                </div>
+                            </div>
+                         </div>
+                         <hr class="divider">
+                         <h5 class="setting-subtitle">3. Analiz Edilecek Coinler</h5>
+                         <div id="ai-coin-manager-container"></div>
+                         <div class="analysis-actions">
+                             <button id="updateCryptoAnalysisBtn"><i class="fas fa-check"></i> Analiz Ayarlarını Güncelle</button>
+                         </div>
+                    </div>
+                 </div>
 
-                <div class="global-analysis-header" style="margin-top: 30px;">
+                <div class="global-analysis-header">
                     <h3><i class="fas fa-magic-sparkles" style="color:var(--accent-blue)"></i> Global AI Analizi</h3>
                     <div class="global-analysis-controls">
-                        <div class="interval-filters" id="cryptoIntervalFilters">
-                             <button class="active" data-interval="4h">4S</button>
-                             <button data-interval="1h">1S</button>
-                             <button data-interval="15m">15D</button>
-                        </div>
                         <div class="interval-filters" id="cryptoRecommendationFilters">
                             <button class="active" data-filter="all">Tümü</button>
                             <button data-filter="buy">Al</button>
@@ -156,7 +151,6 @@
                         </button>
                     </div>
                 </div>
-
                 <div id="crypto-indicator-cards-container" class="indicator-cards-container"></div>
                  <div class="collapsible" style="margin-top: 25px;">
                     <div class="collapsible-header"><span><i class="fas fa-book"></i> Terimler Sözlüğü</span><i class="fas fa-chevron-down"></i></div>
@@ -164,8 +158,8 @@
                 </div>
             </div>
 
-            <div id="alarms-content" class="tab-content">
-                <div class="collapsible" style="margin-bottom: 25px;">
+            <div id="strategy-discovery-content" class="tab-content">
+                <div class="collapsible open" style="margin-bottom: 25px;">
                     <div class="collapsible-header open">
                         <span><i class="fas fa-flask"></i> Strateji Keşif Aracı (Sinyal DNA Analizi)</span>
                         <i class="fas fa-chevron-down"></i>
@@ -173,13 +167,13 @@
                     <div class="collapsible-content open">
                         <p class="section-description">
                             Geçmiş verileri analiz ederek en kârlı alarm koşullarını bulun. 
-                            Örn: "BTC, son 1 ayda 1 saatlik mumda %5 arttığı anlarda hangi ortak koşullar vardı?"
+                            Örn: "BTC, son 1 ayda 1 saatlik mumda %5 arttığı anlarda hangi ortak teknik gösterge koşulları vardı?"
                         </p>
                         <div class="settings-section" style="border: none; padding: 0;">
-                            <div class="setting-item">
-                                <label for="signalAnalysisCoins" title="Analiz edilecek coinleri virgülle ayırarak girin.">Analiz Edilecek Coin(ler)</label>
-                                <input type="text" id="signalAnalysisCoins" placeholder="BTC, ETH, SOL...">
-                            </div>
+                            <h5 class="setting-subtitle">1. Analiz Edilecek Coinler</h5>
+                            <div id="discovery-coin-manager-container" style="margin-bottom: 20px;"></div>
+
+                            <h5 class="setting-subtitle">2. Temel Koşul</h5>
                             <div class="discovery-grid">
                                 <div>
                                     <label for="signalAnalysisTimeframe">Zaman Dilimi</label>
@@ -210,6 +204,16 @@
                                     </select>
                                 </div>
                             </div>
+                            
+                            <h5 class="setting-subtitle" style="margin-top: 25px;">3. DNA'da Aranacak Ek Parametreler (Opsiyonel)</h5>
+                            <div class="filters-grid" id="signalDnaParamsGrid">
+                                <label class="filter-item"><input type="checkbox" data-param="rsi" checked> RSI</label>
+                                <label class="filter-item"><input type="checkbox" data-param="macd" checked> MACD</label>
+                                <label class="filter-item"><input type="checkbox" data-param="adx" checked> ADX</label>
+                                <label class="filter-item"><input type="checkbox" data-param="volume" checked> Hacim Çarpanı</label>
+                                <label class="filter-item"><input type="checkbox" data-param="bollinger"> Bollinger Bantları</label>
+                            </div>
+
                         </div>
                         <div class="analysis-actions">
                             <button id="runSignalAnalysisBtn"><i class="fas fa-search-dollar"></i> Analizi Başlat</button>
@@ -217,13 +221,50 @@
                         <div id="signalAnalysisResultContainer" style="margin-top: 20px;"></div>
                     </div>
                 </div>
+            </div>
+
+            <div id="alarms-content" class="tab-content">
                 <div class="add-asset-bar">
                     <button id="createNewAlarmBtn" style="width: 100%; justify-content: center;"><i class="fas fa-plus"></i> Yeni Alarm Oluştur</button>
                 </div>
                 <div id="alarmsListContainer"></div>
             </div>
+            
+            <div id="alarm-reports-content" class="tab-content">
+                <div class="page-header">
+                    <h3><i class="fas fa-flag-checkered"></i> Alarm Raporları</h3>
+                    <p class="section-description">Telegram üzerinden gelen sinyallerin anlık performansını buradan takip edin.</p>
+                </div>
+                <div class="table-controls">
+                    <div class="input-group" style="flex-grow: 1; margin-bottom: 0;">
+                        <input type="text" id="reportIdInput" placeholder="Takip edilecek Rapor ID'sini girin...">
+                    </div>
+                     <button id="autoRefreshReportsToggle" title="Otomatik Yenileme"><i class="fas fa-sync-alt"></i></button>
+                </div>
+                 <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Coin</th>
+                                <th>Sinyal Yönü</th>
+                                <th>Sinyal Fiyatı</th>
+                                <th>Anlık Fiyat</th>
+                                <th>Performans (%)</th>
+                                <th>Sinyal Tarihi</th>
+                                <th>Alarm Adı</th>
+                                <th>Kaldır</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alarmReportsTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
 
             <div id="crypto-pivot-content" class="tab-content">
+                <div class="portfolio-controls">
+                    <div class="portfolio-tabs" id="pivotPortfolioTabs"></div>
+                </div>
                 <div class="pivot-filters" id="cryptoPivotFilters">
                     <button class="active" data-filter="all">Tümü</button>
                     <button data-filter="above">Pivot Üstü</button>
@@ -246,7 +287,7 @@
             <div class="settings-section">
                 <h4 data-lang="general_settings">Genel Ayarlar</h4>
                 <div class="setting-item"><label data-lang="language">Dil</label><select id="langSelect"><option value="tr">Türkçe</option><option value="en">English</option></select></div>
-                <div class="setting-item"><label data-lang="auto_refresh">Otomatik Yenileme</label><input type="checkbox" id="autoRefreshToggle"></div>
+                <div class="setting-item"><label data-lang="auto_refresh">Otomatik Yenileme (Liste/Rapor)</label><input type="checkbox" id="autoRefreshToggle"></div>
                 <div class="setting-item"><label data-lang="refresh_interval">Yenileme Aralığı (sn)</label><input type="number" id="refreshInterval" min="10" step="10"></div>
                 <div class="setting-item"><label>Telegram Chat ID</label><input type="text" id="telegramPhoneInput" placeholder="123456789"></div>
                 <div class="telegram-info">
@@ -314,7 +355,7 @@
         <div class="panel-content">
             <input type="hidden" id="alarmIdInput">
             
-            <div class="collapsible">
+            <div class="collapsible open">
                 <div class="collapsible-header open"><span>1. Genel Ayarlar</span><i class="fas fa-chevron-down"></i></div>
                 <div class="collapsible-content open">
                     <div class="setting-item">
@@ -329,21 +370,17 @@
                             <option value="4h">4 Saat</option>
                         </select>
                     </div>
-                    <h5 style="margin-top: 20px; margin-bottom: 10px;">Uygulanacak Coinler</h5>
-                    <div id="alarmCoinSelectionGrid"></div>
-                    <div class="add-asset-bar" style="margin-top: 10px; margin-bottom: 0;">
-                        <input type="text" id="addCoinToAlarmInput" placeholder="BTC, ETH, HOOK...">
-                        <button id="addCoinToAlarmBtn" style="padding: 8px 16px;"><i class="fas fa-plus"></i></button>
-                    </div>
+                    <h5 class="setting-subtitle">Uygulanacak Coinler</h5>
+                    <div id="alarm-coin-manager-container"></div>
                 </div>
             </div>
 
-            <div class="collapsible">
+            <div class="collapsible open">
                 <div class="collapsible-header open"><span>2. Alarm Koşulları (En az 1 tane seçin)</span><i class="fas fa-chevron-down"></i></div>
                 <div class="collapsible-content open">
                     <div class="settings-section alarm-condition-box">
                         <label class="filter-item">
-                            <input type="checkbox" id="alarmVolumeCondition" checked>
+                            <input type="checkbox" id="alarmVolumeCondition" data-condition="volume">
                             <span>Hacim Artışı</span>
                         </label>
                         <div class="alarm-rule-grid" style="margin-top: 10px;">
@@ -357,7 +394,7 @@
                     </div>
                     <div class="settings-section alarm-condition-box">
                         <label class="filter-item">
-                            <input type="checkbox" id="alarmMacdCondition" checked>
+                            <input type="checkbox" id="alarmMacdCondition" data-condition="macd">
                             <span>MACD Kesişimi</span>
                         </label>
                         <div class="alarm-rule-grid" style="margin-top: 10px;">
@@ -368,25 +405,27 @@
                             </select>
                         </div>
                     </div>
-                     <input type="checkbox" id="alarmPriceCondition" style="display: none;">
                 </div>
             </div>
-             <div>
-                <h5 style="margin-top: 20px; margin-bottom: 15px; color: var(--text-secondary);">3. Gelişmiş Filtreler (Opsiyonel)</h5>
-                <div>
+             <div class="collapsible open">
+                <div class="collapsible-header open">
+                    <span>3. Gelişmiş Filtreler (Opsiyonel)</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="collapsible-content open">
                     <div class="alarm-condition-box">
                          <label class="filter-item" title="Sinyalin sadece piyasada belirli bir güçte trend varken çalışmasını sağlar. Kararsız piyasalardaki hatalı sinyalleri filtreler.">
-                            <input type="checkbox" id="alarmTrendFilterEnabled">
-                            <span>Güçlü Trend Filtresini Aktif Et</span>
+                            <input type="checkbox" id="alarmTrendFilterEnabled" data-condition="adx">
+                            <span>Güçlü Trend Filtresi (ADX)</span>
                         </label>
                         <div class="alarm-rule-grid" style="margin-top: 10px;">
-                           <label for="alarmADXThreshold" title="Trendin ne kadar güçlü olduğunu belirtir. 25'in üzeri genellikle güçlü bir trend olarak kabul edilir.">Trend Gücü (ADX) Eşiği</label>
+                           <label for="alarmADXThreshold" title="Trendin ne kadar güçlü olduğunu belirtir. 25'in üzeri genellikle güçlü bir trend olarak kabul edilir.">Trend Gücü > Eşik Değer</label>
                            <input type="number" id="alarmADXThreshold" min="0" max="50" value="25">
                         </div>
                     </div>
                     <div class="alarm-condition-box">
                         <label class="filter-item">
-                            <input type="checkbox" id="alarmMacdHistogramCondition">
+                            <input type="checkbox" id="alarmMacdHistogramCondition" data-condition="macdHistogram">
                             <span>MACD Histogram Filtresi</span>
                         </label>
                         <div class="alarm-rule-grid" style="margin-top: 10px;">
@@ -404,10 +443,10 @@
 
             <div class="pivot-dictionary" style="font-size: 0.85rem; line-height: 1.6; margin-top: 20px;">
                 <h5><i class="fas fa-info-circle"></i> Filtre Açıklamaları</h5>
-                <p><strong>Hacim Artışı:</strong> Belirlenen periyottaki ortalama işlem hacminin, belirlediğiniz kat kadar üzerine çıkan ani hacim patlamalarını yakalar.</p>
-                <p><strong>MACD Kesişimi:</strong> İki hareketli ortalama arasındaki ilişkiyi ölçer. Trend dönüşlerini yakalamak için kullanılır.</p>
-                <p><strong>Güçlü Trend Filtresi (ADX):</strong> Piyasanın yönlü bir trend içinde olup olmadığını (yatay olmadığını) kontrol eder.</p>
-                <p><strong>MACD Histogram Filtresi:</strong> Momentumun gücünü belirli bir eşiğe göre filtreler. Örneğin, "Sıfırdan büyük" seçeneği, momentumun pozitif olduğunu garanti eder.</p>
+                <p><strong>Hacim Artışı:</strong> Belirlenen periyottaki ortalama işlem hacminin, belirlediğiniz kat kadar üzerine çıkan ani hacim patlamalarını yakalar. Güçlü bir alım/satım ilgisinin göstergesidir.</p>
+                <p><strong>MACD Kesişimi:</strong> İki hareketli ortalama arasındaki ilişkiyi ölçer. Trend dönüşlerini ve momentum başlangıçlarını yakalamak için en popüler göstergelerden biridir.</p>
+                <p><strong>Güçlü Trend Filtresi (ADX):</strong> Piyasada bir yön olup olmadığını ölçer. ADX 25'in üzerindeyse, piyasanın yatayda olmadığı ve belirgin bir yükseliş veya düşüş trendinde olduğu anlaşılır. Bu filtre, kararsız piyasalardaki yanlış sinyalleri önler.</p>
+                <p><strong>MACD Histogram Filtresi:</strong> Momentumun gücünü ve yönünü teyit eder. Örneğin, bir 'Al' sinyali için Histogram'ın sıfırdan büyük olması, yükseliş momentumunun devam ettiğini gösterir ve sinyali güçlendirir.</p>
              </div>
              <div class="button-group" style="margin-top:20px;">
                 <button id="testAlarmBtn" style="background-color: #373c4a;"><i class="fab fa-telegram-plane"></i> Test Et</button>
@@ -431,7 +470,7 @@
         </div>
         <div class="panel-content">
             <h4 id="backtestAlarmName"></h4>
-            <p>Bu panel, seçilen alarm stratejisinin geçmiş <strong>1000 mum (yaklaşık 10 gün)</strong> üzerindeki performansını her bir coin için ayrı ayrı gösterir. Sonuçlar, sinyal geldikten <strong>15 dakika ve 1 saat sonraki</strong> fiyat değişimlerine dayanmaktadır.</p>
+            <p>Bu panel, seçilen alarm stratejisinin geçmiş <strong>1000 mum (yaklaşık 10 gün)</strong> üzerindeki performansını her bir coin için ayrı ayrı gösterir. Sonuçlar, sinyal geldikten 15 dakika ve 1 saat sonraki fiyat değişimlerine dayanmaktadır.</p>
             <div id="backtest-results-container">
                 <div style="text-align: center; padding: 20px;"><div class="loading"></div></div>
             </div>
