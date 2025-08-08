@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Firebase Config
     const firebaseConfig = {
         apiKey: "AIzaSyA3flTu3Jz9E1D1U_DympYE7B4I4FDxj88",
         authDomain: "fiyattakipv3.firebaseapp.com",
@@ -23,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let autoRefreshTimer = null, reportsRefreshTimer = null;
     let allCryptoData = [], userAlarms = [], trackedReports = [];
     let currentSort = { key: null, order: 'default' };
-    let userPortfolios = {}; 
+    let userPortfolios = {};
     let activePortfolio = 'Varsayılan';
     let cryptoAiPairs = [];
     let discoveryCoins = [];
