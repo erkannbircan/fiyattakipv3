@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const appLoader = document.getElementById('app-loader');
     const loginPage = document.getElementById('login-page');
     const trackerPage = document.getElementById('tracker-page');
+    const errorMessageDiv = document.getElementById('error-message');
     const AVAILABLE_INDICATORS = { ema: "EMA", sma: "SMA", rsi: "RSI", macd: "MACD", bollinger: "Bollinger Bantları", stochRsi: "Stochastic RSI", volume: "Hacim (24s)", atr: "ATR", ichimoku: "Ichimoku Cloud", fibonacci: "Fibonacci" };
     
     const translations = { 
@@ -144,7 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return { level_236: high - diff * 0.236, level_382: high - diff * 0.382, level_500: high - diff * 0.5, level_618: high - diff * 0.618, }; 
     };
 
-
     // --- AUTH & DATA LOADING ---
     auth.onAuthStateChanged(async user => {
         if (user) {
@@ -173,7 +173,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             } catch (err) {
                 console.error("Auth/Firestore Error:", err);
-                if (err.code === 'permission-denied') { document.getElementById("error-message").textContent = "Firestore yetki hatası. Veritabanı kurallarınızı kontrol edin."; }
+                if (errorMessageDiv) {
+                    if (err.code === 'permission-denied') { 
+                        errorMessageDiv.textContent = "Firestore yetki hatası. Veritabanı kurallarınızı kontrol edin.";
+                    } else {
+                        errorMessageDiv.textContent = `Bir hata oluştu: ${err.message}`;
+                    }
+                }
                 auth.signOut();
             }
         } else {
@@ -225,7 +231,8 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchAiDataAndRender();
         renderAlarmReports();
 
-        setupAllEventListeners();
+        // Event Listeners are now more specific
+        setupTrackerPageEventListeners();
     }
     
     // --- UI RENDERING & SETTINGS ---
@@ -562,15 +569,16 @@ document.addEventListener('DOMContentLoaded', () => {
     
     async function fetchAllDataAndRender() {
         const refreshBtn = document.getElementById('refreshBtn');
-        showLoading(refreshBtn);
+        if (refreshBtn) showLoading(refreshBtn);
         
         const currentCoinList = userPortfolios[activePortfolio] || [];
         allCryptoData = await Promise.all(currentCoinList.map(pair => fetchCryptoData(pair, false)));
         
         sortAndRenderTable();
         renderSupportResistance();
-        hideLoading(refreshBtn);
-        document.getElementById('updateTime').textContent = new Date().toLocaleString(settings.lang);
+        if (refreshBtn) hideLoading(refreshBtn);
+        const updateTimeEl = document.getElementById('updateTime');
+        if(updateTimeEl) updateTimeEl.textContent = new Date().toLocaleString(settings.lang);
     }
     
     function sortAndRenderTable() {
@@ -595,8 +603,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateAllTableRows(data) {
         const tableBody = document.getElementById('cryptoPriceTable');
+        if (!tableBody) return;
         tableBody.innerHTML = '';
-        const isSorting = !document.querySelector('#crypto-content .drag-handle-col.hidden');
+        const isSorting = document.querySelector('#crypto-content .drag-handle-col') && !document.querySelector('#crypto-content .drag-handle-col.hidden');
         
         const formatPct = (pct) => (typeof pct === 'number') ? `${pct.toFixed(2)}%` : 'N/A';
         const getCellStyle = (colData, threshold) => {
@@ -637,8 +646,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- AI PIVOT PAGE ---
     function renderSupportResistance() {
         const container = document.getElementById('crypto-pivot-container');
+        if (!container) return;
         container.innerHTML = '';
-        document.getElementById('pivot-dictionary-container').innerHTML = `
+        const dictContainer = document.getElementById('pivot-dictionary-container');
+        if(dictContainer) dictContainer.innerHTML = `
             <div class="pivot-dictionary">
                 <p><span>P:</span> Pivot Noktası (Referans)</p>
                 <p><span>R1, R2:</span> Direnç Seviyeleri (Yükseliş Hedefleri)</p>
@@ -742,6 +753,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- ALARM MANAGEMENT ---
     function renderAlarms() {
         const container = document.getElementById('alarmsListContainer');
+        if (!container) return;
         container.innerHTML = userAlarms.length === 0 ? `<p style="text-align:center; color: var(--text-secondary);">Henüz oluşturulmuş alarm yok.</p>` : '';
         userAlarms.forEach(alarm => {
             const card = document.createElement('div');
@@ -773,12 +785,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('alarmPanelTitle').textContent = alarm ? 'Alarmı Düzenle' : 'Yeni Alarm Oluştur';
         const alarmId = alarm ? alarm.id : '';
         document.getElementById('alarmIdInput').value = alarmId;
-        document.querySelector('#alarmSettingsPanel .dna-recommendation')?.remove();
+        const dnaRec = document.querySelector('#alarmSettingsPanel .dna-recommendation');
+        if (dnaRec) dnaRec.remove();
     
         // Paneli sıfırla
         document.querySelectorAll('#alarmSettingsPanel [data-condition]').forEach(el => {
             el.checked = false;
-            el.closest('.alarm-condition-box').dataset.disabled = true;
+            const parentBox = el.closest('.alarm-condition-box');
+            if(parentBox) parentBox.dataset.disabled = true;
         });
     
         if (suggestedParams) {
@@ -790,7 +804,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const recommendationDiv = document.createElement('div');
             recommendationDiv.className = 'dna-recommendation';
             recommendationDiv.innerHTML = `💡 <strong>AI Önerisi:</strong> Bu alarm, "${suggestedParams.coin.replace('USDT','')}" için bulunan başarılı DNA'ya göre ayarlanıyor.`;
-            document.querySelector('#alarmSettingsPanel .collapsible-content').prepend(recommendationDiv);
+            const firstCollapsible = document.querySelector('#alarmSettingsPanel .collapsible-content');
+            if (firstCollapsible) firstCollapsible.prepend(recommendationDiv);
             
             if (dna.avgVolumeMultiplier) {
                 const el = document.getElementById('alarmVolumeCondition');
@@ -822,7 +837,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             const isNewAlarm = !alarm;
             document.getElementById('alarmNameInput').value = alarm?.name || '';
-            tempAlarmCoins = alarm?.coins?.length > 0 ? [...alarm.coins] : [...userPortfolios[activePortfolio]];
+            tempAlarmCoins = alarm?.coins?.length > 0 ? [...alarm.coins] : [...(userPortfolios[activePortfolio] || [])];
             
             const conditions = alarm?.conditions || {};
             document.getElementById('alarmTimeframe').value = alarm?.timeframe || '15m';
@@ -835,7 +850,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (conditionName === 'adx') { isEnabled = alarm.trendFilterEnabled; }
     
                 el.checked = isEnabled;
-                el.closest('.alarm-condition-box').dataset.disabled = !isEnabled;
+                const parentBox = el.closest('.alarm-condition-box');
+                if (parentBox) parentBox.dataset.disabled = !isEnabled;
             });
             
             document.getElementById('alarmVolumePeriod').value = conditions.volume?.period ?? 20;
@@ -891,51 +907,58 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- ALARM REPORTS ---
     async function renderAlarmReports() {
         if (!userDocRef) return;
-        if (!trackedReports || trackedReports.length === 0) {
-            document.getElementById('alarmReportsTable').innerHTML = `<tr><td colspan="8" style="text-align:center;">Takip edilen rapor bulunmuyor. Rapor ID'sini girerek ekleyebilirsiniz.</td></tr>`;
-            return;
-        }
-        
-        const reportsSnapshot = await userDocRef.collection('alarm_reports')
-                                        .where('reportId', 'in', trackedReports)
-                                        .orderBy('timestamp', 'desc')
-                                        .get();
-        
-        if (reportsSnapshot.empty) {
-            document.getElementById('alarmReportsTable').innerHTML = `<tr><td colspan="8" style="text-align:center;">Takip edilen rapor bulunmuyor.</td></tr>`;
-            return;
-        }
-    
-        const reports = reportsSnapshot.docs.map(doc => doc.data());
-        const coinPairs = [...new Set(reports.map(r => r.coin))];
-        const pricesData = await Promise.all(coinPairs.map(pair => axios.get(`https://api.binance.com/api/v3/ticker/price?symbol=${pair}`).then(res => res.data).catch(() => ({ symbol: pair, price: null }))));
-        const priceMap = new Map(pricesData.map(p => [p.symbol, parseFloat(p.price)]));
-    
         const tableBody = document.getElementById('alarmReportsTable');
-        tableBody.innerHTML = '';
-        reports.forEach(report => {
-            const currentPrice = priceMap.get(report.coin);
-            let performancePct = 'N/A';
-            let perfClass = '';
-            if (currentPrice) {
-                const change = ((currentPrice - report.signalPrice) / report.signalPrice) * 100;
-                performancePct = (report.signalDirection === 'SATIŞ' ? -change : change);
-                perfClass = performancePct > 0 ? 'positive' : 'negative';
-            }
+        if(!tableBody) return;
+
+        if (!trackedReports || trackedReports.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Takip edilen rapor bulunmuyor. Rapor ID'sini girerek ekleyebilirsiniz.</td></tr>`;
+            return;
+        }
+        
+        try {
+            const reportsSnapshot = await userDocRef.collection('alarm_reports')
+                                            .where('reportId', 'in', trackedReports)
+                                            .orderBy('timestamp', 'desc')
+                                            .get();
             
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${report.coin.replace('USDT', '')}</td>
-                <td>${report.signalDirection}</td>
-                <td>$${formatPrice(report.signalPrice)}</td>
-                <td>$${currentPrice ? formatPrice(currentPrice) : 'N/A'}</td>
-                <td class="performance-cell ${perfClass}">${typeof performancePct === 'number' ? performancePct.toFixed(2) + '%' : 'N/A'}</td>
-                <td>${report.timestamp.toDate().toLocaleString()}</td>
-                <td>${report.alarmName}</td>
-                <td><button class="action-btn remove-report-btn" data-report-id="${report.reportId}"><i class="fas fa-times"></i></button></td>
-            `;
-            tableBody.appendChild(row);
-        });
+            if (reportsSnapshot.empty) {
+                tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Takip edilen rapor bulunmuyor.</td></tr>`;
+                return;
+            }
+        
+            const reports = reportsSnapshot.docs.map(doc => doc.data());
+            const coinPairs = [...new Set(reports.map(r => r.coin))];
+            const pricesData = await Promise.all(coinPairs.map(pair => axios.get(`https://api.binance.com/api/v3/ticker/price?symbol=${pair}`).then(res => res.data).catch(() => ({ symbol: pair, price: null }))));
+            const priceMap = new Map(pricesData.map(p => [p.symbol, parseFloat(p.price)]));
+        
+            tableBody.innerHTML = '';
+            reports.forEach(report => {
+                const currentPrice = priceMap.get(report.coin);
+                let performancePct = 'N/A';
+                let perfClass = '';
+                if (currentPrice) {
+                    const change = ((currentPrice - report.signalPrice) / report.signalPrice) * 100;
+                    performancePct = (report.signalDirection === 'SATIŞ' ? -change : change);
+                    perfClass = performancePct > 0 ? 'positive' : 'negative';
+                }
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${report.coin.replace('USDT', '')}</td>
+                    <td>${report.signalDirection}</td>
+                    <td>$${formatPrice(report.signalPrice)}</td>
+                    <td>$${currentPrice ? formatPrice(currentPrice) : 'N/A'}</td>
+                    <td class="performance-cell ${perfClass}">${typeof performancePct === 'number' ? performancePct.toFixed(2) + '%' : 'N/A'}</td>
+                    <td>${report.timestamp.toDate().toLocaleString()}</td>
+                    <td>${report.alarmName}</td>
+                    <td><button class="action-btn remove-report-btn" data-report-id="${report.reportId}"><i class="fas fa-times"></i></button></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        } catch(error) {
+            console.error("Error fetching alarm reports:", error);
+            tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color: var(--accent-red);">Raporlar yüklenirken bir hata oluştu.</td></tr>`;
+        }
     }
     
     async function addReportToTrack(reportId) {
@@ -958,26 +981,80 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // --- EVENT LISTENERS SETUP ---
-    function setupAllEventListeners() {
-        setupGlobalEventListeners();
-        setupTabEventListeners();
-        setupPanelEventListeners();
-        setupMainPageActionListeners();
-        setupAiPageActionListeners();
-        setupPivotPageActionListeners();
-        setupStrategyDiscoveryListeners();
-        setupAlarmEventListeners();
-        setupReportEventListeners();
-        setupCoinManagerEventListeners();
+    function setupGlobalEventListeners() {
+        document.body.addEventListener('click', (e) => {
+            if (e.target.closest('.close-btn') || e.target === modalOverlay) closeAllPanels();
+        });
+    }
+
+    function setupAuthEventListeners() {
+        const loginBtn = document.getElementById('loginBtn');
+        const signupBtn = document.getElementById('signupBtn');
+
+        if(loginBtn) {
+            loginBtn.addEventListener('click', async () => {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                if (!email || !password) {
+                    if (errorMessageDiv) errorMessageDiv.textContent = 'E-posta ve şifre alanları boş bırakılamaz.';
+                    return;
+                }
+                showLoading(loginBtn);
+                try {
+                    await auth.signInWithEmailAndPassword(email, password);
+                    if (errorMessageDiv) errorMessageDiv.textContent = '';
+                } catch (error) {
+                    if (errorMessageDiv) errorMessageDiv.textContent = `Giriş yapılamadı: ${error.message}`;
+                } finally {
+                    hideLoading(loginBtn);
+                }
+            });
+        }
+
+        if(signupBtn) {
+            signupBtn.addEventListener('click', async () => {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                 if (!email || !password) {
+                    if (errorMessageDiv) errorMessageDiv.textContent = 'E-posta ve şifre alanları boş bırakılamaz.';
+                    return;
+                }
+                showLoading(signupBtn);
+                try {
+                    await auth.createUserWithEmailAndPassword(email, password);
+                    if (errorMessageDiv) errorMessageDiv.textContent = '';
+                } catch (error) {
+                    if (errorMessageDiv) errorMessageDiv.textContent = `Kayıt olunamadı: ${error.message}`;
+                } finally {
+                    hideLoading(signupBtn);
+                }
+            });
+        }
     }
     
-    function setupTabEventListeners() {
-        document.querySelector('.tabs').addEventListener('click', async (e) => {
+    function setupTrackerPageEventListeners() {
+        // This function will now only set up listeners for the tracker page.
+        const trackerPageEl = document.getElementById('tracker-page');
+        if (!trackerPageEl) return;
+
+        setupTabEventListeners(trackerPageEl);
+        setupPanelEventListeners(trackerPageEl);
+        setupActionEventListeners(trackerPageEl);
+        setupCoinManagerEventListeners(trackerPageEl);
+        setupReportEventListeners(trackerPageEl);
+        setupStrategyDiscoveryListeners(trackerPageEl);
+        setupAiPageActionListeners(trackerPageEl);
+        setupPivotPageActionListeners(trackerPageEl);
+        setupAlarmEventListeners(trackerPageEl);
+    }
+    
+    function setupTabEventListeners(parentElement) {
+        parentElement.querySelector('.tabs')?.addEventListener('click', async (e) => {
             const tabLink = e.target.closest('.tab-link');
             if (!tabLink || tabLink.classList.contains('active')) return;
     
-            document.querySelector('.tab-link.active')?.classList.remove('active');
-            document.querySelector('.tab-content.active')?.classList.remove('active');
+            parentElement.querySelector('.tab-link.active')?.classList.remove('active');
+            parentElement.querySelector('.tab-content.active')?.classList.remove('active');
             tabLink.classList.add('active');
             const activeTabContent = document.getElementById(`${tabLink.dataset.tab}-content`);
             if (activeTabContent) {
@@ -1008,9 +1085,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     
-    function setupPanelEventListeners() {
-        document.body.addEventListener('click', (e) => {
-            if (e.target.closest('.close-btn') || e.target === modalOverlay) closeAllPanels();
+    function setupPanelEventListeners(parentElement) {
+        parentElement.addEventListener('click', (e) => {
             if (e.target.closest('#settingsBtn')) showPanel('settingsPanel');
             if (e.target.closest('#saveSettingsBtn')) saveSettings();
             if (e.target.closest('#saveChartBtn')) saveChartState();
@@ -1025,17 +1101,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        document.getElementById('alarmSettingsPanel').addEventListener('change', (e) => {
-            if (e.target.matches('[data-condition]')) {
-                const isChecked = e.target.checked;
-                const parentBox = e.target.closest('.alarm-condition-box');
-                if (parentBox) parentBox.dataset.disabled = !isChecked;
-            }
-        });
+        const alarmSettingsPanel = document.getElementById('alarmSettingsPanel');
+        if (alarmSettingsPanel) {
+            alarmSettingsPanel.addEventListener('change', (e) => {
+                if (e.target.matches('[data-condition]')) {
+                    const isChecked = e.target.checked;
+                    const parentBox = e.target.closest('.alarm-condition-box');
+                    if (parentBox) parentBox.dataset.disabled = !isChecked;
+                }
+            });
+        }
     }
 
-    function setupActionEventListeners() {
-        document.getElementById('tracker-page').addEventListener('click', async (e) => {
+    function setupActionEventListeners(parentElement) {
+        parentElement.addEventListener('click', async (e) => {
             const target = e.target;
             const portfolioTab = target.closest('.portfolio-tab');
             if (portfolioTab && !portfolioTab.classList.contains('active')) { 
@@ -1077,7 +1156,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 return;
             }
-            const alarmCard = target.closest('.alarm-card');
+
+            if (target.closest('#logoutBtn')) { e.preventDefault(); auth.signOut(); return;}
+        });
+    }
+
+    function setupAlarmEventListeners(parentElement) {
+        parentElement.addEventListener('click', async (e) => {
+            const target = e.target;
+             const alarmCard = target.closest('.alarm-card');
             if(alarmCard) {
                 const alarmId = alarmCard.dataset.alarmId;
                 const alarm = userAlarms.find(a => a.id === alarmId);
@@ -1090,7 +1177,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             if (target.closest('#createNewAlarmBtn')) { if (!settings.telegramPhone) { showNotification("Lütfen Ayarlar'dan Telegram Chat ID'nizi kaydedin.", false); return; } openAlarmPanel(null); return;}
-            if (target.closest('#autoRefreshReportsToggle')) { toggleReportsAutoRefresh(); return; }
+        });
+    }
+
+    function setupReportEventListeners(parentElement) {
+         parentElement.addEventListener('click', async (e) => {
+            const target = e.target;
+             if (target.closest('#autoRefreshReportsToggle')) { toggleReportsAutoRefresh(); return; }
             if (target.closest('.remove-report-btn')) {
                 const reportIdToRemove = target.closest('.remove-report-btn').dataset.reportId;
                 trackedReports = trackedReports.filter(id => id !== reportIdToRemove);
@@ -1099,86 +1192,120 @@ document.addEventListener('DOMContentLoaded', () => {
                 await renderAlarmReports();
                 return;
             }
-            if (target.closest('#runSignalAnalysisBtn')) { await runSignalAnalysis(); return; }
-            if (target.closest('.use-dna-in-alarm-btn')) { useDnaInAlarm(target.closest('.use-dna-in-alarm-btn')); return; }
-            if (target.closest('#updateCryptoAnalysisBtn')) { await updateAnalysisSettings(); return; }
-            const pivotFilterBtn = target.closest('#cryptoPivotFilters button');
-            if(pivotFilterBtn && !pivotFilterBtn.classList.contains('active')) {
-                settings.cryptoPivotFilter = pivotFilterBtn.dataset.filter;
-                await userDocRef.update({ 'settings.cryptoPivotFilter': settings.cryptoPivotFilter });
-                document.querySelector('#cryptoPivotFilters button.active').classList.remove('active');
-                pivotFilterBtn.classList.add('active');
-                renderSupportResistance();
-                return;
-            }
-            if (target.closest('#logoutBtn')) { e.preventDefault(); auth.signOut(); return;}
-        });
+         });
         
-        document.getElementById('reportIdInput').addEventListener('keypress', (e) => {
-            if(e.key === 'Enter') {
-                const reportId = e.target.value.trim();
-                if(reportId) addReportToTrack(reportId);
-                e.target.value = '';
-            }
-        });
+        const reportIdInput = document.getElementById('reportIdInput');
+        if(reportIdInput) {
+            reportIdInput.addEventListener('keypress', (e) => {
+                if(e.key === 'Enter') {
+                    const reportId = e.target.value.trim();
+                    if(reportId) addReportToTrack(reportId);
+                    e.target.value = '';
+                }
+            });
+        }
     }
 
-    function setupCoinManagerEventListeners() {
-        trackerPage.addEventListener('click', (e) => {
+    function setupCoinManagerEventListeners(parentElement) {
+        parentElement.addEventListener('click', (e) => {
             const addBtn = e.target.closest('.add-coin-btn');
             if (addBtn) { handleAddCoin(addBtn.dataset.listName); return; }
             
             const removeBtn = e.target.closest('.remove-coin-tag, .remove-btn');
             if(removeBtn) { handleRemoveCoin(removeBtn.dataset.listName, removeBtn.dataset.pair); return; }
         });
-        trackerPage.addEventListener('keypress', (e) => {
+        parentElement.addEventListener('keypress', (e) => {
             const input = e.target.closest('.new-coin-input');
             if (input && e.key === 'Enter') { handleAddCoin(input.dataset.listName); }
         });
+    }
+
+    function setupStrategyDiscoveryListeners(parentElement) {
+        parentElement.addEventListener('click', async (e) => {
+            const target = e.target;
+            if (target.closest('#runSignalAnalysisBtn')) { await runSignalAnalysis(); return; }
+            if (target.closest('.use-dna-in-alarm-btn')) { 
+                const btn = target.closest('.use-dna-in-alarm-btn');
+                const dnaData = JSON.parse(btn.dataset.dna);
+                const coin = btn.dataset.coin;
+                const timeframe = btn.dataset.timeframe;
+                const direction = btn.dataset.direction;
+                
+                openAlarmPanel(null, { coin, timeframe, direction, dna: dnaData });
+                return;
+            }
+        });
+    }
+
+    function setupAiPageActionListeners(parentElement) {
+        parentElement.addEventListener('click', async (e) => {
+            const target = e.target;
+            if (target.closest('#updateCryptoAnalysisBtn')) { await updateAnalysisSettings(); return; }
+        });
+    }
+    
+    function setupPivotPageActionListeners(parentElement) {
+         parentElement.addEventListener('click', async (e) => {
+            const target = e.target;
+            const pivotFilterBtn = target.closest('#cryptoPivotFilters button');
+            if(pivotFilterBtn && !pivotFilterBtn.classList.contains('active')) {
+                settings.cryptoPivotFilter = pivotFilterBtn.dataset.filter;
+                await userDocRef.update({ 'settings.cryptoPivotFilter': settings.cryptoPivotFilter });
+                document.querySelector('#cryptoPivotFilters button.active')?.classList.remove('active');
+                pivotFilterBtn.classList.add('active');
+                renderSupportResistance();
+                return;
+            }
+         });
     }
 
     async function updateAnalysisSettings() {
         const btn = document.getElementById('updateCryptoAnalysisBtn');
         showLoading(btn);
 
-        settings.cryptoAnalysisInterval = document.querySelector('#cryptoIntervalFilters button.active').dataset.interval;
-        const selectedPreset = document.querySelector('#strategyPresetFilters button.active').dataset.preset;
-
-        const newIndicators = {};
-        if (selectedPreset === 'custom') {
-            document.querySelectorAll('#crypto-indicator-filters-grid input:checked').forEach(cb => newIndicators[cb.dataset.indicator] = true);
-        } else {
-            Object.assign(newIndicators, STRATEGY_PRESETS[selectedPreset].indicators);
-        }
-        settings.cryptoAnalysisIndicators = newIndicators;
-
-        await userDocRef.update({ 
-            'settings.cryptoAnalysisIndicators': settings.cryptoAnalysisIndicators,
-            'settings.cryptoAnalysisInterval': settings.cryptoAnalysisInterval,
-            coins_ai: cryptoAiPairs 
-        });
+        const activeInterval = document.querySelector('#cryptoIntervalFilters button.active');
+        if(activeInterval) settings.cryptoAnalysisInterval = activeInterval.dataset.interval;
         
-        await fetchAiDataAndRender();
-        hideLoading(btn);
-        showNotification("Analiz ayarları güncellendi.", true);
+        const activePreset = document.querySelector('#strategyPresetFilters button.active');
+        if(activePreset) {
+            const selectedPreset = activePreset.dataset.preset;
+            const newIndicators = {};
+            if (selectedPreset === 'custom') {
+                document.querySelectorAll('#crypto-indicator-filters-grid input:checked').forEach(cb => newIndicators[cb.dataset.indicator] = true);
+            } else if (STRATEGY_PRESETS[selectedPreset]) {
+                Object.assign(newIndicators, STRATEGY_PRESETS[selectedPreset].indicators);
+            }
+            settings.cryptoAnalysisIndicators = newIndicators;
+        }
+
+        try {
+            await userDocRef.update({ 
+                'settings.cryptoAnalysisIndicators': settings.cryptoAnalysisIndicators,
+                'settings.cryptoAnalysisInterval': settings.cryptoAnalysisInterval,
+                coins_ai: cryptoAiPairs 
+            });
+            await fetchAiDataAndRender();
+            showNotification("Analiz ayarları güncellendi.", true);
+        } catch(e) {
+            showNotification("Ayarlar güncellenemedi.", false);
+        } finally {
+            hideLoading(btn);
+        }
     }
     
     async function fetchAiDataAndRender() {
         const container = document.getElementById('crypto-indicator-cards-container');
+        if(!container) return;
         container.innerHTML = '<div class="loading" style="margin: 20px auto; display:block;"></div>';
         
-        const aiData = await Promise.all(cryptoAiPairs.map(async (pair) => {
-            const data = await fetchCryptoData(pair); // Reuse the detailed data fetch
-            if (data.error) return data;
-            // You can add AI-specific calculations here if needed
-            return data;
-        }));
+        const aiData = await Promise.all((cryptoAiPairs || []).map(pair => fetchCryptoData(pair, true)));
         
         renderIndicatorCards('crypto', aiData);
     }
 
     function renderIndicatorCards(type, data) {
         const container = document.getElementById('crypto-indicator-cards-container');
+        if(!container) return;
         container.innerHTML = '';
         if(!data || data.length === 0) {
             container.innerHTML = `<p style="text-align:center; color: var(--text-secondary);">Analiz edilecek coin bulunmuyor.</p>`;
@@ -1194,12 +1321,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
+            // This is a placeholder for actual AI analysis display
             card.innerHTML = `
                 <div class="indicator-card-header">
                     <h4>${asset.pair.replace("USDT", "")}</h4>
                     <span>$${formatPrice(asset.latestPrice)}</span>
                 </div>
                 <p style="color: var(--text-secondary); font-size: 0.9rem;">Detaylı AI Analizi sonuçları bu alanda gösterilebilir.</p>
+                 <div class="indicator-details-grid">
+                    ${settings.cryptoAnalysisIndicators.rsi ? ` <div class="indicator-item"><span class="label">RSI (14)</span><span class="value">${asset.indicators.rsi?.toFixed(2) ?? 'N/A'}</span></div>` : ''}
+                    ${settings.cryptoAnalysisIndicators.macd ? ` <div class="indicator-item"><span class="label">MACD Hist.</span><span class="value ${asset.indicators.macd?.histogram > 0 ? 'value-positive' : 'value-negative'}">${asset.indicators.macd?.histogram?.toFixed(5) ?? 'N/A'}</span></div>` : ''}
+                    ${settings.cryptoAnalysisIndicators.ema ? ` <div class="indicator-item"><span class="label">EMA (50)</span><span class="value">$${formatPrice(asset.indicators.ema)}</span></div>` : ''}
+                    ${settings.cryptoAnalysisIndicators.volume ? ` <div class="indicator-item"><span class="label">Hacim (24s)</span><span class="value">$${formatVolume(asset.indicators.volume)}</span></div>` : ''}
+                </div>
             `;
             container.appendChild(card);
         });
@@ -1207,8 +1341,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function renderIndicatorFilters() { /* This can be filled if needed */ }
     function renderDictionary() { /* This can be filled if needed */ }
-    async function runBacktest(alarmId) { /* Placeholder - Functionality restored in event listener */ }
-    async function showAlarmStatus(alarmId) { /* Placeholder - Functionality restored in event listener */ }
+    async function runBacktest(alarmId) { showNotification("Backtest özelliği yakında eklenecek!", true); }
+    async function showAlarmStatus(alarmId) { showNotification("Alarm durumu kontrol özelliği yakında eklenecek!", true); }
 
     async function runSignalAnalysis() {
         const btn = document.getElementById('runSignalAnalysisBtn');
@@ -1276,22 +1410,8 @@ document.addEventListener('DOMContentLoaded', () => {
             hideLoading(btn);
         }
     }
-
-    function useDnaInAlarm(button) {
-        const dnaData = JSON.parse(button.dataset.dna);
-        const coin = button.dataset.coin;
-        const timeframe = button.dataset.timeframe;
-        const direction = button.dataset.direction;
-        
-        const params = {
-            coin, timeframe, direction, dna: {
-                adx: dnaData.avgAdx,
-                macdHistogram: dnaData.avgMacdHist,
-                volume: dnaData.avgVolumeMultiplier,
-                rsi: dnaData.avgRsi,
-                macd: { histogram: dnaData.avgMacdHist } // Macd kesişimi için bir referans
-            }
-        };
-        openAlarmPanel(null, params);
-    }
+    
+    // --- INITIALIZE APP ---
+    setupGlobalEventListeners();
+    setupAuthEventListeners();
 });
