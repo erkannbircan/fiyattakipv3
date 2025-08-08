@@ -438,6 +438,21 @@
                             <input type="number" id="alarmMacdHistogramValue" value="0" step="0.000001">
                         </div>
                     </div>
+                    <div class="alarm-condition-box">
+                        <label class="filter-item">
+                            <input type="checkbox" id="alarmRsiCondition" data-condition="rsi">
+                            <span>RSI Filtresi</span>
+                        </label>
+                        <div class="alarm-rule-grid" style="margin-top: 10px;">
+                            <label>Koşul</label>
+                            <select id="alarmRsiOperator">
+                                <option value="above">Büyüktür (>)</option>
+                                <option value="below">Küçüktür (<)</option>
+                            </select>
+                            <label>Değer (0-100)</label>
+                            <input type="number" id="alarmRsiValue" value="30" step="1" min="0" max="100">
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -447,6 +462,7 @@
                 <p><strong>MACD Kesişimi:</strong> İki hareketli ortalama arasındaki ilişkiyi ölçer. Trend dönüşlerini ve momentum başlangıçlarını yakalamak için en popüler göstergelerden biridir.</p>
                 <p><strong>Güçlü Trend Filtresi (ADX):</strong> Piyasada bir yön olup olmadığını ölçer. ADX 25'in üzerindeyse, piyasanın yatayda olmadığı ve belirgin bir yükseliş veya düşüş trendinde olduğu anlaşılır. Bu filtre, kararsız piyasalardaki yanlış sinyalleri önler.</p>
                 <p><strong>MACD Histogram Filtresi:</strong> Momentumun gücünü ve yönünü teyit eder. Örneğin, bir 'Al' sinyali için Histogram'ın sıfırdan büyük olması, yükseliş momentumunun devam ettiğini gösterir ve sinyali güçlendirir.</p>
+                <p><strong>RSI Filtresi:</strong> Varlığın aşırı alım (genellikle >70) veya aşırı satım (genellikle <30) bölgelerinde olup olmadığını kontrol eder. Bir alım sinyalini, RSI'ın aşırı satım bölgesinde olmasıyla birleştirmek, sinyalin gücünü artırabilir.</p>
              </div>
              <div class="button-group" style="margin-top:20px;">
                 <button id="testAlarmBtn" style="background-color: #373c4a;"><i class="fab fa-telegram-plane"></i> Test Et</button>
