@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const appLoader = document.getElementById('app-loader');
     const loginPage = document.getElementById('login-page');
     const trackerPage = document.getElementById('tracker-page');
-    const AVAILABLE_INDICATORS = { ema: "EMA", sma: "SMA", rsi: "RSI", macd: "MACD", bollinger: "Bollinger Bands", stochRsi: "Stochastic RSI", volume: "Hacim (24s)", atr: "ATR", ichimoku: "Ichimoku Cloud", fibonacci: "Fibonacci" };
+    const AVAILABLE_INDICATORS = { ema: "EMA", sma: "SMA", rsi: "RSI", macd: "MACD", bollinger: "Bollinger Bantları", stochRsi: "Stochastic RSI", volume: "Hacim (24s)", atr: "ATR", ichimoku: "Ichimoku Cloud", fibonacci: "Fibonacci" };
     
     const translations = { 
         tr: { 
@@ -163,16 +163,12 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAllPortfolioTabs();
         
         await fetchAllDataAndRender();
-        await fetchAiDataAndRender();
-        await renderAlarmReports();
+        fetchAiDataAndRender(); 
+        renderAlarmReports();
 
-        setupGlobalEventListeners();
-        setupTabEventListeners();
-        setupPanelEventListeners();
-        setupActionEventListeners();
-        setupCoinManagerEventListeners();
+        setupAllEventListeners();
     }
-
+    
     // --- UI RENDERING & SETTINGS ---
     function applySettingsToUI() {
         document.getElementById('langSelect').value = settings.lang;
@@ -454,6 +450,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!analysisKlines || analysisKlines.length < 52 || !dailyKlines || dailyKlines.length < 2) throw new Error("Yetersiz geçmiş veri.");
 
             const latestPrice = parseFloat(tickerData.lastPrice);
+            const analysisClosePrices = analysisKlines.map(d => d[4]);
+
             const calculatePct = (col) => {
                 const days = settings.columns[col].days;
                 if (dailyKlines.length < days + 1) return { pct: 'N/A' };
@@ -470,14 +468,15 @@ document.addEventListener('DOMContentLoaded', () => {
             return {
                 pair, latestPrice, error: false, type: 'crypto', currency: 'USDT',
                 col1: calculatePct(1), col2: calculatePct(2), col3: calculatePct(3),
-                sr: { r2: pivot + (high - low), r1: (2 * pivot) - low, pivot: pivot, s1: (2 * pivot) - high, s2: pivot - (high - low) }
+                sr: { r2: pivot + (high - low), r1: (2 * pivot) - low, pivot: pivot, s1: (2 * pivot) - high, s2: pivot - (high - low) },
+                indicators: { sma: calculateSMA(analysisClosePrices, 50), ema: calculateEMA(analysisClosePrices, 50), rsi: calculateRSI(analysisClosePrices, 14), macd: calculateMACD(analysisClosePrices), bollinger: calculateBollingerBands(analysisClosePrices), stochRsi: calculateStochasticRSI(analysisClosePrices, 14), volume: parseFloat(tickerData.quoteVolume), atr: calculateATR(analysisKlines, 14), ichimoku: calculateIchimokuCloud(analysisKlines), fibonacci: calculateFibonacciRetracement(analysisKlines) }
             };
         } catch (error) {
             console.error(`${pair} verisi çekilirken hata oluştu:`, error);
             return { pair, error: true, type: 'crypto' };
         }
     }
-
+    
     async function fetchAllDataAndRender() {
         const refreshBtn = document.getElementById('refreshBtn');
         showLoading(refreshBtn);
