@@ -163,8 +163,8 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAllPortfolioTabs();
         
         await fetchAllDataAndRender();
-        fetchAiDataAndRender(); // Don't wait for this
-        renderAlarmReports(); // Don't wait for this
+        await fetchAiDataAndRender();
+        await renderAlarmReports();
 
         setupGlobalEventListeners();
         setupTabEventListeners();
@@ -326,8 +326,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (addedCoins.length > 0) {
             updateCoinList(listName, assetList);
             await saveCoinListToFirestore(listName);
-            if (listName === 'crypto') fetchAllDataAndRender();
-            if (listName === 'ai') fetchAiDataAndRender();
+            if (listName === 'crypto') await fetchAllDataAndRender();
+            if (listName === 'ai') await fetchAiDataAndRender();
         }
         input.value = '';
     }
@@ -349,8 +349,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updateCoinList(listName, updatedList);
         await saveCoinListToFirestore(listName);
-        if (listName === 'crypto') fetchAllDataAndRender();
-        if (listName === 'ai') fetchAiDataAndRender();
+        if (listName === 'crypto') await fetchAllDataAndRender();
+        if (listName === 'ai') await fetchAiDataAndRender();
     }
     
     async function saveCoinListToFirestore(listName) {
@@ -615,7 +615,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const savedState = settings.chartStates?.[pair];
 
         try {
-            // Düzeltildi: new TradingView.widget() doğrudan bir onChartReady metodu döndürmez, zincirleme (chaining) ile kullanılır.
             tradingViewWidget = new TradingView.widget({
                 symbol: `BINANCE:${pair}`,
                 interval: "D",
@@ -632,11 +631,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 details: true,
                 studies: ["MASimple@tv-basicstudies", "Volume@tv-basicstudies", "RSI@tv-basicstudies"],
                 saved_data: savedState || undefined,
-            });
-            
-            tradingViewWidget.onChartReady(() => {
-                // Widget yüklendiğinde yapılacak ek işlemler buraya gelebilir.
-                // Şimdilik boş bırakıyoruz çünkü ana işlevsellik widget'ın kendisinde.
             });
 
         } catch (error) {
@@ -718,7 +712,6 @@ document.addEventListener('DOMContentLoaded', () => {
             recommendationDiv.innerHTML = `💡 <strong>AI Önerisi:</strong> Bu alarm, "${suggestedParams.coin.replace('USDT','')}" için bulunan başarılı DNA'ya göre ayarlanıyor.`;
             document.querySelector('#alarmSettingsPanel .collapsible-content').prepend(recommendationDiv);
             
-            // Tüm koşulları DNA'ya göre DİNAMİK olarak ayarla
             if (dna.avgVolumeMultiplier) {
                 const el = document.getElementById('alarmVolumeCondition');
                 el.checked = true;
@@ -1108,7 +1101,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
-            // This part can be enhanced with AI analysis result display
             card.innerHTML = `
                 <div class="indicator-card-header">
                     <h4>${asset.pair.replace("USDT", "")}</h4>
