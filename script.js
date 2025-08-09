@@ -231,7 +231,6 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchAiDataAndRender();
         renderAlarmReports();
 
-        // Event Listeners are now more specific
         setupTrackerPageEventListeners();
     }
     
@@ -377,6 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 continue;
             }
             try {
+                // A quick check to see if the asset is valid on Binance
                 await axios.get(`https://api.binance.com/api/v3/ticker/price?symbol=${newPair}`);
                 assetList.push(newPair);
                 addedCoins.push(newPair);
@@ -785,57 +785,58 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('alarmPanelTitle').textContent = alarm ? 'Alarmı Düzenle' : 'Yeni Alarm Oluştur';
         const alarmId = alarm ? alarm.id : '';
         document.getElementById('alarmIdInput').value = alarmId;
-        const dnaRec = document.querySelector('#alarmSettingsPanel .dna-recommendation');
-        if (dnaRec) dnaRec.remove();
+        
+        const dnaRecDiv = document.querySelector('#alarmSettingsPanel .dna-recommendation');
+        if (dnaRecDiv) dnaRecDiv.remove();
     
         // Paneli sıfırla
         document.querySelectorAll('#alarmSettingsPanel [data-condition]').forEach(el => {
             el.checked = false;
             const parentBox = el.closest('.alarm-condition-box');
-            if(parentBox) parentBox.dataset.disabled = true;
+            if(parentBox) parentBox.dataset.disabled = "true";
         });
     
         if (suggestedParams) {
-            const dna = suggestedParams.dna;
-            document.getElementById('alarmNameInput').value = `${suggestedParams.coin.replace('USDT','')} DNA Alarmı`;
-            tempAlarmCoins = [suggestedParams.coin];
-            document.getElementById('alarmTimeframe').value = suggestedParams.timeframe;
+            const { coin, timeframe, direction, dna, dna_analysis } = suggestedParams;
+            document.getElementById('alarmNameInput').value = `${coin.replace('USDT','')} DNA Alarmı`;
+            tempAlarmCoins = [coin];
+            document.getElementById('alarmTimeframe').value = timeframe;
             
             const recommendationDiv = document.createElement('div');
             recommendationDiv.className = 'dna-recommendation';
-            recommendationDiv.innerHTML = `💡 <strong>AI Önerisi:</strong> Bu alarm, "${suggestedParams.coin.replace('USDT','')}" için bulunan başarılı DNA'ya göre ayarlanıyor.`;
+            recommendationDiv.innerHTML = `💡 <strong>AI Önerisi:</strong> Bu alarm, "${coin.replace('USDT','')}" için bulunan başarılı DNA'ya göre ayarlanıyor.`;
+            recommendationDiv.dataset.dnaAnalysis = JSON.stringify(dna_analysis);
             const firstCollapsible = document.querySelector('#alarmSettingsPanel .collapsible-content');
             if (firstCollapsible) firstCollapsible.prepend(recommendationDiv);
             
+            document.getElementById('alarmMacdSignalType').value = direction === 'up' ? 'buy' : 'sell';
+
             if (dna.avgVolumeMultiplier) {
-                const el = document.getElementById('alarmVolumeCondition');
-                el.checked = true;
-                el.closest('.alarm-condition-box').dataset.disabled = false;
+                document.getElementById('alarmVolumeCondition').checked = true;
                 document.getElementById('alarmVolumeMultiplier').value = dna.avgVolumeMultiplier.toFixed(1);
             }
             if (dna.avgMacdHist) {
-                const el = document.getElementById('alarmMacdHistogramCondition');
-                el.checked = true;
-                el.closest('.alarm-condition-box').dataset.disabled = false;
+                document.getElementById('alarmMacdHistogramCondition').checked = true;
                 document.getElementById('alarmMacdHistogramOperator').value = dna.avgMacdHist > 0 ? 'above' : 'below';
-                document.getElementById('alarmMacdHistogramValue').value = dna.avgMacdHist.toFixed(6);
+                document.getElementById('alarmMacdHistogramValue').value = 0; // Start with 0 for safety
             }
-            if (dna.avgAdx) {
-                const el = document.getElementById('alarmTrendFilterEnabled');
-                el.checked = true;
-                el.closest('.alarm-condition-box').dataset.disabled = false;
-                document.getElementById('alarmADXThreshold').value = dna.avgAdx.toFixed(0);
+             if (dna.avgAdx) {
+                document.getElementById('alarmTrendFilterEnabled').checked = true;
+                document.getElementById('alarmADXThreshold').value = Math.max(20, Math.floor(dna.avgAdx));
             }
              if (dna.avgRsi) {
-                const el = document.getElementById('alarmRsiCondition');
-                el.checked = true;
-                el.closest('.alarm-condition-box').dataset.disabled = false;
-                document.getElementById('alarmRsiOperator').value = suggestedParams.direction === 'up' ? 'below' : 'above';
-                document.getElementById('alarmRsiValue').value = dna.avgRsi.toFixed(0);
+                document.getElementById('alarmRsiCondition').checked = true;
+                document.getElementById('alarmRsiOperator').value = direction === 'up' ? 'below' : 'above';
+                document.getElementById('alarmRsiValue').value = direction === 'up' 
+                    ? Math.min(50, Math.floor(dna.avgRsi)) 
+                    : Math.max(50, Math.ceil(dna.avgRsi));
             }
+            document.getElementById('alarmMacdCondition').checked = true;
+            document.querySelectorAll('#alarmSettingsPanel [data-condition]:checked').forEach(el => {
+                el.closest('.alarm-condition-box').dataset.disabled = "false";
+            });
     
         } else {
-            const isNewAlarm = !alarm;
             document.getElementById('alarmNameInput').value = alarm?.name || '';
             tempAlarmCoins = alarm?.coins?.length > 0 ? [...alarm.coins] : [...(userPortfolios[activePortfolio] || [])];
             
@@ -844,14 +845,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             document.querySelectorAll('#alarmSettingsPanel [data-condition]').forEach(el => {
                 const conditionName = el.dataset.condition;
-                let isEnabled = false;
-                if (isNewAlarm && (conditionName === 'volume' || conditionName === 'macd')) { isEnabled = true; }
-                else if (conditions[conditionName]) { isEnabled = conditions[conditionName].enabled; }
-                else if (conditionName === 'adx') { isEnabled = alarm.trendFilterEnabled; }
-    
+                const isEnabled = conditions[conditionName]?.enabled ?? (conditionName === 'adx' && alarm?.trendFilterEnabled);
                 el.checked = isEnabled;
-                const parentBox = el.closest('.alarm-condition-box');
-                if (parentBox) parentBox.dataset.disabled = !isEnabled;
+                el.closest('.alarm-condition-box').dataset.disabled = !isEnabled;
             });
             
             document.getElementById('alarmVolumePeriod').value = conditions.volume?.period ?? 20;
@@ -870,14 +866,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     async function saveAlarm() {
+        const btn = document.getElementById('saveAlarmBtn');
+        showLoading(btn);
+
         const alarmId = document.getElementById('alarmIdInput').value;
         const alarmName = document.getElementById('alarmNameInput').value;
-        if (!alarmName) { showNotification("Alarm adı boş bırakılamaz.", false); return; }
+        if (!alarmName) { showNotification("Alarm adı boş bırakılamaz.", false); hideLoading(btn); return; }
     
-        const volumeEnabled = document.getElementById('alarmVolumeCondition').checked;
-        const macdEnabled = document.getElementById('alarmMacdCondition').checked;
-        if (!volumeEnabled && !macdEnabled) { showNotification("En az bir ana alarm koşulu (Hacim veya MACD) seçmelisiniz.", false); return; }
-        
         const newAlarm = {
             id: alarmId || `alarm_${new Date().getTime()}`, name: alarmName, coins: tempAlarmCoins,
             isActive: alarmId ? (userAlarms.find(a => a.id === alarmId)?.isActive ?? true) : true,
@@ -885,15 +880,23 @@ document.addEventListener('DOMContentLoaded', () => {
             trendFilterEnabled: document.getElementById('alarmTrendFilterEnabled').checked,
             adxThreshold: parseInt(document.getElementById('alarmADXThreshold').value),
             conditions: {
-                volume: { enabled: volumeEnabled, period: parseInt(document.getElementById('alarmVolumePeriod').value), multiplier: parseFloat(document.getElementById('alarmVolumeMultiplier').value), amount: parseFloat(document.getElementById('alarmVolumeAmount').value) || 0 },
-                macd: { enabled: macdEnabled, signalType: document.getElementById('alarmMacdSignalType').value },
+                volume: { enabled: document.getElementById('alarmVolumeCondition').checked, period: parseInt(document.getElementById('alarmVolumePeriod').value), multiplier: parseFloat(document.getElementById('alarmVolumeMultiplier').value), amount: parseFloat(document.getElementById('alarmVolumeAmount').value) || 0 },
+                macd: { enabled: document.getElementById('alarmMacdCondition').checked, signalType: document.getElementById('alarmMacdSignalType').value },
                 macdHistogram: { enabled: document.getElementById('alarmMacdHistogramCondition').checked, operator: document.getElementById('alarmMacdHistogramOperator').value, value: parseFloat(document.getElementById('alarmMacdHistogramValue').value) },
                 rsi: { enabled: document.getElementById('alarmRsiCondition').checked, operator: document.getElementById('alarmRsiOperator').value, value: parseFloat(document.getElementById('alarmRsiValue').value) }
             }
         };
+        
+        const dnaRecDiv = document.querySelector('#alarmSettingsPanel .dna-recommendation');
+        if (dnaRecDiv && dnaRecDiv.dataset.dnaAnalysis) {
+            newAlarm.dna_analysis = JSON.parse(dnaRecDiv.dataset.dnaAnalysis);
+        }
     
-        if (alarmId) userAlarms = userAlarms.map(a => a.id === alarmId ? newAlarm : a);
-        else userAlarms.push(newAlarm);
+        if (alarmId) {
+            userAlarms = userAlarms.map(a => a.id === alarmId ? newAlarm : a);
+        } else {
+            userAlarms.push(newAlarm);
+        }
     
         try {
             await userDocRef.update({ alarms: userAlarms });
@@ -901,6 +904,8 @@ document.addEventListener('DOMContentLoaded', () => {
             renderAlarms(); closeAllPanels();
         } catch (error) {
             showNotification("Alarm kaydedilemedi.", false);
+        } finally {
+            hideLoading(btn);
         }
     }
     
@@ -1033,7 +1038,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function setupTrackerPageEventListeners() {
-        // This function will now only set up listeners for the tracker page.
         const trackerPageEl = document.getElementById('tracker-page');
         if (!trackerPageEl) return;
 
@@ -1227,11 +1231,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (target.closest('.use-dna-in-alarm-btn')) { 
                 const btn = target.closest('.use-dna-in-alarm-btn');
                 const dnaData = JSON.parse(btn.dataset.dna);
-                const coin = btn.dataset.coin;
-                const timeframe = btn.dataset.timeframe;
-                const direction = btn.dataset.direction;
-                
-                openAlarmPanel(null, { coin, timeframe, direction, dna: dnaData });
+                openAlarmPanel(null, dnaData);
                 return;
             }
         });
@@ -1321,7 +1321,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
-            // This is a placeholder for actual AI analysis display
             card.innerHTML = `
                 <div class="indicator-card-header">
                     <h4>${asset.pair.replace("USDT", "")}</h4>
@@ -1341,7 +1340,38 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function renderIndicatorFilters() { /* This can be filled if needed */ }
     function renderDictionary() { /* This can be filled if needed */ }
-    async function runBacktest(alarmId) { showNotification("Backtest özelliği yakında eklenecek!", true); }
+    async function runBacktest(alarmId) {
+        const alarm = userAlarms.find(a => a.id === alarmId);
+        if(!alarm) return;
+        showPanel('backtestPanel');
+        const container = document.getElementById('backtest-results-container');
+        container.innerHTML = `<div class="loading" style="margin:20px auto;"></div>`;
+        document.getElementById('backtestAlarmName').textContent = `"${alarm.name}" Stratejisi`;
+        try {
+            const runBacktestFunc = functions.httpsCallable('runBacktest');
+            const result = await runBacktestFunc({ alarm });
+            const data = result.data;
+            let html = '';
+            for (const coin in data) {
+                const res = data[coin];
+                const successRate = res.totalSignals > 0 ? (res.positiveSignals_1h / res.totalSignals * 100) : 0;
+                 html += `
+                    <div class="backtest-card">
+                        <h5>${coin.replace("USDT","")}</h5>
+                        <div class="backtest-results-grid">
+                            <p><span class="label">Toplam Sinyal:</span> <span class="value">${res.totalSignals}</span></p>
+                            <p><span class="label">Başarı Oranı (1S):</span> <span class="value ${successRate > 50 ? 'positive' : 'negative'}">${successRate.toFixed(1)}%</span></p>
+                            <p><span class="label">Ort. Getiri (1S):</span> <span class="value ${res.averageReturn_1h > 0 ? 'positive' : 'negative'}">${res.averageReturn_1h}%</span></p>
+                            <p><span class="label">Ort. Getiri (4S):</span> <span class="value ${res.averageReturn_4h > 0 ? 'positive' : 'negative'}">${res.averageReturn_4h}%</span></p>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html || '<p>Backtest sonucu bulunamadı.</p>';
+        } catch(e) {
+            container.innerHTML = `<p style="color:var(--accent-red)">Hata: ${e.message}</p>`
+        }
+    }
     async function showAlarmStatus(alarmId) { showNotification("Alarm durumu kontrol özelliği yakında eklenecek!", true); }
 
     async function runSignalAnalysis() {
@@ -1377,10 +1407,8 @@ document.addEventListener('DOMContentLoaded', () => {
             for(const coin in data) {
                 const res = data[coin];
                 html += `<div class="backtest-card" style="margin-bottom:15px;"><h4>${coin.replace("USDT","")} Analiz Sonuçları</h4>`;
-                if(res.error || !res) {
-                    html += `<p style="color:var(--accent-red)">Hata: ${res?.error || 'Veri alınamadı.'}</p>`;
-                } else if(res.totalEvents === 0) {
-                    html += `<p>Belirtilen koşullarda hiç olay bulunamadı.</p>`;
+                if(res.error || !res || res.totalEvents === 0) {
+                    html += `<p style="color:var(--accent-red)">${res?.error || 'Belirtilen koşullarda hiç olay bulunamadı.'}</p>`;
                 } else {
                     let dnaText = [];
                     if (res.dna.avgAdx) dnaText.push(`ADX > ${res.dna.avgAdx.toFixed(0)}`);
@@ -1388,9 +1416,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (res.dna.avgRsi) dnaText.push(`RSI ~ ${res.dna.avgRsi.toFixed(0)}`);
                     if (res.dna.avgVolumeMultiplier) dnaText.push(`Hacim > Ort. x${res.dna.avgVolumeMultiplier.toFixed(1)}`);
 
+                    const fullDnaData = {
+                        coin, timeframe: params.timeframe, direction: params.direction, dna: res.dna, 
+                        dna_analysis: { avgReturn1h: res.avgReturn1h }
+                    };
+
                     html += `
                         <p>Bu koşul, son ${params.days} günde <strong>${res.totalEvents}</strong> kez gerçekleşti.</p>
-                        <p>Sinyal sonrası potansiyel performans:</p>
+                        <p><strong>Geçmiş Getiri Potansiyeli (Sinyal Sonrası Yönlü):</strong></p>
                         <ul>
                             <li>15 Dk Sonra: <strong style="color:${res.avgReturn15m > 0 ? 'var(--value-positive)' : 'var(--value-negative)'}">${res.avgReturn15m.toFixed(2)}%</strong></li>
                             <li>1 Saat Sonra: <strong style="color:${res.avgReturn1h > 0 ? 'var(--value-positive)' : 'var(--value-negative)'}">${res.avgReturn1h.toFixed(2)}%</strong></li>
@@ -1398,7 +1431,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <li>1 Gün Sonra: <strong style="color:${res.avgReturn1d > 0 ? 'var(--value-positive)' : 'var(--value-negative)'}">${res.avgReturn1d.toFixed(2)}%</strong></li>
                         </ul>
                         <div class="analysis-summary"><strong>💡 Sinyal DNA'sı:</strong><br>${dnaText.join(' | ')}</div>
-                        <div class="analysis-actions"><button class="use-dna-in-alarm-btn" data-coin="${coin}" data-timeframe="${params.timeframe}" data-direction="${params.direction}" data-dna='${JSON.stringify(res.dna)}'><i class="fas fa-magic"></i> Bu DNA ile Alarm Kur</button></div>
+                        <div class="analysis-actions"><button class="use-dna-in-alarm-btn" data-dna='${JSON.stringify(fullDnaData)}'><i class="fas fa-magic"></i> Bu DNA ile Alarm Kur</button></div>
                     `;
                 }
                 html += `</div>`;
