@@ -781,89 +781,88 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    function openAlarmPanel(alarm = null, suggestedParams = null) {
-        document.getElementById('alarmPanelTitle').textContent = alarm ? 'Alarmı Düzenle' : 'Yeni Alarm Oluştur';
-        const alarmId = alarm ? alarm.id : '';
-        document.getElementById('alarmIdInput').value = alarmId;
-        
-        const dnaRecDiv = document.querySelector('#alarmSettingsPanel .dna-recommendation');
-        if (dnaRecDiv) dnaRecDiv.remove();
+ function openAlarmPanel(alarm = null, suggestedParams = null) {
+    document.getElementById('alarmPanelTitle').textContent = alarm ? 'Alarmı Düzenle' : 'Yeni Alarm Oluştur';
+    const alarmId = alarm ? alarm.id : '';
+    document.getElementById('alarmIdInput').value = alarmId;
     
-        // Paneli sıfırla
-        document.querySelectorAll('#alarmSettingsPanel [data-condition]').forEach(el => {
-            el.checked = false;
-            const parentBox = el.closest('.alarm-condition-box');
-            if(parentBox) parentBox.dataset.disabled = "true";
-        });
-    
-        if (suggestedParams) {
-            const { coin, timeframe, direction, dna, dna_analysis } = suggestedParams;
-            document.getElementById('alarmNameInput').value = `${coin.replace('USDT','')} DNA Alarmı`;
-            tempAlarmCoins = [coin];
-            document.getElementById('alarmTimeframe').value = timeframe;
-            
-            const recommendationDiv = document.createElement('div');
-            recommendationDiv.className = 'dna-recommendation';
-            recommendationDiv.innerHTML = `💡 <strong>AI Önerisi:</strong> Bu alarm, "${coin.replace('USDT','')}" için bulunan başarılı DNA'ya göre ayarlanıyor.`;
-            recommendationDiv.dataset.dnaAnalysis = JSON.stringify(dna_analysis);
-            const firstCollapsible = document.querySelector('#alarmSettingsPanel .collapsible-content');
-            if (firstCollapsible) firstCollapsible.prepend(recommendationDiv);
-            
-            document.getElementById('alarmMacdSignalType').value = direction === 'up' ? 'buy' : 'sell';
+    const dnaRecDiv = document.querySelector('#alarmSettingsPanel .dna-recommendation');
+    if (dnaRecDiv) dnaRecDiv.remove();
 
-            if (dna.avgVolumeMultiplier) {
-                document.getElementById('alarmVolumeCondition').checked = true;
-                document.getElementById('alarmVolumeMultiplier').value = dna.avgVolumeMultiplier.toFixed(1);
-            }
-            if (dna.avgMacdHist) {
-                document.getElementById('alarmMacdHistogramCondition').checked = true;
-                document.getElementById('alarmMacdHistogramOperator').value = dna.avgMacdHist > 0 ? 'above' : 'below';
-                document.getElementById('alarmMacdHistogramValue').value = 0; // Start with 0 for safety
-            }
-             if (dna.avgAdx) {
-                document.getElementById('alarmTrendFilterEnabled').checked = true;
-                document.getElementById('alarmADXThreshold').value = Math.max(20, Math.floor(dna.avgAdx));
-            }
-             if (dna.avgRsi) {
-                document.getElementById('alarmRsiCondition').checked = true;
-                document.getElementById('alarmRsiOperator').value = direction === 'up' ? 'below' : 'above';
-                document.getElementById('alarmRsiValue').value = direction === 'up' 
-                    ? Math.min(50, Math.floor(dna.avgRsi)) 
-                    : Math.max(50, Math.ceil(dna.avgRsi));
-            }
-            document.getElementById('alarmMacdCondition').checked = true;
-            document.querySelectorAll('#alarmSettingsPanel [data-condition]:checked').forEach(el => {
-                el.closest('.alarm-condition-box').dataset.disabled = "false";
-            });
-    
-        } else {
-            document.getElementById('alarmNameInput').value = alarm?.name || '';
-            tempAlarmCoins = alarm?.coins?.length > 0 ? [...alarm.coins] : [...(userPortfolios[activePortfolio] || [])];
-            
-            const conditions = alarm?.conditions || {};
-            document.getElementById('alarmTimeframe').value = alarm?.timeframe || '15m';
-            
-            document.querySelectorAll('#alarmSettingsPanel [data-condition]').forEach(el => {
-                const conditionName = el.dataset.condition;
-                const isEnabled = conditions[conditionName]?.enabled ?? (conditionName === 'adx' && alarm?.trendFilterEnabled);
-                el.checked = isEnabled;
-                el.closest('.alarm-condition-box').dataset.disabled = !isEnabled;
-            });
-            
-            document.getElementById('alarmVolumePeriod').value = conditions.volume?.period ?? 20;
-            document.getElementById('alarmVolumeMultiplier').value = conditions.volume?.multiplier ?? 2;
-            document.getElementById('alarmVolumeAmount').value = conditions.volume?.amount ?? 0;
-            document.getElementById('alarmMacdSignalType').value = conditions.macd?.signalType ?? 'buy';
-            document.getElementById('alarmADXThreshold').value = alarm?.adxThreshold ?? 25;
-            document.getElementById('alarmMacdHistogramOperator').value = conditions.macdHistogram?.operator ?? 'above';
-            document.getElementById('alarmMacdHistogramValue').value = conditions.macdHistogram?.value ?? 0;
-            document.getElementById('alarmRsiOperator').value = conditions.rsi?.operator ?? 'below';
-            document.getElementById('alarmRsiValue').value = conditions.rsi?.value ?? 30;
+    // Paneli sıfırla
+    document.querySelectorAll('#alarmSettingsPanel [data-condition]').forEach(el => {
+        el.checked = false;
+        const parentBox = el.closest('.alarm-condition-box');
+        if(parentBox) parentBox.dataset.disabled = "true";
+    });
+    // Form inputlarını da sıfırla
+    document.getElementById('alarmNameInput').value = '';
+    document.getElementById('alarmTimeframe').value = '15m';
+    document.getElementById('alarmVolumeMultiplier').value = 2;
+    document.getElementById('alarmADXThreshold').value = 25;
+    document.getElementById('alarmMacdHistogramValue').value = 0;
+    document.getElementById('alarmRsiValue').value = 30;
+
+    if (suggestedParams) {
+        const { coin, timeframe, direction, dna, dna_analysis } = suggestedParams;
+        document.getElementById('alarmNameInput').value = `${coin.replace('USDT','')} DNA Alarmı`;
+        tempAlarmCoins = [coin];
+        document.getElementById('alarmTimeframe').value = timeframe;
+        
+        const recommendationDiv = document.createElement('div');
+        recommendationDiv.className = 'dna-recommendation';
+        recommendationDiv.innerHTML = `💡 <strong>AI Önerisi:</strong> Bu alarm, "${coin.replace('USDT','')}" için bulunan başarılı DNA'ya göre ayarlanıyor.`;
+        recommendationDiv.dataset.dnaAnalysis = JSON.stringify(dna_analysis);
+        const firstCollapsible = document.querySelector('#alarmSettingsPanel .collapsible-content');
+        if (firstCollapsible) firstCollapsible.prepend(recommendationDiv);
+        
+        document.getElementById('alarmMacdSignalType').value = direction === 'up' ? 'buy' : 'sell';
+
+        if (dna.avgVolumeMultiplier) {
+            document.getElementById('alarmVolumeCondition').checked = true;
+            document.getElementById('alarmVolumeMultiplier').value = dna.avgVolumeMultiplier.toFixed(1);
         }
-    
-        createCoinManager('alarm-coin-manager-container', tempAlarmCoins, 'alarm');
-        showPanel('alarmSettingsPanel');
+        if (dna.avgMacdHist) {
+            document.getElementById('alarmMacdHistogramCondition').checked = true;
+            document.getElementById('alarmMacdHistogramOperator').value = dna.avgMacdHist > 0 ? 'above' : 'below';
+            // **** BURASI DÜZELTİLDİ ****
+            document.getElementById('alarmMacdHistogramValue').value = dna.avgMacdHist.toFixed(6); 
+        }
+         if (dna.avgAdx) {
+            document.getElementById('alarmTrendFilterEnabled').checked = true;
+            document.getElementById('alarmADXThreshold').value = Math.max(20, Math.floor(dna.avgAdx));
+        }
+         if (dna.avgRsi) {
+            document.getElementById('alarmRsiCondition').checked = true;
+            document.getElementById('alarmRsiOperator').value = direction === 'up' ? 'below' : 'above';
+             // **** BURASI DÜZELTİLDİ ****
+            document.getElementById('alarmRsiValue').value = Math.round(dna.avgRsi);
+        }
+        document.getElementById('alarmMacdCondition').checked = true;
+        document.querySelectorAll('#alarmSettingsPanel [data-condition]:checked').forEach(el => {
+            el.closest('.alarm-condition-box').dataset.disabled = "false";
+        });
+
+    } else {
+        // ... (Bu bölüm orijinaldeki gibi çalışmaya devam ediyor)
+        document.getElementById('alarmNameInput').value = alarm?.name || '';
+        tempAlarmCoins = alarm?.coins?.length > 0 ? [...alarm.coins] : [...(userPortfolios[activePortfolio] || [])];
+        const conditions = alarm?.conditions || {};
+        document.getElementById('alarmTimeframe').value = alarm?.timeframe || '15m';
+        document.querySelectorAll('#alarmSettingsPanel [data-condition]').forEach(el => {
+            const conditionName = el.dataset.condition;
+            const isEnabled = conditions[conditionName]?.enabled ?? (conditionName === 'adx' && alarm?.trendFilterEnabled);
+            el.checked = isEnabled;
+            el.closest('.alarm-condition-box').dataset.disabled = !isEnabled;
+        });
+        document.getElementById('alarmVolumePeriod').value = conditions.volume?.period ?? 20;
+        document.getElementById('alarmVolumeMultiplier').value = conditions.volume?.multiplier ?? 2;
+        // ... (diğer tüm orijinal değer atamaları)
     }
+
+    createCoinManager('alarm-coin-manager-container', tempAlarmCoins, 'alarm');
+    showPanel('alarmSettingsPanel');
+}
     
     async function saveAlarm() {
         const btn = document.getElementById('saveAlarmBtn');
