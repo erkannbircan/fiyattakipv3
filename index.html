@@ -450,6 +450,14 @@
                     </div>
             </div>
 
+            <div class="pivot-dictionary" style="font-size: 0.85rem; line-height: 1.6; margin-top: 20px;">
+                <h5><i class="fas fa-info-circle"></i> Filtre Açıklamaları</h5>
+                <p><strong>Hacim Artışı:</strong> Belirlenen periyottaki ortalama işlem hacminin, belirlediğiniz kat kadar üzerine çıkan ani hacim patlamalarını yakalar. Güçlü bir alım/satım ilgisinin göstergesidir.</p>
+                <p><strong>MACD Kesişimi:</strong> İki hareketli ortalama arasındaki ilişkiyi ölçer. Trend dönüşlerini ve momentum başlangıçlarını yakalamak için en popüler göstergelerden biridir.</p>
+                <p><strong>Güçlü Trend Filtresi (ADX):</strong> Piyasada bir yön olup olmadığını ölçer. ADX 25'in üzerindeyse, piyasanın yatayda olmadığı ve belirgin bir yükseliş veya düşüş trendinde olduğu anlaşılır. Bu filtre, kararsız piyasalardaki yanlış sinyalleri önler.</p>
+                <p><strong>MACD Histogram Filtresi:</strong> Momentumun gücünü ve yönünü teyit eder. Örneğin, bir 'Al' sinyali için Histogram'ın sıfırdan büyük olması, yükseliş momentumunun devam ettiğini gösterir ve sinyali güçlendirir.</p>
+                <p><strong>RSI Filtresi:</strong> Varlığın aşırı alım (genellikle >70) veya aşırı satım (genellikle <30) bölgelerinde olup olmadığını kontrol eder. Bir alım sinyalini, RSI'ın aşırı satım bölgesinde olmasıyla birleştirmek, sinyalin gücünü artırabilir.</p>
+             </div>
              <div class="button-group" style="margin-top:20px;">
                 <button id="testAlarmBtn" style="background-color: #373c4a;"><i class="fab fa-telegram-plane"></i> Test Et</button>
                 <button id="saveAlarmBtn"><i class="fas fa-save"></i> Kaydet</button>
@@ -472,7 +480,7 @@
         </div>
         <div class="panel-content">
             <h4 id="backtestAlarmName"></h4>
-            <p>Bu panel, seçilen alarm stratejisinin geçmiş <strong>1000 mum (yaklaşık 10 gün)</strong> üzerindeki performansını her bir coin için ayrı ayrı gösterir. Sonuçlar, sinyal geldikten sonraki fiyat değişimlerine dayanmaktadır.</p>
+            <p>Bu panel, seçilen alarm stratejisinin geçmiş <strong>1000 mum (yaklaşık 10 gün)</strong> üzerindeki performansını her bir coin için ayrı ayrı gösterir. Sonuçlar, sinyal geldikten 15 dakika ve 1 saat sonraki fiyat değişimlerine dayanmaktadır.</p>
             <div id="backtest-results-container">
                 <div style="text-align: center; padding: 20px;"><div class="loading"></div></div>
             </div>
@@ -496,8 +504,10 @@
         </div>
     </div>
 
+
     <div id="modalOverlay" class="modal-overlay"></div>
     <div class="notification" id="notification"></div>
      <script src="script.js"></script>
+
 </body>
 </html>
