@@ -111,6 +111,7 @@ function setupPanelEventListeners(parentElement) {
         if (e.target.closest('#saveChartBtn')) saveChartState();
         if (e.target.closest('#saveAlarmBtn')) saveAlarm();
         if (e.target.closest('#savePortfolioBtn')) handlePortfolioSave();
+        if (e.target.closest('#testAlarmBtn')) sendTestTelegramMessage();
         
         const collapsibleHeader = e.target.closest('.collapsible-header');
         if (collapsibleHeader) {
@@ -126,7 +127,9 @@ function setupPanelEventListeners(parentElement) {
             if (e.target.matches('[data-condition]')) {
                 const isChecked = e.target.checked;
                 const parentBox = e.target.closest('.alarm-condition-box');
-                if (parentBox) parentBox.dataset.disabled = !isChecked;
+                if (parentBox) {
+                    parentBox.dataset.disabled = !isChecked;
+                }
             }
         });
     }
