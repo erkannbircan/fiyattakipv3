@@ -95,6 +95,9 @@ function setupTabEventListeners(parentElement) {
                 case 'alarms':
                     renderAlarms();
                     break;
+                    case 'live-scanner': // Bu bölümü ekleyin
+    document.getElementById('scannerResultsTable').innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">Tarama başlatılmadı.</td></tr>`;
+    break;
                 case 'alarm-reports':
                     renderAlarmReports();
                     break;
@@ -275,4 +278,11 @@ function setupPivotPageActionListeners(parentElement) {
             return;
         }
      });
+}
+function setupScannerEventListeners(parentElement) {
+    parentElement.addEventListener('click', (e) => {
+        if (e.target.closest('#startScannerBtn')) {
+            startScanner();
+        }
+    });
 }
