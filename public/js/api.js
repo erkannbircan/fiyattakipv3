@@ -228,3 +228,13 @@ async function runSignalAnalysis() {
         hideLoading(btn);
     }
 }
+async function matchDnaProfile(coin, timeframe) {
+    try {
+        const matchSignalDNA = state.firebase.functions.httpsCallable('matchSignalDNA');
+        const result = await matchSignalDNA({ coin, timeframe });
+        return result.data;
+    } catch (error) {
+        console.error(`Eşleştirme hatası (${coin}):`, error);
+        throw error;
+    }
+}
