@@ -65,6 +65,7 @@ function setupTrackerPageEventListeners() {
     setupAiPageActionListeners(trackerPageEl);
     setupPivotPageActionListeners(trackerPageEl);
     setupAlarmEventListeners(trackerPageEl);
+    setupScannerEventListeners(trackerPageEl);
 }
 
 function setupTabEventListeners(parentElement) {
@@ -92,12 +93,12 @@ function setupTabEventListeners(parentElement) {
                 case 'strategy-discovery':
                     createCoinManager('discovery-coin-manager-container', state.discoveryCoins, 'discovery');
                     break;
+                case 'live-scanner':
+                    document.getElementById('scannerResultsTable').innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">Tarama başlatılmadı.</td></tr>`;
+                    break;
                 case 'alarms':
                     renderAlarms();
                     break;
-                    case 'live-scanner': // Bu bölümü ekleyin
-    document.getElementById('scannerResultsTable').innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">Tarama başlatılmadı.</td></tr>`;
-    break;
                 case 'alarm-reports':
                     renderAlarmReports();
                     break;
@@ -105,7 +106,6 @@ function setupTabEventListeners(parentElement) {
         }
     });
 }
-
 
 function setupPanelEventListeners(parentElement) {
     parentElement.addEventListener('click', (e) => {
@@ -131,7 +131,7 @@ function setupPanelEventListeners(parentElement) {
                 const isChecked = e.target.checked;
                 const parentBox = e.target.closest('.alarm-condition-box');
                 if (parentBox) {
-                    parentBox.dataset.disabled = !isChecked;
+                    parentBox.dataset.disabled = String(!isChecked);
                 }
             }
         });
@@ -279,10 +279,30 @@ function setupPivotPageActionListeners(parentElement) {
         }
      });
 }
+
 function setupScannerEventListeners(parentElement) {
     parentElement.addEventListener('click', (e) => {
         if (e.target.closest('#startScannerBtn')) {
             startScanner();
         }
     });
+}
+
+async function sendTestTelegramMessage() {
+    const btn = document.getElementById('testAlarmBtn');
+    if (!state.settings.telegramPhone) {
+        showNotification("Lütfen Ayarlar'dan Telegram Chat ID'nizi kaydedin.", false);
+        return;
+    }
+    showLoading(btn);
+    try {
+        const sendTestNotification = state.firebase.functions.httpsCallable('sendTestNotification');
+        await sendTestNotification({ chatId: state.settings.telegramPhone });
+        showNotification("Test bildirimi başarıyla gönderildi!", true);
+    } catch (error) {
+        console.error("Telegram test hatası:", error);
+        showNotification("Test bildirimi gönderilemedi. Chat ID'nizi kontrol edin.", false);
+    } finally {
+        hideLoading(btn);
+    }
 }
