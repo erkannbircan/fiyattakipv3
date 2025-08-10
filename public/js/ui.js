@@ -37,40 +37,40 @@ const formatPrice = (price) => {
 const formatVolume = (volume) => { const num = parseFloat(volume); if (isNaN(num)) return 'N/A'; if (num >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(2)}B`; if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M`; if (num >= 1_000) return `${(num / 1_000).toFixed(2)}K`; return num.toFixed(0); };
 
 function applySettingsToUI() {
-    document.getElementById('langSelect').value = settings.lang;
-    document.getElementById('autoRefreshToggle').checked = settings.autoRefresh;
-    document.getElementById('refreshInterval').value = settings.refreshInterval;
-    document.getElementById('refreshInterval').min = { admin: 10, qualified: 120, new_user: 300 }[currentUserRole] || 300;
-    document.getElementById('telegramPhoneInput').value = settings.telegramPhone || '';
+    document.getElementById('langSelect').value = state.settings.lang;
+    document.getElementById('autoRefreshToggle').checked = state.settings.autoRefresh;
+    document.getElementById('refreshInterval').value = state.settings.refreshInterval;
+    document.getElementById('refreshInterval').min = { admin: 10, qualified: 120, new_user: 300 }[state.currentUserRole] || 300;
+    document.getElementById('telegramPhoneInput').value = state.settings.telegramPhone || '';
 
     for (let i = 1; i <= 3; i++) {
-        if(settings.columns[i]) {
-            document.getElementById(`col${i}_name_input`).value = settings.columns[i].name;
-            document.getElementById(`col${i}_days_input`).value = settings.columns[i].days;
-            document.getElementById(`col${i}_threshold_input`).value = settings.columns[i].threshold;
-            document.getElementById(`col${i}_header_crypto`).innerHTML = `${settings.columns[i].name}<span class="sort-indicator"></span>`;
+        if(state.settings.columns[i]) {
+            document.getElementById(`col${i}_name_input`).value = state.settings.columns[i].name;
+            document.getElementById(`col${i}_days_input`).value = state.settings.columns[i].days;
+            document.getElementById(`col${i}_threshold_input`).value = state.settings.columns[i].threshold;
+            document.getElementById(`col${i}_header_crypto`).innerHTML = `${state.settings.columns[i].name}<span class="sort-indicator"></span>`;
         }
     }
-    document.getElementById('high_color_input').value = settings.colors.high;
-    document.getElementById('low_color_input').value = settings.colors.low;
-    document.getElementById('high_color_preview').style.backgroundColor = settings.colors.high;
-    document.getElementById('low_color_preview').style.backgroundColor = settings.colors.low;
+    document.getElementById('high_color_input').value = state.settings.colors.high;
+    document.getElementById('low_color_input').value = state.settings.colors.low;
+    document.getElementById('high_color_preview').style.backgroundColor = state.settings.colors.high;
+    document.getElementById('low_color_preview').style.backgroundColor = state.settings.colors.low;
 
     document.querySelectorAll(`#cryptoPivotFilters button.active, #cryptoIntervalFilters button.active`).forEach(b => b.classList.remove('active'));
-    document.querySelector(`#cryptoPivotFilters button[data-filter="${settings.cryptoPivotFilter}"]`)?.classList.add('active');
-    document.querySelector(`#cryptoIntervalFilters button[data-interval="${settings.cryptoAnalysisInterval}"]`)?.classList.add('active');
+    document.querySelector(`#cryptoPivotFilters button[data-filter="${state.settings.cryptoPivotFilter}"]`)?.classList.add('active');
+    document.querySelector(`#cryptoIntervalFilters button[data-interval="${state.settings.cryptoAnalysisInterval}"]`)?.classList.add('active');
 
     Object.keys(AVAILABLE_INDICATORS).forEach(key => {
         const checkbox = document.querySelector(`#crypto-indicator-filters-grid input[data-indicator="${key}"]`);
-        if (checkbox) checkbox.checked = !!settings.cryptoAnalysisIndicators[key];
+        if (checkbox) checkbox.checked = !!state.settings.cryptoAnalysisIndicators[key];
     });
-    translatePage(settings.lang);
+    translatePage(state.settings.lang);
     toggleAutoRefresh();
     toggleReportsAutoRefresh(false);
 }
 
 function updateAdminUI() {
-    const isAdmin = currentUserRole === 'admin';
+    const isAdmin = state.currentUserRole === 'admin';
     document.getElementById('analyzeAllCryptoBtn').style.display = isAdmin ? 'flex' : 'none';
     document.getElementById('alarms-tab').style.display = isAdmin ? 'block' : 'none';
     document.getElementById('strategy-discovery-tab').style.display = isAdmin ? 'block' : 'none';
@@ -84,7 +84,7 @@ function createCoinManager(containerId, coinList, listName) {
         <div class="coin-manager">
             <div class="add-asset-bar">
                 <input type="text" class="new-coin-input" data-list-name="${listName}" placeholder="BTC, ETH, SOL...">
-                <button class="add-coin-btn" data-list-name="${listName}"><i class="fas fa-plus"></i> ${translations[settings.lang].add}</button>
+                <button class="add-coin-btn" data-list-name="${listName}"><i class="fas fa-plus"></i> ${translations[state.settings.lang].add}</button>
             </div>
             <div class="coin-selection-grid" data-list-name="${listName}">
                 ${(coinList || []).map(pair => `
@@ -117,12 +117,12 @@ function renderPortfolioTabs(containerId) {
     const tabsContainer = document.getElementById(containerId);
     if(!tabsContainer) return;
     tabsContainer.innerHTML = '';
-    for (const name in userPortfolios) {
+    for (const name in state.userPortfolios) {
         const tab = document.createElement('div');
         tab.className = 'portfolio-tab';
         tab.textContent = name;
         tab.dataset.portfolioName = name;
-        if (name === activePortfolio) {
+        if (name === state.activePortfolio) {
             tab.classList.add('active');
         }
         tabsContainer.appendChild(tab);
@@ -132,9 +132,9 @@ function renderPortfolioTabs(containerId) {
 function showPortfolioModal(action) {
     document.getElementById('portfolioModalTitle').textContent = action === 'new' ? 'Yeni Liste Oluştur' : 'Listeyi Yeniden Adlandır';
     document.getElementById('portfolioModalLabel').textContent = action === 'new' ? 'Yeni Listenin Adı' : 'Yeni Ad';
-    document.getElementById('portfolioNameInput').value = action === 'rename' ? activePortfolio : '';
+    document.getElementById('portfolioNameInput').value = action === 'rename' ? state.activePortfolio : '';
     document.getElementById('portfolioActionInput').value = action;
-    document.getElementById('originalPortfolioNameInput').value = activePortfolio;
+    document.getElementById('originalPortfolioNameInput').value = state.activePortfolio;
     document.getElementById('portfolio-error-message').textContent = '';
     showPanel('portfolioModal');
 }
@@ -150,8 +150,8 @@ function updateAllTableRows(data) {
         const pct = colData?.pct; let classes = '', style = '';
         if (typeof pct !== 'number') return { classes: '', style: '' };
         if (pct < 0) { classes = 'negative'; }
-        else if (pct >= threshold) { classes = 'positive-high'; style = `style="color: ${settings.colors.high};"`; }
-        else { classes = 'positive-low'; style = `style="color: ${settings.colors.low};"`; }
+        else if (pct >= threshold) { classes = 'positive-high'; style = `style="color: ${state.settings.colors.high};"`; }
+        else { classes = 'positive-low'; style = `style="color: ${state.settings.colors.low};"`; }
         return { classes, style };
     };
 
@@ -163,9 +163,9 @@ function updateAllTableRows(data) {
         if (result.error) {
             rowHTML = `<td class="drag-handle-col ${isSorting ? '' : 'hidden'}"><i class="fas fa-grip-lines drag-handle"></i></td><td class="asset-cell">${result.pair.replace("USDT", "")}</td><td colspan="5" style="text-align:center; color: var(--accent-red);">Veri alınamadı</td>`;
         } else {
-            const cellStyle1 = getCellStyle(result.col1, settings.columns[1].threshold);
-            const cellStyle2 = getCellStyle(result.col2, settings.columns[2].threshold);
-            const cellStyle3 = getCellStyle(result.col3, settings.columns[3].threshold);
+            const cellStyle1 = getCellStyle(result.col1, state.settings.columns[1].threshold);
+            const cellStyle2 = getCellStyle(result.col2, state.settings.columns[2].threshold);
+            const cellStyle3 = getCellStyle(result.col3, state.settings.columns[3].threshold);
             rowHTML = `
                 <td class="drag-handle-col ${isSorting ? '' : 'hidden'}"><i class="fas fa-grip-lines drag-handle"></i></td>
                 <td class="asset-cell" data-pair="${result.pair}">${result.pair.replace("USDT", "")}</td>
@@ -193,10 +193,10 @@ function renderSupportResistance() {
             <p><span>S1, S2:</span> Destek Seviyeleri (Düşüş Durakları)</p>
         </div>`;
 
-    const filter = settings.cryptoPivotFilter;
-    const pivotPortfolioName = document.querySelector('#pivotPortfolioTabs .portfolio-tab.active')?.dataset.portfolioName || activePortfolio;
-    const pivotCoinList = userPortfolios[pivotPortfolioName] || [];
-    const dataToRender = allCryptoData.filter(asset => pivotCoinList.includes(asset.pair) && !asset.error && asset.sr);
+    const filter = state.settings.cryptoPivotFilter;
+    const pivotPortfolioName = document.querySelector('#pivotPortfolioTabs .portfolio-tab.active')?.dataset.portfolioName || state.activePortfolio;
+    const pivotCoinList = state.userPortfolios[pivotPortfolioName] || [];
+    const dataToRender = state.allCryptoData.filter(asset => pivotCoinList.includes(asset.pair) && !asset.error && asset.sr);
     
     dataToRender.forEach(asset => {
         if ((filter === 'above' && asset.latestPrice < asset.sr.pivot) || (filter === 'below' && asset.latestPrice > asset.sr.pivot)) return;
@@ -241,10 +241,10 @@ function showChart(pair) {
     container.innerHTML = '<div class="loading" style="margin: auto;"></div>';
     showPanel('chartPanel');
 
-    const savedState = settings.chartStates?.[pair];
+    const savedState = state.settings.chartStates?.[pair];
 
     try {
-        tradingViewWidget = new TradingView.widget({
+        state.tradingViewWidget = new TradingView.widget({
             symbol: `BINANCE:${pair}`,
             interval: "D",
             autosize: true,
@@ -270,8 +270,8 @@ function showChart(pair) {
 function renderAlarms() {
     const container = document.getElementById('alarmsListContainer');
     if (!container) return;
-    container.innerHTML = userAlarms.length === 0 ? `<p style="text-align:center; color: var(--text-secondary);">Henüz oluşturulmuş alarm yok.</p>` : '';
-    userAlarms.forEach(alarm => {
+    container.innerHTML = state.userAlarms.length === 0 ? `<p style="text-align:center; color: var(--text-secondary);">Henüz oluşturulmuş alarm yok.</p>` : '';
+    state.userAlarms.forEach(alarm => {
         const card = document.createElement('div');
         card.className = 'alarm-card';
         card.dataset.alarmId = alarm.id;
@@ -321,7 +321,7 @@ function openAlarmPanel(alarm = null, suggestedParams = null) {
     if (suggestedParams) {
         const { coin, timeframe, direction, dna, dna_analysis } = suggestedParams;
         document.getElementById('alarmNameInput').value = `${coin.replace('USDT','')} DNA Alarmı`;
-        tempAlarmCoins = [coin];
+        state.tempAlarmCoins = [coin];
         document.getElementById('alarmTimeframe').value = timeframe;
         
         const recommendationDiv = document.createElement('div');
@@ -358,7 +358,7 @@ function openAlarmPanel(alarm = null, suggestedParams = null) {
 
     } else {
         document.getElementById('alarmNameInput').value = alarm?.name || '';
-        tempAlarmCoins = alarm?.coins?.length > 0 ? [...alarm.coins] : [...(userPortfolios[activePortfolio] || [])];
+        state.tempAlarmCoins = alarm?.coins?.length > 0 ? [...alarm.coins] : [...(state.userPortfolios[state.activePortfolio] || [])];
         const conditions = alarm?.conditions || {};
         document.getElementById('alarmTimeframe').value = alarm?.timeframe || '15m';
         document.querySelectorAll('#alarmSettingsPanel [data-condition]').forEach(el => {
@@ -371,23 +371,23 @@ function openAlarmPanel(alarm = null, suggestedParams = null) {
         document.getElementById('alarmVolumeMultiplier').value = conditions.volume?.multiplier ?? 2;
     }
 
-    createCoinManager('alarm-coin-manager-container', tempAlarmCoins, 'alarm');
+    createCoinManager('alarm-coin-manager-container', state.tempAlarmCoins, 'alarm');
     showPanel('alarmSettingsPanel');
 }
 
 async function renderAlarmReports() {
-    if (!userDocRef) return;
+    if (!state.userDocRef) return;
     const tableBody = document.getElementById('alarmReportsTable');
     if(!tableBody) return;
 
-    if (!trackedReports || trackedReports.length === 0) {
+    if (!state.trackedReports || state.trackedReports.length === 0) {
         tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Takip edilen rapor bulunmuyor. Rapor ID'sini girerek ekleyebilirsiniz.</td></tr>`;
         return;
     }
     
     try {
-        const reportsSnapshot = await userDocRef.collection('alarm_reports')
-                                        .where('reportId', 'in', trackedReports)
+        const reportsSnapshot = await state.userDocRef.collection('alarm_reports')
+                                        .where('reportId', 'in', state.trackedReports)
                                         .orderBy('timestamp', 'desc')
                                         .get();
         
@@ -456,10 +456,10 @@ function renderIndicatorCards(type, data) {
             </div>
             <p style="color: var(--text-secondary); font-size: 0.9rem;">Detaylı AI Analizi sonuçları bu alanda gösterilebilir.</p>
              <div class="indicator-details-grid">
-                ${settings.cryptoAnalysisIndicators.rsi ? ` <div class="indicator-item"><span class="label">RSI (14)</span><span class="value">${asset.indicators.rsi?.toFixed(2) ?? 'N/A'}</span></div>` : ''}
-                ${settings.cryptoAnalysisIndicators.macd ? ` <div class="indicator-item"><span class="label">MACD Hist.</span><span class="value ${asset.indicators.macd?.histogram > 0 ? 'value-positive' : 'value-negative'}">${asset.indicators.macd?.histogram?.toFixed(5) ?? 'N/A'}</span></div>` : ''}
-                ${settings.cryptoAnalysisIndicators.ema ? ` <div class="indicator-item"><span class="label">EMA (50)</span><span class="value">$${formatPrice(asset.indicators.ema)}</span></div>` : ''}
-                ${settings.cryptoAnalysisIndicators.volume ? ` <div class="indicator-item"><span class="label">Hacim (24s)</span><span class="value">$${formatVolume(asset.indicators.volume)}</span></div>` : ''}
+                ${state.settings.cryptoAnalysisIndicators.rsi ? ` <div class="indicator-item"><span class="label">RSI (14)</span><span class="value">${asset.indicators.rsi?.toFixed(2) ?? 'N/A'}</span></div>` : ''}
+                ${state.settings.cryptoAnalysisIndicators.macd ? ` <div class="indicator-item"><span class="label">MACD Hist.</span><span class="value ${asset.indicators.macd?.histogram > 0 ? 'value-positive' : 'value-negative'}">${asset.indicators.macd?.histogram?.toFixed(5) ?? 'N/A'}</span></div>` : ''}
+                ${state.settings.cryptoAnalysisIndicators.ema ? ` <div class="indicator-item"><span class="label">EMA (50)</span><span class="value">$${formatPrice(asset.indicators.ema)}</span></div>` : ''}
+                ${state.settings.cryptoAnalysisIndicators.volume ? ` <div class="indicator-item"><span class="label">Hacim (24s)</span><span class="value">$${formatVolume(asset.indicators.volume)}</span></div>` : ''}
             </div>
         `;
         container.appendChild(card);
