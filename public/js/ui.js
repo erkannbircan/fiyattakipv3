@@ -1,6 +1,3 @@
-// public/js/ui.js
-
-// --- UI HELPER FUNCTIONS ---
 function translatePage(lang) { document.querySelectorAll('[data-lang]').forEach(el => { const key = el.getAttribute('data-lang'); if (translations[lang]?.[key] && typeof translations[lang][key] === 'string') el.textContent = translations[lang][key]; }); }
 function showPage(pageId) {
     document.getElementById('app-loader').style.display = 'none';
@@ -39,8 +36,108 @@ const formatPrice = (price) => {
 };
 const formatVolume = (volume) => { const num = parseFloat(volume); if (isNaN(num)) return 'N/A'; if (num >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(2)}B`; if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M`; if (num >= 1_000) return `${(num / 1_000).toFixed(2)}K`; return num.toFixed(0); };
 
-// --- UI RENDERING FUNCTIONS ---
-// The functions below render parts of the UI based on the current state.
+function applySettingsToUI() {
+    document.getElementById('langSelect').value = settings.lang;
+    document.getElementById('autoRefreshToggle').checked = settings.autoRefresh;
+    document.getElementById('refreshInterval').value = settings.refreshInterval;
+    document.getElementById('refreshInterval').min = { admin: 10, qualified: 120, new_user: 300 }[currentUserRole] || 300;
+    document.getElementById('telegramPhoneInput').value = settings.telegramPhone || '';
+
+    for (let i = 1; i <= 3; i++) {
+        if(settings.columns[i]) {
+            document.getElementById(`col${i}_name_input`).value = settings.columns[i].name;
+            document.getElementById(`col${i}_days_input`).value = settings.columns[i].days;
+            document.getElementById(`col${i}_threshold_input`).value = settings.columns[i].threshold;
+            document.getElementById(`col${i}_header_crypto`).innerHTML = `${settings.columns[i].name}<span class="sort-indicator"></span>`;
+        }
+    }
+    document.getElementById('high_color_input').value = settings.colors.high;
+    document.getElementById('low_color_input').value = settings.colors.low;
+    document.getElementById('high_color_preview').style.backgroundColor = settings.colors.high;
+    document.getElementById('low_color_preview').style.backgroundColor = settings.colors.low;
+
+    document.querySelectorAll(`#cryptoPivotFilters button.active, #cryptoIntervalFilters button.active`).forEach(b => b.classList.remove('active'));
+    document.querySelector(`#cryptoPivotFilters button[data-filter="${settings.cryptoPivotFilter}"]`)?.classList.add('active');
+    document.querySelector(`#cryptoIntervalFilters button[data-interval="${settings.cryptoAnalysisInterval}"]`)?.classList.add('active');
+
+    Object.keys(AVAILABLE_INDICATORS).forEach(key => {
+        const checkbox = document.querySelector(`#crypto-indicator-filters-grid input[data-indicator="${key}"]`);
+        if (checkbox) checkbox.checked = !!settings.cryptoAnalysisIndicators[key];
+    });
+    translatePage(settings.lang);
+    toggleAutoRefresh();
+    toggleReportsAutoRefresh(false);
+}
+
+function updateAdminUI() {
+    const isAdmin = currentUserRole === 'admin';
+    document.getElementById('analyzeAllCryptoBtn').style.display = isAdmin ? 'flex' : 'none';
+    document.getElementById('alarms-tab').style.display = isAdmin ? 'block' : 'none';
+    document.getElementById('strategy-discovery-tab').style.display = isAdmin ? 'block' : 'none';
+    document.getElementById('alarm-reports-tab').style.display = isAdmin ? 'block' : 'none';
+}
+
+function createCoinManager(containerId, coinList, listName) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = `
+        <div class="coin-manager">
+            <div class="add-asset-bar">
+                <input type="text" class="new-coin-input" data-list-name="${listName}" placeholder="BTC, ETH, SOL...">
+                <button class="add-coin-btn" data-list-name="${listName}"><i class="fas fa-plus"></i> ${translations[settings.lang].add}</button>
+            </div>
+            <div class="coin-selection-grid" data-list-name="${listName}">
+                ${(coinList || []).map(pair => `
+                    <div class="coin-tag" data-pair="${pair}">
+                        <span>${pair.replace("USDT", "")}</span>
+                        <button class="remove-coin-tag" data-list-name="${listName}" data-pair="${pair}">&times;</button>
+                    </div>
+                `).join('')}
+            </div>
+        </div>`;
+}
+
+function updateCoinList(listName, newCoinList) {
+    const grid = document.querySelector(`.coin-selection-grid[data-list-name="${listName}"]`);
+    if (!grid) return;
+    grid.innerHTML = (newCoinList || []).map(pair => `
+        <div class="coin-tag" data-pair="${pair}">
+            <span>${pair.replace("USDT", "")}</span>
+            <button class="remove-coin-tag" data-list-name="${listName}" data-pair="${pair}">&times;</button>
+        </div>
+    `).join('');
+}
+
+function renderAllPortfolioTabs() {
+    renderPortfolioTabs('portfolioTabs');
+    renderPortfolioTabs('pivotPortfolioTabs');
+}
+
+function renderPortfolioTabs(containerId) {
+    const tabsContainer = document.getElementById(containerId);
+    if(!tabsContainer) return;
+    tabsContainer.innerHTML = '';
+    for (const name in userPortfolios) {
+        const tab = document.createElement('div');
+        tab.className = 'portfolio-tab';
+        tab.textContent = name;
+        tab.dataset.portfolioName = name;
+        if (name === activePortfolio) {
+            tab.classList.add('active');
+        }
+        tabsContainer.appendChild(tab);
+    }
+}
+
+function showPortfolioModal(action) {
+    document.getElementById('portfolioModalTitle').textContent = action === 'new' ? 'Yeni Liste Oluştur' : 'Listeyi Yeniden Adlandır';
+    document.getElementById('portfolioModalLabel').textContent = action === 'new' ? 'Yeni Listenin Adı' : 'Yeni Ad';
+    document.getElementById('portfolioNameInput').value = action === 'rename' ? activePortfolio : '';
+    document.getElementById('portfolioActionInput').value = action;
+    document.getElementById('originalPortfolioNameInput').value = activePortfolio;
+    document.getElementById('portfolio-error-message').textContent = '';
+    showPanel('portfolioModal');
+}
 
 function updateAllTableRows(data) {
     const tableBody = document.getElementById('cryptoPriceTable');
@@ -89,7 +186,12 @@ function renderSupportResistance() {
     if (!container) return;
     container.innerHTML = '';
     const dictContainer = document.getElementById('pivot-dictionary-container');
-    if(dictContainer) dictContainer.innerHTML = `<div class="pivot-dictionary"><p><span>P:</span> Pivot Noktası (Referans)</p><p><span>R1, R2:</span> Direnç Seviyeleri (Yükseliş Hedefleri)</p><p><span>S1, S2:</span> Destek Seviyeleri (Düşüş Durakları)</p></div>`;
+    if(dictContainer) dictContainer.innerHTML = `
+        <div class="pivot-dictionary">
+            <p><span>P:</span> Pivot Noktası (Referans)</p>
+            <p><span>R1, R2:</span> Direnç Seviyeleri (Yükseliş Hedefleri)</p>
+            <p><span>S1, S2:</span> Destek Seviyeleri (Düşüş Durakları)</p>
+        </div>`;
 
     const filter = settings.cryptoPivotFilter;
     const pivotPortfolioName = document.querySelector('#pivotPortfolioTabs .portfolio-tab.active')?.dataset.portfolioName || activePortfolio;
@@ -114,16 +216,55 @@ function renderSupportResistance() {
         const card = document.createElement('div');
         card.className = 'pivot-bar-card';
         card.innerHTML = `
-            <div class="pivot-bar-header"><span class="pair-name">${asset.pair.replace("USDT", "")} - Günlük Pivot</span><span class="insight">${insight}</span></div>
+            <div class="pivot-bar-header">
+                <span class="pair-name">${asset.pair.replace("USDT", "")} - Günlük Pivot</span>
+                <span class="insight">${insight}</span>
+            </div>
             <div class="pivot-bar-container">
                 <div class="pivot-bar"></div>
                 <div class="current-price-indicator" style="left: ${getPosition(asset.latestPrice)}%;" data-price="$${formatPrice(asset.latestPrice)}"></div>
             </div>
             <div class="pivot-values">
-                <span>S2: ${formatPrice(s2)}</span><span>S1: ${formatPrice(s1)}</span><span style="font-weight:bold;">P: ${formatPrice(pivot)}</span><span>R1: ${formatPrice(r1)}</span><span>R2: ${formatPrice(r2)}</span>
+                <span>S2: ${formatPrice(s2)}</span>
+                <span>S1: ${formatPrice(s1)}</span>
+                <span style="font-weight:bold;">P: ${formatPrice(pivot)}</span>
+                <span>R1: ${formatPrice(r1)}</span>
+                <span>R2: ${formatPrice(r2)}</span>
             </div>`;
         container.appendChild(card);
     });
+}
+
+function showChart(pair) {
+    document.getElementById('chartPanelTitle').textContent = pair.replace("USDT", "");
+    const container = document.getElementById('chartContainer');
+    container.innerHTML = '<div class="loading" style="margin: auto;"></div>';
+    showPanel('chartPanel');
+
+    const savedState = settings.chartStates?.[pair];
+
+    try {
+        tradingViewWidget = new TradingView.widget({
+            symbol: `BINANCE:${pair}`,
+            interval: "D",
+            autosize: true,
+            container_id: "chartContainer",
+            theme: "dark",
+            style: "1",
+            locale: "tr",
+            toolbar_bg: "#1e222d",
+            enable_publishing: false,
+            withdateranges: true,
+            hide_side_toolbar: false,
+            allow_symbol_change: true,
+            details: true,
+            studies: ["MASimple@tv-basicstudies", "Volume@tv-basicstudies", "RSI@tv-basicstudies"],
+            saved_data: savedState || undefined,
+        });
+    } catch (error) {
+        console.error("TradingView widget error:", error);
+        container.innerHTML = `<p style="color:var(--accent-red); text-align:center;">Grafik yüklenemedi.</p>`;
+    }
 }
 
 function renderAlarms() {
@@ -154,6 +295,140 @@ function renderAlarms() {
             </div>`;
         container.appendChild(card);
     });
+}
+
+function openAlarmPanel(alarm = null, suggestedParams = null) {
+    document.getElementById('alarmPanelTitle').textContent = alarm ? 'Alarmı Düzenle' : 'Yeni Alarm Oluştur';
+    const alarmId = alarm ? alarm.id : '';
+    document.getElementById('alarmIdInput').value = alarmId;
+    
+    const dnaRecDiv = document.querySelector('#alarmSettingsPanel .dna-recommendation');
+    if (dnaRecDiv) dnaRecDiv.remove();
+
+    document.querySelectorAll('#alarmSettingsPanel [data-condition]').forEach(el => {
+        el.checked = false;
+        const parentBox = el.closest('.alarm-condition-box');
+        if(parentBox) parentBox.dataset.disabled = "true";
+    });
+
+    document.getElementById('alarmNameInput').value = '';
+    document.getElementById('alarmTimeframe').value = '15m';
+    document.getElementById('alarmVolumeMultiplier').value = 2;
+    document.getElementById('alarmADXThreshold').value = 25;
+    document.getElementById('alarmMacdHistogramValue').value = 0;
+    document.getElementById('alarmRsiValue').value = 30;
+
+    if (suggestedParams) {
+        const { coin, timeframe, direction, dna, dna_analysis } = suggestedParams;
+        document.getElementById('alarmNameInput').value = `${coin.replace('USDT','')} DNA Alarmı`;
+        tempAlarmCoins = [coin];
+        document.getElementById('alarmTimeframe').value = timeframe;
+        
+        const recommendationDiv = document.createElement('div');
+        recommendationDiv.className = 'dna-recommendation';
+        recommendationDiv.innerHTML = `💡 <strong>AI Önerisi:</strong> Bu alarm, "${coin.replace('USDT','')}" için bulunan başarılı DNA'ya göre ayarlanıyor.`;
+        recommendationDiv.dataset.dnaAnalysis = JSON.stringify(dna_analysis);
+        const firstCollapsible = document.querySelector('#alarmSettingsPanel .collapsible-content');
+        if (firstCollapsible) firstCollapsible.prepend(recommendationDiv);
+        
+        document.getElementById('alarmMacdSignalType').value = direction === 'up' ? 'buy' : 'sell';
+
+        if (dna.avgVolumeMultiplier) {
+            document.getElementById('alarmVolumeCondition').checked = true;
+            document.getElementById('alarmVolumeMultiplier').value = dna.avgVolumeMultiplier.toFixed(1);
+        }
+        if (dna.avgMacdHist) {
+            document.getElementById('alarmMacdHistogramCondition').checked = true;
+            document.getElementById('alarmMacdHistogramOperator').value = dna.avgMacdHist > 0 ? 'above' : 'below';
+            document.getElementById('alarmMacdHistogramValue').value = dna.avgMacdHist.toFixed(6); 
+        }
+         if (dna.avgAdx) {
+            document.getElementById('alarmTrendFilterEnabled').checked = true;
+            document.getElementById('alarmADXThreshold').value = Math.max(20, Math.floor(dna.avgAdx));
+        }
+         if (dna.avgRsi) {
+            document.getElementById('alarmRsiCondition').checked = true;
+            document.getElementById('alarmRsiOperator').value = direction === 'up' ? 'below' : 'above';
+            document.getElementById('alarmRsiValue').value = Math.round(dna.avgRsi);
+        }
+        document.getElementById('alarmMacdCondition').checked = true;
+        document.querySelectorAll('#alarmSettingsPanel [data-condition]:checked').forEach(el => {
+            el.closest('.alarm-condition-box').dataset.disabled = "false";
+        });
+
+    } else {
+        document.getElementById('alarmNameInput').value = alarm?.name || '';
+        tempAlarmCoins = alarm?.coins?.length > 0 ? [...alarm.coins] : [...(userPortfolios[activePortfolio] || [])];
+        const conditions = alarm?.conditions || {};
+        document.getElementById('alarmTimeframe').value = alarm?.timeframe || '15m';
+        document.querySelectorAll('#alarmSettingsPanel [data-condition]').forEach(el => {
+            const conditionName = el.dataset.condition;
+            const isEnabled = conditions[conditionName]?.enabled ?? (conditionName === 'adx' && alarm?.trendFilterEnabled);
+            el.checked = isEnabled;
+            el.closest('.alarm-condition-box').dataset.disabled = !isEnabled;
+        });
+        document.getElementById('alarmVolumePeriod').value = conditions.volume?.period ?? 20;
+        document.getElementById('alarmVolumeMultiplier').value = conditions.volume?.multiplier ?? 2;
+    }
+
+    createCoinManager('alarm-coin-manager-container', tempAlarmCoins, 'alarm');
+    showPanel('alarmSettingsPanel');
+}
+
+async function renderAlarmReports() {
+    if (!userDocRef) return;
+    const tableBody = document.getElementById('alarmReportsTable');
+    if(!tableBody) return;
+
+    if (!trackedReports || trackedReports.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Takip edilen rapor bulunmuyor. Rapor ID'sini girerek ekleyebilirsiniz.</td></tr>`;
+        return;
+    }
+    
+    try {
+        const reportsSnapshot = await userDocRef.collection('alarm_reports')
+                                        .where('reportId', 'in', trackedReports)
+                                        .orderBy('timestamp', 'desc')
+                                        .get();
+        
+        if (reportsSnapshot.empty) {
+            tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Takip edilen rapor bulunmuyor.</td></tr>`;
+            return;
+        }
+    
+        const reports = reportsSnapshot.docs.map(doc => doc.data());
+        const coinPairs = [...new Set(reports.map(r => r.coin))];
+        const pricesData = await Promise.all(coinPairs.map(pair => axios.get(`https://api.binance.com/api/v3/ticker/price?symbol=${pair}`).then(res => res.data).catch(() => ({ symbol: pair, price: null }))));
+        const priceMap = new Map(pricesData.map(p => [p.symbol, parseFloat(p.price)]));
+    
+        tableBody.innerHTML = '';
+        reports.forEach(report => {
+            const currentPrice = priceMap.get(report.coin);
+            let performancePct = 'N/A';
+            let perfClass = '';
+            if (currentPrice) {
+                const change = ((currentPrice - report.signalPrice) / report.signalPrice) * 100;
+                performancePct = (report.signalDirection === 'SATIŞ' ? -change : change);
+                perfClass = performancePct > 0 ? 'positive' : 'negative';
+            }
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${report.coin.replace('USDT', '')}</td>
+                <td>${report.signalDirection}</td>
+                <td>$${formatPrice(report.signalPrice)}</td>
+                <td>$${currentPrice ? formatPrice(currentPrice) : 'N/A'}</td>
+                <td class="performance-cell ${perfClass}">${typeof performancePct === 'number' ? performancePct.toFixed(2) + '%' : 'N/A'}</td>
+                <td>${report.timestamp.toDate().toLocaleString()}</td>
+                <td>${report.alarmName}</td>
+                <td><button class="action-btn remove-report-btn" data-report-id="${report.reportId}"><i class="fas fa-times"></i></button></td>
+            `;
+            tableBody.appendChild(row);
+        });
+    } catch(error) {
+        console.error("Error fetching alarm reports:", error);
+        tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color: var(--accent-red);">Raporlar yüklenirken bir hata oluştu.</td></tr>`;
+    }
 }
 
 function renderIndicatorCards(type, data) {
@@ -191,5 +466,5 @@ function renderIndicatorCards(type, data) {
     });
 }
 
-// Other rendering functions like renderAllPortfolioTabs, createCoinManager, etc.
-// should be moved from the original script.js to here.
+function renderIndicatorFilters() { }
+function renderDictionary() { }
