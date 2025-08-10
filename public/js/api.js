@@ -190,9 +190,9 @@ async function runSignalAnalysis() {
                 html += `<p style="color:var(--accent-red)">${res?.error || 'Belirtilen koşullarda hiç olay bulunamadı.'}</p>`;
             } else {
                 let dnaText = [];
+                if (res.dna.avgRsi) dnaText.push(`RSI ~ ${res.dna.avgRsi.toFixed(0)} (Hız: %${res.dna.avgRsiVelocity.toFixed(1)})`);
+                if (res.dna.avgMacdHist) dnaText.push(`MACD Hist. ~ ${res.dna.avgMacdHist.toFixed(5)} (Hız: %${res.dna.avgMacdVelocity.toFixed(1)})`);
                 if (res.dna.avgAdx) dnaText.push(`ADX > ${res.dna.avgAdx.toFixed(0)}`);
-                if (res.dna.avgMacdHist) dnaText.push(`MACD Hist. ${res.dna.avgMacdHist > 0 ? '>' : '<'} ${res.dna.avgMacdHist.toFixed(5)}`);
-                if (res.dna.avgRsi) dnaText.push(`RSI ~ ${res.dna.avgRsi.toFixed(0)}`);
                 if (res.dna.avgVolumeMultiplier) dnaText.push(`Hacim > Ort. x${res.dna.avgVolumeMultiplier.toFixed(1)}`);
 
                 const fullDnaData = {
@@ -201,17 +201,17 @@ async function runSignalAnalysis() {
                 };
 
                 html += `
-                    <p>Bu koşul, son ${params.days} günde <strong>${res.totalEvents}</strong> kez gerçekleşti.</p>
-                    <p style="margin-top:15px;"><strong>Sinyal Anındaki Yükseliş:</strong></p>
-                    <p style="font-size:0.9rem; color: var(--text-secondary);">Bu DNA tespit edildiğinde, fiyat ana yükselişin ortalama <strong style="color:var(--accent-yellow); font-size:1rem;">%${res.avgRiseUntilEvent.toFixed(2)}</strong>'lik kısmını tamamlamıştı.</p>
-                    <p style="margin-top:15px;"><strong>Sinyal SONRASI Getiri Potansiyeli:</strong></p>
+                    <p>Bu sinyal, son ${params.days} günde <strong>${res.totalEvents}</strong> kez büyük hareketten hemen önce tespit edildi.</p>
+                    <p style="margin-top:15px;"><strong>Ortalama Güven Skoru: <span style="color:var(--accent-yellow);">${res.avgScore.toFixed(0)}/100</span></strong></p>
+                    
+                    <p style="margin-top:15px;"><strong>Sinyal SONRASI Ortalama Getiri Potansiyeli:</strong></p>
                     <ul>
                         <li>15 Dk Sonra: <strong style="color:${res.avgReturn15m >= 0 ? 'var(--value-positive)' : 'var(--value-negative)'}">${res.avgReturn15m.toFixed(2)}%</strong></li>
                         <li>1 Saat Sonra: <strong style="color:${res.avgReturn1h >= 0 ? 'var(--value-positive)' : 'var(--value-negative)'}">${res.avgReturn1h.toFixed(2)}%</strong></li>
                         <li>4 Saat Sonra: <strong style="color:${res.avgReturn4h >= 0 ? 'var(--value-positive)' : 'var(--value-negative)'}">${res.avgReturn4h.toFixed(2)}%</strong></li>
                         <li>1 Gün Sonra: <strong style="color:${res.avgReturn1d >= 0 ? 'var(--value-positive)' : 'var(--value-negative)'}">${res.avgReturn1d.toFixed(2)}%</strong></li>
                     </ul>
-                    <div class="analysis-summary"><strong>💡 Sinyal DNA'sı:</strong><br>${dnaText.join(' | ')}</div>
+                    <div class="analysis-summary"><strong>💡 Sinyal DNA'sı (Yükseliş Öncesi An):</strong><br>${dnaText.join(' | ')}</div>
                     <div class="analysis-actions"><button class="use-dna-in-alarm-btn" data-dna='${JSON.stringify(fullDnaData)}'><i class="fas fa-magic"></i> Bu DNA ile Alarm Kur</button></div>
                 `;
             }
