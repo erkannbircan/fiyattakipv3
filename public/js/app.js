@@ -34,27 +34,18 @@ function initializeAuthListener() {
                 }
 
                 loadSettingsAndRole(userData);
-                if (!state.pageInitialized) await initializeTrackerPage(userData);
+                if (!state.pageInitialized) {
+                    await initializeTrackerPage(userData);
+                }
 
                 showPage('tracker-page');
-                updateAdminUI(){
-    const isAdmin = state.currentUserRole === 'admin';
-    document.getElementById('analyzeAllCryptoBtn').style.display = isAdmin ? 'flex' : 'none';
-    document.getElementById('live-scanner-tab').style.display = isAdmin ? 'block' : 'none'; // Bu yeni satırı ekleyin
-    document.getElementById('alarms-tab').style.display = isAdmin ? 'block' : 'none';
-    document.getElementById('strategy-discovery-tab').style.display = isAdmin ? 'block' : 'none';
-    document.getElementById('alarm-reports-tab').style.display = isAdmin ? 'block' : 'none';
-};
+                updateAdminUI();
 
             } catch (err) {
-                console.error("Auth/Firestore Error:", err);
+                console.error("Auth/Firestore Hatası:", err);
                 const errorMessageDiv = document.getElementById('error-message');
                 if (errorMessageDiv) {
-                    if (err.code === 'permission-denied') {
-                        errorMessageDiv.textContent = "Firestore yetki hatası. Veritabanı kurallarınızı kontrol edin.";
-                    } else {
-                        errorMessageDiv.textContent = `Bir hata oluştu: ${err.message}`;
-                    }
+                    errorMessageDiv.textContent = `Bir hata oluştu: ${err.message}`;
                 }
                 state.firebase.auth.signOut();
             }
