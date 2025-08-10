@@ -335,19 +335,44 @@ async function saveAlarm() {
 
     const alarmId = document.getElementById('alarmIdInput').value;
     const alarmName = document.getElementById('alarmNameInput').value;
-    if (!alarmName) { showNotification("Alarm adı boş bırakılamaz.", false); hideLoading(btn); return; }
+    if (!alarmName) {
+        showNotification("Alarm adı boş bırakılamaz.", false);
+        hideLoading(btn);
+        return;
+    }
+
+    const safeParseInt = (id, defaultValue = 0) => parseInt(document.getElementById(id).value) || defaultValue;
+    const safeParseFloat = (id, defaultValue = 0) => parseFloat(document.getElementById(id).value) || defaultValue;
 
     const newAlarm = {
-        id: alarmId || `alarm_${new Date().getTime()}`, name: alarmName, coins: state.tempAlarmCoins,
+        id: alarmId || `alarm_${new Date().getTime()}`,
+        name: alarmName,
+        coins: state.tempAlarmCoins,
         isActive: alarmId ? (state.userAlarms.find(a => a.id === alarmId)?.isActive ?? true) : true,
         timeframe: document.getElementById('alarmTimeframe').value,
         trendFilterEnabled: document.getElementById('alarmTrendFilterEnabled').checked,
-        adxThreshold: parseInt(document.getElementById('alarmADXThreshold').value),
+        adxThreshold: safeParseInt('alarmADXThreshold', 25),
         conditions: {
-            volume: { enabled: document.getElementById('alarmVolumeCondition').checked, period: parseInt(document.getElementById('alarmVolumePeriod').value), multiplier: parseFloat(document.getElementById('alarmVolumeMultiplier').value), amount: parseFloat(document.getElementById('alarmVolumeAmount').value) || 0 },
-            macd: { enabled: document.getElementById('alarmMacdCondition').checked, signalType: document.getElementById('alarmMacdSignalType').value },
-            macdHistogram: { enabled: document.getElementById('alarmMacdHistogramCondition').checked, operator: document.getElementById('alarmMacdHistogramOperator').value, value: parseFloat(document.getElementById('alarmMacdHistogramValue').value) },
-            rsi: { enabled: document.getElementById('alarmRsiCondition').checked, operator: document.getElementById('alarmRsiOperator').value, value: parseFloat(document.getElementById('alarmRsiValue').value) }
+            volume: {
+                enabled: document.getElementById('alarmVolumeCondition').checked,
+                period: safeParseInt('alarmVolumePeriod', 20),
+                multiplier: safeParseFloat('alarmVolumeMultiplier', 2),
+                amount: safeParseFloat('alarmVolumeAmount', 0)
+            },
+            macd: {
+                enabled: document.getElementById('alarmMacdCondition').checked,
+                signalType: document.getElementById('alarmMacdSignalType').value
+            },
+            macdHistogram: {
+                enabled: document.getElementById('alarmMacdHistogramCondition').checked,
+                operator: document.getElementById('alarmMacdHistogramOperator').value,
+                value: safeParseFloat('alarmMacdHistogramValue', 0)
+            },
+            rsi: {
+                enabled: document.getElementById('alarmRsiCondition').checked,
+                operator: document.getElementById('alarmRsiOperator').value,
+                value: safeParseFloat('alarmRsiValue', 30)
+            }
         }
     };
     
@@ -365,7 +390,8 @@ async function saveAlarm() {
     try {
         await state.userDocRef.update({ alarms: state.userAlarms });
         showNotification("Alarm başarıyla kaydedildi.", true);
-        renderAlarms(); closeAllPanels();
+        renderAlarms();
+        closeAllPanels();
     } catch (error) {
         showNotification("Alarm kaydedilemedi.", false);
     } finally {
