@@ -6,7 +6,7 @@ async function fetchCryptoData(pair, withIndicators = false) {
         
         const promises = [dailyKlinesResponse, tickerResponse];
         if (withIndicators) {
-            promises.push(axios.get(`https://api.binance.com/api/v3/klines?symbol=${pair}&interval=${settings.cryptoAnalysisInterval}&limit=400`, { timeout }));
+            promises.push(axios.get(`https://api.binance.com/api/v3/klines?symbol=${pair}&interval=${state.settings.cryptoAnalysisInterval}&limit=400`, { timeout }));
         }
 
         const [dailyKlinesResult, tickerResult, analysisKlinesResult] = await Promise.all(promises);
@@ -18,13 +18,13 @@ async function fetchCryptoData(pair, withIndicators = false) {
         
         const latestPrice = parseFloat(tickerData.lastPrice);
         const calculatePct = (col) => {
-            const days = settings.columns[col].days;
+            const days = state.settings.columns[col].days;
             if (dailyKlines.length < days + 1) return { pct: 'N/A' };
             const periodData = dailyKlines.slice(-(days + 1), -1);
             let lowestPrice = Infinity, lowestDate = null;
             periodData.forEach(d => { const low = parseFloat(d[3]); if (low < lowestPrice) { lowestPrice = low; lowestDate = new Date(d[0]); } });
             if (lowestPrice === Infinity) return { pct: 'N/A' };
-            return { pct: ((latestPrice - lowestPrice) / lowestPrice * 100), lowestPrice, lowestDate: lowestDate.toLocaleDateString(settings.lang) };
+            return { pct: ((latestPrice - lowestPrice) / lowestPrice * 100), lowestPrice, lowestDate: lowestDate.toLocaleDateString(state.settings.lang) };
         };
         const yesterday = dailyKlines[dailyKlines.length - 2];
         const high = parseFloat(yesterday[2]), low = parseFloat(yesterday[3]), close = parseFloat(yesterday[4]);
@@ -62,14 +62,14 @@ async function fetchCryptoData(pair, withIndicators = false) {
 }
 
 async function runBacktest(alarmId) {
-    const alarm = userAlarms.find(a => a.id === alarmId);
+    const alarm = state.userAlarms.find(a => a.id === alarmId);
     if(!alarm) return;
     showPanel('backtestPanel');
     const container = document.getElementById('backtest-results-container');
     container.innerHTML = `<div class="loading" style="margin:20px auto;"></div>`;
     document.getElementById('backtestAlarmName').textContent = `"${alarm.name}" Stratejisi`;
     try {
-        const runBacktestFunc = functions.httpsCallable('runBacktest');
+        const runBacktestFunc = state.firebase.functions.httpsCallable('runBacktest');
         const result = await runBacktestFunc({ alarm });
         const data = result.data;
         let html = '';
@@ -103,7 +103,7 @@ async function runSignalAnalysis() {
     document.querySelectorAll('#signalDnaParamsGrid input:checked').forEach(cb => dnaParams[cb.dataset.param] = true);
 
     const params = {
-        coins: discoveryCoins,
+        coins: state.discoveryCoins,
         timeframe: document.getElementById('signalAnalysisTimeframe').value,
         changePercent: parseFloat(document.getElementById('signalAnalysisChange').value),
         direction: document.getElementById('signalAnalysisDirection').value,
@@ -120,7 +120,7 @@ async function runSignalAnalysis() {
     const resultContainer = document.getElementById('signalAnalysisResultContainer');
     resultContainer.innerHTML = '<div class="loading" style="margin: 20px auto; display:block;"></div>';
     try {
-        const findSignalDNA = functions.httpsCallable('findSignalDNA');
+        const findSignalDNA = state.firebase.functions.httpsCallable('findSignalDNA');
         const result = await findSignalDNA(params);
         const data = result.data;
         
