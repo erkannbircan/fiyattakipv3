@@ -1,4 +1,4 @@
-// --- HESAPLAMA FONKSİYONLARI BURAYA TAŞINDI ---
+// --- HESAPLAMA FONKSİYONLARI ---
 const calculateSMA = (data, period) => { if (data.length < period) return null; return data.slice(-period).reduce((s, v) => s + parseFloat(v), 0) / period; };
 const calculateEMA = (data, period) => { if (data.length < period) return null; const k = 2 / (period + 1); let ema = calculateSMA(data.slice(0, period), period); for (let i = period; i < data.length; i++) { ema = (parseFloat(data[i]) * k) + (ema * (1 - k)); } return ema; };
 const calculateStdDev = (data, period) => { let mean = data.slice(-period).reduce((s, v) => s + parseFloat(v), 0) / period; return Math.sqrt(data.slice(-period).reduce((s, v) => s + Math.pow(parseFloat(v) - mean, 2), 0) / period); };
@@ -6,9 +6,8 @@ const calculateBollingerBands = (data, period = 20, stdDev = 2) => { if (data.le
 const calculateRSI = (data, period = 14) => {
     if (data.length <= period) return null;
     let gains = 0, losses = 0;
-    for (let i = 1; i <= period; i++) { const diff = parseFloat(data[i]) - parseFloat(data[i - 1]); if (diff >= 0) { gains += diff; } else { losses -= diff; } }
-    let avgGain = gains / period, avgLoss = losses / period;
-    for (let i = period + 1; i < data.length; i++) { const diff = parseFloat(data[i]) - parseFloat(data[i-1]); if (diff >= 0) { avgGain = (avgGain * (period - 1) + diff) / period; avgLoss = (avgLoss * (period - 1)) / period; } else { avgLoss = (avgLoss * (period - 1) - diff) / period; avgGain = (avgGain * (period - 1)) / period; } }
+    for (let i = data.length - period; i < data.length; i++) { const diff = parseFloat(data[i]) - parseFloat(data[i - 1]); if (diff >= 0) { gains += diff; } else { losses -= diff; } }
+    let avgGain = gains / period; let avgLoss = losses / period;
     if (avgLoss === 0) return 100; const rs = avgGain / avgLoss; return 100 - (100 / (1 + rs));
 };
 const calculateStochasticRSI = (data, period = 14) => {
@@ -151,7 +150,6 @@ async function runBacktest(alarmId) {
         container.innerHTML = `<p style="color:var(--accent-red)">Hata: ${e.message}</p>`
     }
 }
-async function showAlarmStatus(alarmId) { showNotification("Alarm durumu kontrol özelliği yakında eklenecek!", true); }
 
 async function runSignalAnalysis() {
     const btn = document.getElementById('runSignalAnalysisBtn');
@@ -183,41 +181,23 @@ async function runSignalAnalysis() {
         const data = result.data;
         
         let html = '';
-        // Seçilen coin listesi üzerinden dönerek sıralı sonuçlar elde edelim
         for (const coin of params.coins) {
             const res = data[coin];
             html += `<div class="backtest-card" style="margin-bottom:15px;"><h4>${coin.replace("USDT","")} Analiz Sonuçları</h4>`;
             
-            // Sonucun geçerli olup olmadığını kontrol edelim
-            if(!res || res.error || res.totalEvents === 0) {
-                const errorMessage = res?.error || 'Bu coin için belirtilen koşullarda hiç olay bulunamadı.';
-                html += `<p style="color:var(--text-secondary); padding: 10px 0;">${errorMessage}</p>`;
-            } else {
-                let dnaText = [];
-                if (res.dna.avgRsi) dnaText.push(`RSI ~ ${res.dna.avgRsi.toFixed(0)} (Hız: %${res.dna.avgRsiVelocity.toFixed(1)})`);
-                if (res.dna.avgMacdHist) dnaText.push(`MACD Hist. ~ ${res.dna.avgMacdHist.toFixed(5)} (Hız: %${res.dna.avgMacdVelocity.toFixed(1)})`);
-                if (res.dna.avgAdx) dnaText.push(`ADX > ${res.dna.avgAdx.toFixed(0)}`);
-                if (res.dna.avgVolumeMultiplier) dnaText.push(`Hacim > Ort. x${res.dna.avgVolumeMultiplier.toFixed(1)}`);
-
-                const fullDnaData = {
-                    coin, timeframe: params.timeframe, direction: params.direction, dna: res.dna, 
-                    dna_analysis: { avgReturn1h: res.avgReturn1h }
-                };
-
-                html += `
-                    <p>Bu sinyal, son ${params.days} günde <strong>${res.totalEvents}</strong> kez büyük hareketten hemen önce tespit edildi.</p>
-                    <p style="margin-top:15px;"><strong>Ortalama Güven Skoru: <span style="color:var(--accent-yellow);">${res.avgScore.toFixed(0)}/100</span></strong></p>
-                    
-                    <p style="margin-top:15px;"><strong>Sinyal SONRASI Ortalama Getiri Potansiyeli:</strong></p>
-                    <ul>
-                        <li>15 Dk Sonra: <strong style="color:${res.avgReturn15m >= 0 ? 'var(--value-positive)' : 'var(--value-negative)'}">${res.avgReturn15m.toFixed(2)}%</strong></li>
-                        <li>1 Saat Sonra: <strong style="color:${res.avgReturn1h >= 0 ? 'var(--value-positive)' : 'var(--value-negative)'}">${res.avgReturn1h.toFixed(2)}%</strong></li>
-                        <li>4 Saat Sonra: <strong style="color:${res.avgReturn4h >= 0 ? 'var(--value-positive)' : 'var(--value-negative)'}">${res.avgReturn4h.toFixed(2)}%</strong></li>
-                        <li>1 Gün Sonra: <strong style="color:${res.avgReturn1d >= 0 ? 'var(--value-positive)' : 'var(--value-negative)'}">${res.avgReturn1d.toFixed(2)}%</strong></li>
-                    </ul>
-                    <div class="analysis-summary"><strong>💡 Sinyal DNA'sı (Yükseliş Öncesi An):</strong><br>${dnaText.join(' | ')}</div>
-                    <div class="analysis-actions"><button class="use-dna-in-alarm-btn" data-dna='${JSON.stringify(fullDnaData)}'><i class="fas fa-magic"></i> Bu DNA ile Alarm Kur</button></div>
-                `;
+            if (!res || res.status === 'error') {
+                const errorMessage = res?.message || 'Analiz sırasında bilinmeyen bir hata oluştu.';
+                html += `<p style="color:var(--accent-red); padding: 10px 0;">${errorMessage}</p>`;
+            } else if (res.status === 'info') {
+                 html += `<p style="color:var(--text-secondary); padding: 10px 0;">${res.message}</p>`;
+            }
+            else if (res.status === 'success') {
+                html += `<p style="color:var(--value-positive);">${res.message}</p>`;
+                html += '<ul>';
+                res.profile.featureOrder.forEach((feature, index) => {
+                    html += `<li><strong>${feature}:</strong> ${res.profile.mean[index]}</li>`;
+                });
+                html += '</ul>';
             }
             html += `</div>`;
         }
@@ -228,6 +208,7 @@ async function runSignalAnalysis() {
         hideLoading(btn);
     }
 }
+
 async function matchDnaProfile(coin, timeframe) {
     try {
         const matchSignalDNA = state.firebase.functions.httpsCallable('matchSignalDNA');
