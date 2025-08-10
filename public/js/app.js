@@ -449,3 +449,12 @@ async function updateAnalysisSettings() {
         hideLoading(btn);
     }
 }
+
+function updateAdminUI() {
+    const isAdmin = state.currentUserRole === 'admin';
+    document.getElementById('analyzeAllCryptoBtn').style.display = isAdmin ? 'flex' : 'none';
+    document.getElementById('live-scanner-tab').style.display = isAdmin ? 'block' : 'none';
+    document.getElementById('alarms-tab').style.display = isAdmin ? 'block' : 'none';
+    document.getElementById('strategy-discovery-tab').style.display = isAdmin ? 'block' : 'none';
+    document.getElementById('alarm-reports-tab').style.display = isAdmin ? 'block' : 'none';
+}
