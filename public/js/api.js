@@ -183,12 +183,15 @@ async function runSignalAnalysis() {
         const data = result.data;
         
         let html = '';
-        for(const coin in data) {
+        // Seçilen coin listesi üzerinden dönerek sıralı sonuçlar elde edelim
+        for (const coin of params.coins) {
             const res = data[coin];
             html += `<div class="backtest-card" style="margin-bottom:15px;"><h4>${coin.replace("USDT","")} Analiz Sonuçları</h4>`;
-            if(res.error || !res || res.totalEvents === 0) {
-                // --- İYİLEŞTİRME BURADA ---
-                html += `<p style="color:var(--text-secondary); padding: 10px 0;">${res?.error || 'Bu coin için belirtilen koşullarda hiç olay bulunamadı.'}</p>`;
+            
+            // Sonucun geçerli olup olmadığını kontrol edelim
+            if(!res || res.error || res.totalEvents === 0) {
+                const errorMessage = res?.error || 'Bu coin için belirtilen koşullarda hiç olay bulunamadı.';
+                html += `<p style="color:var(--text-secondary); padding: 10px 0;">${errorMessage}</p>`;
             } else {
                 let dnaText = [];
                 if (res.dna.avgRsi) dnaText.push(`RSI ~ ${res.dna.avgRsi.toFixed(0)} (Hız: %${res.dna.avgRsiVelocity.toFixed(1)})`);
