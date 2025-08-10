@@ -56,6 +56,7 @@
                 <div class="tab-link" data-tab="crypto-ai">Kripto AI</div>
                 <div class="tab-link" data-tab="crypto-pivot">AI Pivot</div>
                 <div class="tab-link" data-tab="strategy-discovery" id="strategy-discovery-tab" style="display: none;">Strateji Keşfi</div>
+                <div class="tab-link" data-tab="live-scanner" id="live-scanner-tab" style="display: none;">Canlı DNA Tarama</div>
                 <div class="tab-link" data-tab="alarms" id="alarms-tab" style="display: none;">Alarmlar</div>
                 <div class="tab-link" data-tab="alarm-reports" id="alarm-reports-tab" style="display: none;">Alarm Raporları</div>
             </div>
@@ -155,19 +156,18 @@
             <div id="strategy-discovery-content" class="tab-content">
                 <div class="collapsible open" style="margin-bottom: 25px;">
                     <div class="collapsible-header open">
-                        <span><i class="fas fa-flask"></i> Strateji Keşif Aracı (Sinyal DNA Analizi)</span>
+                        <span><i class="fas fa-flask"></i> Strateji Keşif Aracı (DNA Profili Oluşturma)</span>
                         <i class="fas fa-chevron-down"></i>
                     </div>
                     <div class="collapsible-content open">
                         <p class="section-description">
-                            Geçmiş verileri analiz ederek en kârlı alarm koşullarını bulun. 
-                            Örn: "BTC, son 1 ayda 1 saatlik mumda %5 arttığı anlarda hangi ortak teknik gösterge koşulları vardı?"
+                            Geçmiş verileri analiz ederek kârlı senaryoların "DNA profillerini" oluşturun ve kaydedin. Bu profiller, Canlı Tarama aracında kullanılacaktır.
                         </p>
                         <div class="settings-section" style="border: none; padding: 0;">
                             <h5 class="setting-subtitle">1. Analiz Edilecek Coinler</h5>
                             <div id="discovery-coin-manager-container" style="margin-bottom: 20px;"></div>
 
-                            <h5 class="setting-subtitle">2. Temel Koşul</h5>
+                            <h5 class="setting-subtitle">2. Temel Koşul (Kârlı Senaryo Tanımı)</h5>
                             <div class="discovery-grid">
                                 <div>
                                     <label for="signalAnalysisTimeframe">Zaman Dilimi</label>
@@ -184,7 +184,7 @@
                                         <option value="7">Son 1 Hafta</option>
                                         <option value="30" selected>Son 1 Ay</option>
                                         <option value="90">Son 3 Ay</option>
-                                         <option value="180">Son 6 Ay</option>
+                                        <option value="180">Son 6 Ay</option>
                                     </select>
                                 </div>
                                 <div>
@@ -200,21 +200,54 @@
                                 </div>
                             </div>
                             
-                            <h5 class="setting-subtitle" style="margin-top: 25px;">3. DNA'da Aranacak Ek Parametreler (Opsiyonel)</h5>
+                            <h5 class="setting-subtitle" style="margin-top: 25px;">3. DNA'da Aranacak Parametreler</h5>
                             <div class="filters-grid" id="signalDnaParamsGrid">
                                 <label class="filter-item"><input type="checkbox" data-param="rsi" checked> RSI</label>
                                 <label class="filter-item"><input type="checkbox" data-param="macd" checked> MACD</label>
                                 <label class="filter-item"><input type="checkbox" data-param="adx" checked> ADX</label>
                                 <label class="filter-item"><input type="checkbox" data-param="volume" checked> Hacim Çarpanı</label>
-                                <label class="filter-item"><input type="checkbox" data-param="bollinger"> Bollinger Bantları</label>
                             </div>
-
                         </div>
                         <div class="analysis-actions">
-                            <button id="runSignalAnalysisBtn"><i class="fas fa-search-dollar"></i> Analizi Başlat</button>
+                            <button id="runSignalAnalysisBtn"><i class="fas fa-search-dollar"></i> DNA Profillerini Oluştur</button>
                         </div>
                         <div id="signalAnalysisResultContainer" style="margin-top: 20px;"></div>
                     </div>
+                </div>
+            </div>
+
+            <div id="live-scanner-content" class="tab-content">
+                <div class="page-header">
+                    <h3><i class="fas fa-broadcast-tower"></i> Canlı DNA Eşleşme Tarayıcısı</h3>
+                    <p class="section-description">
+                        Oluşturduğunuz kârlı DNA profillerine anlık olarak en çok benzeyen coin'leri burada takip edin. Skor ne kadar yüksekse, mevcut durum o profile o kadar çok benziyor demektir.
+                    </p>
+                </div>
+                <div class="scanner-controls" style="display: flex; gap: 20px; align-items: center; justify-content: center; margin-bottom: 20px;">
+                    <div class="setting-item" style="margin-bottom: 0;">
+                        <label for="scannerTimeframe">Zaman Dilimi</label>
+                        <select id="scannerTimeframe">
+                            <option value="15m">15 Dakika</option>
+                            <option value="1h" selected>1 Saat</option>
+                            <option value="4h">4 Saat</option>
+                        </select>
+                    </div>
+                    <button id="startScannerBtn" class="primary-button" style="width: auto;"><i class="fas fa-play"></i> Taramayı Başlat</button>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Coin</th>
+                                <th>Eşleşme Skoru</th>
+                                <th>Eşleşen Profil</th>
+                                <th>Anlık Fiyat</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scannerResultsTable">
+                            <tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">Tarama başlatılmadı.</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -505,6 +538,7 @@
         </div>
     </div>
 
+
     <div id="modalOverlay" class="modal-overlay"></div>
     <div class="notification" id="notification"></div>
     
@@ -513,8 +547,9 @@
     <script src="js/ui.js"></script>
     <script src="js/api.js"></script>
     <script src="js/telegram.js"></script> 
+    <script src="js/scanner.js"></script>
     <script src="js/events.js"></script>
     <script src="js/app.js"></script>
 
 </body>
-</html> 
+</html>
