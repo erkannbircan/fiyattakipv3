@@ -1,5 +1,3 @@
-// public/js/auth.js
-
 function setupAuthEventListeners() {
     const loginBtn = document.getElementById('loginBtn');
     const signupBtn = document.getElementById('signupBtn');
