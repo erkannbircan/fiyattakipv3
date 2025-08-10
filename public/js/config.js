@@ -1,6 +1,3 @@
-// public/js/config.js
-
-// --- Firebase Config ---
 const firebaseConfig = {
     apiKey: "AIzaSyA3flTu3Jz9E1D1U_DympYE7B4I4FDxj88",
     authDomain: "fiyattakipv3.firebaseapp.com",
@@ -10,7 +7,6 @@ const firebaseConfig = {
     appId: "1:440839843277:web:2c9c15e4a103e8b2f2e884"
 };
 
-// --- GLOBAL STATE & CONSTANTS ---
 const STRATEGY_PRESETS = {
     momentum: { name: '⚡ Momentum', indicators: { rsi: true, stochRsi: true, macd: true, volume: true, sma: false, ema: false, ichimoku: false, bollinger: false, atr: false, fibonacci: false } },
     trend: { name: '📈 Trend', indicators: { ema: true, sma: true, ichimoku: true, macd: true, adx: true, rsi: false, stochRsi: false, bollinger: false, volume: false, atr: false, fibonacci: false } },
