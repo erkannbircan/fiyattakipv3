@@ -236,3 +236,32 @@ async function matchDnaProfile(coin, timeframe) {
         throw error;
     }
 }
+// api.js dosyasının en sonuna bu iki yeni fonksiyonu ekleyin
+
+async function fetchDnaProfiles() {
+    try {
+        const getProfilesFunc = state.firebase.functions.httpsCallable('getDnaProfiles');
+        const result = await getProfilesFunc();
+        renderDnaProfiles(result.data.profiles);
+    } catch (error) {
+        console.error("DNA profilleri çekilirken hata oluştu:", error);
+        showNotification("Profiller yüklenemedi.", false);
+        const container = document.getElementById('dnaProfilesContainer');
+        if(container) container.innerHTML = `<p style="color:var(--accent-red)">Profiller yüklenirken bir hata oluştu.</p>`;
+    }
+}
+
+async function deleteDnaProfile(profileId) {
+    if (!confirm(`"${profileId}" profilini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
+        return;
+    }
+    try {
+        const deleteProfileFunc = state.firebase.functions.httpsCallable('deleteDnaProfile');
+        await deleteProfileFunc({ profileId });
+        showNotification("Profil başarıyla silindi.", true);
+        await fetchDnaProfiles(); // Listeyi yenile
+    } catch (error) {
+        console.error("Profil silinirken hata oluştu:", error);
+        showNotification("Profil silinemedi.", false);
+    }
+}
