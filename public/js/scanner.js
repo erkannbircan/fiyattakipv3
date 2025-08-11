@@ -1,3 +1,5 @@
+// scanner.js dosyasının tamamını bu kodla değiştirin.
+
 let scannerInterval = null;
 
 function startScanner() {
@@ -15,8 +17,8 @@ function startScanner() {
     document.getElementById('scannerTimeframe').disabled = true;
     showNotification("Tarama başlatıldı...", true);
     
-    runScan(); // İlk taramayı hemen yap
-    scannerInterval = setInterval(runScan, 60000); // Her 1 dakikada bir tekrarla
+    runScan();
+    scannerInterval = setInterval(runScan, 60000);
 }
 
 async function runScan() {
@@ -31,17 +33,23 @@ async function runScan() {
 
     tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center;"><div class="loading"></div></td></tr>`;
 
+    // Her coin için eşleşme fonksiyonunu çağırıp sonuçları tek bir listede topluyoruz
     const scanPromises = coinsToScan.map(coin => 
         matchDnaProfile(coin, timeframe)
-            .then(result => ({ coin, ...result }))
-            .catch(error => ({ coin, score: 0, message: 'Analiz hatası' }))
+            .then(result => result.matches) // Artık 'matches' dizisini alıyoruz
+            .catch(error => {
+                console.error(`Tarama hatası (${coin}):`, error);
+                return []; // Hata durumunda boş dizi döndür
+            })
     );
 
-    const results = await Promise.all(scanPromises);
+    const resultsArrays = await Promise.all(scanPromises);
+    const allResults = resultsArrays.flat(); // Tüm sonuçları tek bir dizide birleştir
     
-    results.sort((a, b) => b.score - a.score);
+    // Sonuçları skora göre yüksekten düşüğe sırala
+    allResults.sort((a, b) => b.score - a.score);
 
-    renderScannerResults(results);
+    renderScannerResults(allResults);
 }
 
 function renderScannerResults(results) {
@@ -49,18 +57,25 @@ function renderScannerResults(results) {
     tableBody.innerHTML = '';
 
     if (results.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">Sonuç bulunamadı.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">Aktif bir eşleşme bulunamadı.</td></tr>`;
         return;
     }
 
+    // Her bir eşleşme için yeni bir satır oluştur
     results.forEach(res => {
         const row = document.createElement('tr');
         const scoreColor = res.score > 75 ? 'var(--value-positive)' : (res.score > 50 ? 'var(--accent-yellow)' : 'var(--text-secondary)');
+        const directionIcon = res.direction === 'up' 
+            ? '<i class="fas fa-arrow-up" style="color: var(--accent-green);"></i>' 
+            : '<i class="fas fa-arrow-down" style="color: var(--accent-red);"></i>';
         
+        // Profil ID'sinden daha okunaklı bir isim oluştur
+        const profileName = res.profileId.replace(/_/g, ' ').replace('pct', '%');
+
         row.innerHTML = `
-            <td>${res.coin.replace('USDT', '')}</td>
+            <td>${res.coin.replace('USDT', '')} ${directionIcon}</td>
             <td><strong style="color: ${scoreColor};">${res.score} / 100</strong></td>
-            <td>${res.profileId ? res.profileId.replace(/_/g, ' ') : 'N/A'}</td>
+            <td><small>${profileName}</small></td>
             <td>Yükleniyor...</td>
         `;
         tableBody.appendChild(row);
