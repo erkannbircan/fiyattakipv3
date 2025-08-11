@@ -153,7 +153,6 @@ async function runBacktest(alarmId) {
 
 // İki aşamalı akış için fonksiyonları yeniden düzenliyoruz.
 
-// 1. ADIM: Sadece önizleme verilerini çeker, veritabanına KAYDETMEZ.
 async function runSignalAnalysisPreview() {
     const btn = document.getElementById('runSignalAnalysisBtn');
     showLoading(btn);
@@ -168,7 +167,7 @@ async function runSignalAnalysisPreview() {
         direction: document.getElementById('signalAnalysisDirection').value,
         days: parseInt(document.getElementById('signalAnalysisPeriod').value),
         params: dnaParams,
-        isPreview: true // ÖNEMLİ: Önizleme modunu aktif et
+        isPreview: true
     };
 
     if(params.coins.length === 0) {
@@ -183,9 +182,15 @@ async function runSignalAnalysisPreview() {
     try {
         const findSignalDNAFunc = state.firebase.functions.httpsCallable('findSignalDNA');
         const result = await findSignalDNAFunc(params);
-        renderSignalAnalysisPreview(result.data); // UI'ı güncellemek için yeni render fonksiyonu
+        renderSignalAnalysisPreview(result.data);
     } catch (error) {
-        resultContainer.innerHTML = `<p style="color:var(--accent-red)">Analiz sırasında bir hata oluştu: ${error.message}</p>`;
+        // Hata mesajını daha anlaşılır hale getiriyoruz.
+        console.error("findSignalDNA Hatası:", error);
+        const errorMessage = error.details ? error.details.message : error.message;
+        resultContainer.innerHTML = `<p style="color:var(--accent-red); padding: 10px; border-left: 2px solid var(--accent-red); background-color: rgba(239, 83, 80, 0.1);">
+            <strong>Analiz sırasında bir sunucu hatası oluştu.</strong><br>
+            Detay: ${errorMessage || 'Lütfen daha sonra tekrar deneyin veya farklı parametreler seçin.'}
+        </p>`;
     } finally {
         hideLoading(btn);
     }
