@@ -374,33 +374,76 @@ function openAlarmPanel(alarm = null, suggestedParams = null) {
     createCoinManager('alarm-coin-manager-container', state.tempAlarmCoins, 'alarm');
     showPanel('alarmSettingsPanel');
 }
-// Bu yeni fonksiyon, ön analiz sonuçlarını ekranda gösterecek.
+// ui.js içindeki renderSignalAnalysisPreview fonksiyonunu bununla değiştirin
 function renderSignalAnalysisPreview(data) {
     const resultContainer = document.getElementById('signalAnalysisResultContainer');
     let html = '';
 
+    const getPerformanceClass = (value) => parseFloat(value) > 0 ? 'positive' : 'negative';
+
     for (const coin in data) {
         const res = data[coin];
-        // Parametreleri JSON formatında data attribute'una ekliyoruz ki butona basıldığında kullanabilelim
         const paramsString = JSON.stringify(res.params);
 
-        html += `<div class="backtest-card" data-coin="${coin}" style="margin-bottom:15px;"><h4>${coin.replace("USDT","")} Analiz Sonuçları</h4>`;
+        html += `<div class="backtest-card" data-coin="${coin}" style="margin-bottom:15px; border-left: 3px solid var(--accent-blue);">
+                    <h4>${coin.replace("USDT","")} Analiz Sonuçları</h4>`;
         
         if (res.status === 'error' || res.status === 'info') {
             const messageColor = res.status === 'error' ? 'var(--accent-red)' : 'var(--text-secondary)';
             html += `<p style="color:${messageColor}; padding: 10px 0;">${res.message}</p>`;
         } else if (res.status === 'preview') {
+            // DNA özetini (ortalama değerleri) alarm kurma butonu için hazırlıyoruz
+            const dnaForAlarm = {
+                coin: res.params.coins[0],
+                timeframe: res.params.timeframe,
+                direction: res.params.direction,
+                dna_analysis: { avgReturn1h: res.avgReturns['1h'] },
+                dna: {}
+            };
+            res.dnaSummary.featureOrder.forEach((feature, index) => {
+                const keyMap = { 'rsi': 'avgRsi', 'macd_hist': 'avgMacdHist', 'adx': 'avgAdx', 'volume_mult': 'avgVolumeMultiplier' };
+                if (keyMap[feature]) {
+                    dnaForAlarm.dna[keyMap[feature]] = res.dnaSummary.mean[index];
+                }
+            });
+            const dnaForAlarmString = JSON.stringify(dnaForAlarm);
+
             html += `
-                <div class="backtest-results-grid" style="grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <p><span class="label">Başarılı Olay Sayısı:</span> <span class="value">${res.eventCount}</span></p>
-                    <p><span class="label">Ort. Getiri (4S):</span> <span class="value ${res.avgFutureReturn > 0 ? 'positive' : 'negative'}">${res.avgFutureReturn}%</span></p>
+                <p class="section-description" style="margin-bottom: 15px;">${res.message}</p>
+                
+                <h5 class="setting-subtitle" style="margin-top:0;">Ortalama Getiri Performansı</h5>
+                <div class="backtest-results-grid" style="grid-template-columns: repeat(4, 1fr); gap: 10px;">
+                    <div class="backtest-card" style="padding:10px;">
+                        <p class="label">15 Dakika</p>
+                        <p class="value ${getPerformanceClass(res.avgReturns['15m'])}">${res.avgReturns['15m']}%</p>
+                    </div>
+                    <div class="backtest-card" style="padding:10px;">
+                        <p class="label">1 Saat</p>
+                        <p class="value ${getPerformanceClass(res.avgReturns['1h'])}">${res.avgReturns['1h']}%</p>
+                    </div>
+                    <div class="backtest-card" style="padding:10px;">
+                        <p class="label">4 Saat</p>
+                        <p class="value ${getPerformanceClass(res.avgReturns['4h'])}">${res.avgReturns['4h']}%</p>
+                    </div>
+                    <div class="backtest-card" style="padding:10px;">
+                        <p class="label">1 Gün</p>
+                        <p class="value ${getPerformanceClass(res.avgReturns['1d'])}">${res.avgReturns['1d']}%</p>
+                    </div>
                 </div>
-                <div class="analysis-summary">
-                    <p>${res.message}</p>
+
+                <h5 class="setting-subtitle">Fırsat Anının DNA Özeti (Ortalama Değerler)</h5>
+                <div class="backtest-results-grid" style="grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));">
+                    ${res.dnaSummary.featureOrder.map((feature, index) => `
+                        <p><span class="label">${feature}:</span> <span class="value">${parseFloat(res.dnaSummary.mean[index]).toFixed(2)}</span></p>
+                    `).join('')}
                 </div>
-                <div class="preview-actions" style="margin-top: 15px;">
+
+                <div class="preview-actions" style="margin-top: 20px; display:flex; gap:10px; flex-wrap:wrap;">
                     <button class="primary-button save-dna-btn" data-params='${paramsString}'>
-                        <i class="fas fa-save"></i> DNA Profili Oluştur ve Kaydet
+                        <i class="fas fa-save"></i> DNA Profili Oluştur
+                    </button>
+                    <button class="action-btn-sm use-dna-in-alarm-btn" data-dna='${dnaForAlarmString}' style="background-color: var(--bg-tertiary);">
+                        <i class="fas fa-bell"></i> Bu Stratejiden Alarm Kur
                     </button>
                 </div>
             `;
