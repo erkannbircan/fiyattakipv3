@@ -297,20 +297,25 @@ function renderAlarms() {
     });
 }
 
+// ui.js dosyasındaki openAlarmPanel fonksiyonunun tamamını bu kodla değiştirin.
+
 function openAlarmPanel(alarm = null, suggestedParams = null) {
     document.getElementById('alarmPanelTitle').textContent = alarm ? 'Alarmı Düzenle' : 'Yeni Alarm Oluştur';
     const alarmId = alarm ? alarm.id : '';
     document.getElementById('alarmIdInput').value = alarmId;
     
+    // Önceki öneriyi temizle
     const dnaRecDiv = document.querySelector('#alarmSettingsPanel .dna-recommendation');
     if (dnaRecDiv) dnaRecDiv.remove();
 
+    // Tüm koşulları ve kutuları sıfırla
     document.querySelectorAll('#alarmSettingsPanel [data-condition]').forEach(el => {
         el.checked = false;
         const parentBox = el.closest('.alarm-condition-box');
         if(parentBox) parentBox.dataset.disabled = "true";
     });
 
+    // Varsayılan değerleri ayarla
     document.getElementById('alarmNameInput').value = '';
     document.getElementById('alarmTimeframe').value = '15m';
     document.getElementById('alarmVolumeMultiplier').value = 2;
@@ -318,7 +323,7 @@ function openAlarmPanel(alarm = null, suggestedParams = null) {
     document.getElementById('alarmMacdHistogramValue').value = 0;
     document.getElementById('alarmRsiValue').value = 30;
 
-    if (suggestedParams) {
+    if (suggestedParams) { // DNA ÖNERİSİ GELDİYSE
         const { coin, timeframe, direction, dna, dna_analysis } = suggestedParams;
         document.getElementById('alarmNameInput').value = `${coin.replace('USDT','')} DNA Alarmı`;
         state.tempAlarmCoins = [coin];
@@ -327,20 +332,20 @@ function openAlarmPanel(alarm = null, suggestedParams = null) {
         const recommendationDiv = document.createElement('div');
         recommendationDiv.className = 'dna-recommendation';
         recommendationDiv.innerHTML = `💡 <strong>AI Önerisi:</strong> Bu alarm, "${coin.replace('USDT','')}" için bulunan başarılı DNA'ya göre ayarlanıyor.`;
-        recommendationDiv.dataset.dnaAnalysis = JSON.stringify(dna_analysis);
         const firstCollapsible = document.querySelector('#alarmSettingsPanel .collapsible-content');
         if (firstCollapsible) firstCollapsible.prepend(recommendationDiv);
         
         document.getElementById('alarmMacdSignalType').value = direction === 'up' ? 'buy' : 'sell';
 
+        // Koşulları önerilen DNA'ya göre doldur
         if (dna.avgVolumeMultiplier) {
             document.getElementById('alarmVolumeCondition').checked = true;
-            document.getElementById('alarmVolumeMultiplier').value = dna.avgVolumeMultiplier.toFixed(1);
+            document.getElementById('alarmVolumeMultiplier').value = parseFloat(dna.avgVolumeMultiplier).toFixed(1);
         }
         if (dna.avgMacdHist) {
             document.getElementById('alarmMacdHistogramCondition').checked = true;
             document.getElementById('alarmMacdHistogramOperator').value = dna.avgMacdHist > 0 ? 'above' : 'below';
-            document.getElementById('alarmMacdHistogramValue').value = dna.avgMacdHist.toFixed(6); 
+            document.getElementById('alarmMacdHistogramValue').value = parseFloat(dna.avgMacdHist).toFixed(6); 
         }
          if (dna.avgAdx) {
             document.getElementById('alarmTrendFilterEnabled').checked = true;
@@ -351,25 +356,46 @@ function openAlarmPanel(alarm = null, suggestedParams = null) {
             document.getElementById('alarmRsiOperator').value = direction === 'up' ? 'below' : 'above';
             document.getElementById('alarmRsiValue').value = Math.round(dna.avgRsi);
         }
+        // MACD kesişimi her DNA alarmı için temel koşuldur
         document.getElementById('alarmMacdCondition').checked = true;
-        document.querySelectorAll('#alarmSettingsPanel [data-condition]:checked').forEach(el => {
-            el.closest('.alarm-condition-box').dataset.disabled = "false";
-        });
-
-    } else {
+        
+    } else { // MEVCUT BİR ALARM DÜZENLENİYORSA
         document.getElementById('alarmNameInput').value = alarm?.name || '';
         state.tempAlarmCoins = alarm?.coins?.length > 0 ? [...alarm.coins] : [...(state.userPortfolios[state.activePortfolio] || [])];
         const conditions = alarm?.conditions || {};
         document.getElementById('alarmTimeframe').value = alarm?.timeframe || '15m';
-        document.querySelectorAll('#alarmSettingsPanel [data-condition]').forEach(el => {
-            const conditionName = el.dataset.condition;
-            const isEnabled = conditions[conditionName]?.enabled ?? (conditionName === 'adx' && alarm?.trendFilterEnabled);
-            el.checked = isEnabled;
-            el.closest('.alarm-condition-box').dataset.disabled = !isEnabled;
-        });
-        document.getElementById('alarmVolumePeriod').value = conditions.volume?.period ?? 20;
-        document.getElementById('alarmVolumeMultiplier').value = conditions.volume?.multiplier ?? 2;
+
+        // Gerekli input alanlarının değerlerini doldur
+        if(conditions.volume) {
+            document.getElementById('alarmVolumePeriod').value = conditions.volume.period ?? 20;
+            document.getElementById('alarmVolumeMultiplier').value = conditions.volume.multiplier ?? 2;
+        }
+        if(conditions.macdHistogram) {
+             document.getElementById('alarmMacdHistogramOperator').value = conditions.macdHistogram.operator ?? 'above';
+             document.getElementById('alarmMacdHistogramValue').value = conditions.macdHistogram.value ?? 0;
+        }
+        if(conditions.rsi){
+            document.getElementById('alarmRsiOperator').value = conditions.rsi.operator ?? 'above';
+            document.getElementById('alarmRsiValue').value = conditions.rsi.value ?? 30;
+        }
+        document.getElementById('alarmADXThreshold').value = alarm?.adxThreshold ?? 25;
     }
+
+    // *** KİLİT DÜZELTME: Hem yeni hem de mevcut alarm için, tüm kutuların durumunu sondan güncelliyoruz. ***
+    document.querySelectorAll('#alarmSettingsPanel [data-condition]').forEach(el => {
+        // Mevcut bir alarm düzenleniyorsa, durumu conditions'tan al
+        if (alarm && alarm.conditions) {
+            const conditionName = el.dataset.condition;
+            // adx için eski trendFilterEnabled kontrolü
+            const isEnabled = conditionName === 'adx' ? alarm.trendFilterEnabled : alarm.conditions[conditionName]?.enabled;
+            el.checked = !!isEnabled;
+        }
+        // Kutunun disabled durumunu, checkbox'ın mevcut durumuna göre ayarla
+        const parentBox = el.closest('.alarm-condition-box');
+        if (parentBox) { // Null kontrolü ile çökme engelleniyor.
+            parentBox.dataset.disabled = String(!el.checked);
+        }
+    });
 
     createCoinManager('alarm-coin-manager-container', state.tempAlarmCoins, 'alarm');
     showPanel('alarmSettingsPanel');
