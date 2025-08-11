@@ -571,3 +571,38 @@ function renderIndicatorCards(type, data) {
 
 function renderIndicatorFilters() { }
 function renderDictionary() { }
+// ui.js dosyasının en sonuna bu yeni fonksiyonu ekleyin
+
+function renderDnaProfiles(profiles) {
+    const container = document.getElementById('dnaProfilesContainer');
+    if (!container) return;
+
+    if (!profiles || profiles.length === 0) {
+        container.innerHTML = `<p style="text-align: center; color: var(--text-secondary);">Henüz kaydedilmiş bir DNA profili bulunmuyor.</p>`;
+        return;
+    }
+
+    let html = '<div class="table-wrapper"><table><thead><tr>' +
+               '<th>Profil Adı</th><th>Parametreler</th><th>Olay Sayısı</th><th>Sil</th>' +
+               '</tr></thead><tbody>';
+
+    profiles.forEach(profile => {
+        // Profil ID'sinden coin, zaman dilimi gibi bilgileri ayıklayarak daha okunaklı bir isim oluştur
+        const nameParts = profile.id.split('_');
+        const profileName = `${nameParts[0]} / ${nameParts[1]} / ${nameParts[2] === 'up' ? 'Artış' : 'Azalış'} %${nameParts[3].replace('pct','')}`;
+        
+        html += `<tr>
+                    <td><strong>${profileName}</strong></td>
+                    <td><small>${profile.featureOrder.join(', ')}</small></td>
+                    <td>${profile.eventCount}</td>
+                    <td>
+                        <button class="action-btn delete-dna-btn" data-profile-id="${profile.id}" title="Profili Sil">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                 </tr>`;
+    });
+
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+}
