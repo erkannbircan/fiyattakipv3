@@ -247,7 +247,13 @@ async function fetchDnaProfiles() {
         console.error("DNA profilleri çekilirken hata oluştu:", error);
         showNotification("Profiller yüklenemedi.", false);
         const container = document.getElementById('dnaProfilesContainer');
-        if(container) container.innerHTML = `<p style="color:var(--accent-red)">Profiller yüklenirken bir hata oluştu.</p>`;
+        if(container) {
+            // HATA MESAJINI DAHA ANLAŞILIR HALE GETİRİYORUZ
+            container.innerHTML = `<p style="color:var(--accent-red); padding: 10px;">
+                <b>Profiller yüklenirken bir hata oluştu.</b><br>
+                <small>Olası Sebep: Sunucu fonksiyonları (functions) henüz deploy edilmemiş olabilir. Lütfen 'firebase deploy --only functions' komutunu çalıştırdığınızdan emin olun.</small>
+            </p>`;
+        }
     }
 }
 
