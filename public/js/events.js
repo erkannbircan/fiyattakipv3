@@ -137,34 +137,7 @@ function setupPanelEventListeners(parentElement) {
         });
     }
 }
-function setupStrategyDiscoveryListeners(parentElement) {
-    parentElement.addEventListener('click', async (e) => {
-        const target = e.target;
-        // Ana analiz butonunun görevini değiştiriyoruz.
-        if (target.closest('#runSignalAnalysisBtn')) {
-            await runSignalAnalysisPreview(); // HATA DÜZELTİLDİ: Artık doğru fonksiyonu ('önizleme') çağırıyor.
-            return;
-        }
-        
-        // Dinamik olarak oluşturulan 'Kaydet' butonu için olay dinleyici
-        const saveBtn = target.closest('.save-dna-btn');
-        if (saveBtn) {
-            const params = JSON.parse(saveBtn.dataset.params);
-            // Butonun ait olduğu coin'i de parametrelere ekliyoruz
-            const coin = target.closest('.backtest-card').dataset.coin;
-            params.coins = [coin]; // Sadece bu coin için kaydetme işlemi yap
-            await saveDnaProfile(params);
-            return;
-        }
 
-        if (target.closest('.use-dna-in-alarm-btn')) { 
-            const btn = target.closest('.use-dna-in-alarm-btn');
-            const dnaData = JSON.parse(btn.dataset.dna);
-            openAlarmPanel(null, dnaData);
-            return;
-        }
-    });
-}
 function setupActionEventListeners(parentElement) {
     parentElement.addEventListener('click', async (e) => {
         const target = e.target;
@@ -275,7 +248,24 @@ function setupCoinManagerEventListeners(parentElement) {
 function setupStrategyDiscoveryListeners(parentElement) {
     parentElement.addEventListener('click', async (e) => {
         const target = e.target;
-        if (target.closest('#runSignalAnalysisBtn')) { await runSignalAnalysis(); return; }
+        
+        // Ana analiz butonunun görevini değiştiriyoruz.
+        if (target.closest('#runSignalAnalysisBtn')) {
+            await runSignalAnalysisPreview(); // HATA DÜZELTİLDİ: Artık doğru fonksiyonu ('önizleme') çağırıyor.
+            return;
+        }
+        
+        // Dinamik olarak oluşturulan 'Kaydet' butonu için olay dinleyici
+        const saveBtn = target.closest('.save-dna-btn');
+        if (saveBtn) {
+            const params = JSON.parse(saveBtn.dataset.params);
+            const coin = target.closest('.backtest-card').dataset.coin;
+            params.coins = [coin]; // Sadece bu coin için kaydetme işlemi yap
+            await saveDnaProfile(params);
+            return;
+        }
+
+        // Bu buton henüz eklenmedi ama geleceğe hazırlık için duruyor.
         if (target.closest('.use-dna-in-alarm-btn')) { 
             const btn = target.closest('.use-dna-in-alarm-btn');
             const dnaData = JSON.parse(btn.dataset.dna);
