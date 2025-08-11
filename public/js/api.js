@@ -151,7 +151,10 @@ async function runBacktest(alarmId) {
     }
 }
 
-async function runSignalAnalysis() {
+// İki aşamalı akış için fonksiyonları yeniden düzenliyoruz.
+
+// 1. ADIM: Sadece önizleme verilerini çeker, veritabanına KAYDETMEZ.
+async function runSignalAnalysisPreview() {
     const btn = document.getElementById('runSignalAnalysisBtn');
     showLoading(btn);
 
@@ -164,7 +167,8 @@ async function runSignalAnalysis() {
         changePercent: parseFloat(document.getElementById('signalAnalysisChange').value),
         direction: document.getElementById('signalAnalysisDirection').value,
         days: parseInt(document.getElementById('signalAnalysisPeriod').value),
-        params: dnaParams
+        params: dnaParams,
+        isPreview: true // ÖNEMLİ: Önizleme modunu aktif et
     };
 
     if(params.coins.length === 0) {
@@ -175,39 +179,47 @@ async function runSignalAnalysis() {
 
     const resultContainer = document.getElementById('signalAnalysisResultContainer');
     resultContainer.innerHTML = '<div class="loading" style="margin: 20px auto; display:block;"></div>';
+    
     try {
-        const findSignalDNA = state.firebase.functions.httpsCallable('findSignalDNA');
-        const result = await findSignalDNA(params);
-        const data = result.data;
-        
-        let html = '';
-        for (const coin of params.coins) {
-            const res = data[coin];
-            html += `<div class="backtest-card" style="margin-bottom:15px;"><h4>${coin.replace("USDT","")} Analiz Sonuçları</h4>`;
-            
-            if (!res || res.status === 'error') {
-                const errorMessage = res?.message || 'Analiz sırasında bilinmeyen bir hata oluştu.';
-                html += `<p style="color:var(--accent-red); padding: 10px 0;">${errorMessage}</p>`;
-            } else if (res.status === 'info') {
-                 html += `<p style="color:var(--text-secondary); padding: 10px 0;">${res.message}</p>`;
-            }
-            else if (res.status === 'success') {
-                html += `<p style="color:var(--value-positive);">${res.message}</p>`;
-                html += '<ul>';
-                res.profile.featureOrder.forEach((feature, index) => {
-                    html += `<li><strong>${feature}:</strong> ${res.profile.mean[index]}</li>`;
-                });
-                html += '</ul>';
-            }
-            html += `</div>`;
-        }
-        resultContainer.innerHTML = html || `<p>Analiz için sonuç bulunamadı.</p>`;
+        const findSignalDNAFunc = state.firebase.functions.httpsCallable('findSignalDNA');
+        const result = await findSignalDNAFunc(params);
+        renderSignalAnalysisPreview(result.data); // UI'ı güncellemek için yeni render fonksiyonu
     } catch (error) {
         resultContainer.innerHTML = `<p style="color:var(--accent-red)">Analiz sırasında bir hata oluştu: ${error.message}</p>`;
     } finally {
         hideLoading(btn);
     }
 }
+
+// 2. ADIM: Kullanıcı onayladıktan sonra profili veritabanına kaydeder.
+async function saveDnaProfile(params) {
+    const resultContainer = document.getElementById('signalAnalysisResultContainer');
+    const coinCard = resultContainer.querySelector(`.backtest-card[data-coin="${params.coins[0]}"]`);
+    if(coinCard) {
+        coinCard.innerHTML += '<div class="loading" style="margin-top:10px;"></div>';
+    }
+    
+    try {
+        const findSignalDNAFunc = state.firebase.functions.httpsCallable('findSignalDNA');
+        const finalParams = { ...params, isPreview: false }; // ÖNEMLİ: Kaydetme modunu aktif et
+        const result = await findSignalDNAFunc(finalParams);
+        const data = result.data[params.coins[0]];
+
+        if (data && data.status === 'success') {
+            showNotification(`DNA profili (${data.profileId}) başarıyla kaydedildi!`, true);
+            if(coinCard) coinCard.querySelector('.loading').remove();
+            if(coinCard) coinCard.querySelector('.preview-actions').innerHTML = `<p style="color:var(--value-positive);"><i class="fas fa-check-circle"></i> Profil Kaydedildi</p>`;
+
+        } else {
+            throw new Error(data.message || 'Profil kaydedilemedi.');
+        }
+    } catch (error) {
+        showNotification(`Profil kaydedilirken hata oluştu: ${error.message}`, false);
+        if(coinCard) coinCard.querySelector('.loading').remove();
+    }
+}
+
+
 
 async function matchDnaProfile(coin, timeframe) {
     try {
