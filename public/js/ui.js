@@ -374,7 +374,41 @@ function openAlarmPanel(alarm = null, suggestedParams = null) {
     createCoinManager('alarm-coin-manager-container', state.tempAlarmCoins, 'alarm');
     showPanel('alarmSettingsPanel');
 }
+// Bu yeni fonksiyon, ön analiz sonuçlarını ekranda gösterecek.
+function renderSignalAnalysisPreview(data) {
+    const resultContainer = document.getElementById('signalAnalysisResultContainer');
+    let html = '';
 
+    for (const coin in data) {
+        const res = data[coin];
+        // Parametreleri JSON formatında data attribute'una ekliyoruz ki butona basıldığında kullanabilelim
+        const paramsString = JSON.stringify(res.params);
+
+        html += `<div class="backtest-card" data-coin="${coin}" style="margin-bottom:15px;"><h4>${coin.replace("USDT","")} Analiz Sonuçları</h4>`;
+        
+        if (res.status === 'error' || res.status === 'info') {
+            const messageColor = res.status === 'error' ? 'var(--accent-red)' : 'var(--text-secondary)';
+            html += `<p style="color:${messageColor}; padding: 10px 0;">${res.message}</p>`;
+        } else if (res.status === 'preview') {
+            html += `
+                <div class="backtest-results-grid" style="grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <p><span class="label">Başarılı Olay Sayısı:</span> <span class="value">${res.eventCount}</span></p>
+                    <p><span class="label">Ort. Getiri (4S):</span> <span class="value ${res.avgFutureReturn > 0 ? 'positive' : 'negative'}">${res.avgFutureReturn}%</span></p>
+                </div>
+                <div class="analysis-summary">
+                    <p>${res.message}</p>
+                </div>
+                <div class="preview-actions" style="margin-top: 15px;">
+                    <button class="primary-button save-dna-btn" data-params='${paramsString}'>
+                        <i class="fas fa-save"></i> DNA Profili Oluştur ve Kaydet
+                    </button>
+                </div>
+            `;
+        }
+        html += `</div>`;
+    }
+    resultContainer.innerHTML = html || `<p>Analiz için sonuç bulunamadı.</p>`;
+}
 async function renderAlarmReports() {
     if (!state.userDocRef) return;
     const tableBody = document.getElementById('alarmReportsTable');
