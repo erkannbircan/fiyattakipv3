@@ -245,31 +245,30 @@ function setupCoinManagerEventListeners(parentElement) {
     });
 }
 
+// events.js içindeki setupStrategyDiscoveryListeners fonksiyonunu bununla değiştirin
 function setupStrategyDiscoveryListeners(parentElement) {
     parentElement.addEventListener('click', async (e) => {
         const target = e.target;
         
-        // Ana analiz butonunun görevini değiştiriyoruz.
         if (target.closest('#runSignalAnalysisBtn')) {
-            await runSignalAnalysisPreview(); // HATA DÜZELTİLDİ: Artık doğru fonksiyonu ('önizleme') çağırıyor.
+            await runSignalAnalysisPreview();
             return;
         }
         
-        // Dinamik olarak oluşturulan 'Kaydet' butonu için olay dinleyici
         const saveBtn = target.closest('.save-dna-btn');
         if (saveBtn) {
             const params = JSON.parse(saveBtn.dataset.params);
             const coin = target.closest('.backtest-card').dataset.coin;
-            params.coins = [coin]; // Sadece bu coin için kaydetme işlemi yap
+            params.coins = [coin];
             await saveDnaProfile(params);
             return;
         }
 
-        // Bu buton henüz eklenmedi ama geleceğe hazırlık için duruyor.
-        if (target.closest('.use-dna-in-alarm-btn')) { 
-            const btn = target.closest('.use-dna-in-alarm-btn');
-            const dnaData = JSON.parse(btn.dataset.dna);
-            openAlarmPanel(null, dnaData);
+        // "Alarm Kur" butonu için olay dinleyici GÜNCELLENDİ
+        const alarmBtn = target.closest('.use-dna-in-alarm-btn');
+        if (alarmBtn) { 
+            const dnaData = JSON.parse(alarmBtn.dataset.dna);
+            openAlarmPanel(null, dnaData); // openAlarmPanel'e DNA verisini gönderiyoruz
             return;
         }
     });
