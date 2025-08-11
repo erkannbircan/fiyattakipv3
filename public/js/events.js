@@ -68,58 +68,44 @@ function setupTrackerPageEventListeners() {
     setupScannerEventListeners(trackerPageEl);
 }
 
-// events.js dosyasındaki setupStrategyDiscoveryListeners fonksiyonunu güncelleyin
-// ve setupTabEventListeners fonksiyonuna bir case ekleyin.
-
 function setupTabEventListeners(parentElement) {
-    // ... mevcut switch-case yapısının içine bu yeni case'i ekleyin ...
-    switch (tabLink.dataset.tab) {
-        // ... diğer case'ler ...
-        case 'strategy-discovery':
-            createCoinManager('discovery-coin-manager-container', state.discoveryCoins, 'discovery');
-            fetchDnaProfiles(); // YENİ: Sekme açıldığında profilleri yükle
-            break;
-        // ... diğer case'ler ...
-    }
-}
+    parentElement.querySelector('.tabs')?.addEventListener('click', async (e) => {
+        const tabLink = e.target.closest('.tab-link');
+        if (!tabLink || tabLink.classList.contains('active')) return;
 
-
-function setupStrategyDiscoveryListeners(parentElement) {
-    parentElement.addEventListener('click', async (e) => {
-        const target = e.target;
+        parentElement.querySelector('.tab-link.active')?.classList.remove('active');
+        parentElement.querySelector('.tab-content.active')?.classList.remove('active');
+        tabLink.classList.add('active');
+        const activeTabContent = document.getElementById(`${tabLink.dataset.tab}-content`);
         
-        if (target.closest('#runSignalAnalysisBtn')) {
-            await runSignalAnalysisPreview();
-            return;
-        }
-        
-        const saveBtn = target.closest('.save-dna-btn');
-        if (saveBtn) {
-            const params = JSON.parse(saveBtn.dataset.params);
-            const coin = target.closest('.backtest-card').dataset.coin;
-            params.coins = [coin];
-            await saveDnaProfile(params);
-            await fetchDnaProfiles(); // YENİ: Profil kaydedildikten sonra listeyi yenile
-            return;
-        }
-
-        const alarmBtn = target.closest('.use-dna-in-alarm-btn');
-        if (alarmBtn) { 
-            const dnaData = JSON.parse(alarmBtn.dataset.dna);
-            openAlarmPanel(null, dnaData);
-            return;
-        }
-
-        // YENİ: Yenile ve Sil butonları için olay dinleyiciler
-        if(target.closest('#refreshDnaProfilesBtn')) {
-            await fetchDnaProfiles();
-            return;
-        }
-        const deleteBtn = target.closest('.delete-dna-btn');
-        if(deleteBtn) {
-            const profileId = deleteBtn.dataset.profileId;
-            await deleteDnaProfile(profileId);
-            return;
+        if (activeTabContent) {
+            activeTabContent.classList.add('active');
+            // HATA DÜZELTİLDİ: switch bloğunun tamamı addEventListener içinde olmalı
+            switch (tabLink.dataset.tab) {
+                case 'crypto':
+                    createCoinManager('crypto-coin-manager-container', state.userPortfolios[state.activePortfolio] || [], 'crypto');
+                    break;
+                case 'crypto-ai':
+                    createCoinManager('ai-coin-manager-container', state.cryptoAiPairs, 'ai');
+                    await fetchAiDataAndRender();
+                    break;
+                case 'crypto-pivot':
+                    renderSupportResistance();
+                    break;
+                case 'strategy-discovery':
+                    createCoinManager('discovery-coin-manager-container', state.discoveryCoins, 'discovery');
+                    await fetchDnaProfiles(); // Sekme açıldığında profilleri yükle
+                    break;
+                case 'live-scanner':
+                    document.getElementById('scannerResultsTable').innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">Tarama başlatılmadı.</td></tr>`;
+                    break;
+                case 'alarms':
+                    renderAlarms();
+                    break;
+                case 'alarm-reports':
+                    renderAlarmReports();
+                    break;
+            }
         }
     });
 }
@@ -262,7 +248,6 @@ function setupCoinManagerEventListeners(parentElement) {
     });
 }
 
-// events.js içindeki setupStrategyDiscoveryListeners fonksiyonunu bununla değiştirin
 function setupStrategyDiscoveryListeners(parentElement) {
     parentElement.addEventListener('click', async (e) => {
         const target = e.target;
@@ -278,14 +263,26 @@ function setupStrategyDiscoveryListeners(parentElement) {
             const coin = target.closest('.backtest-card').dataset.coin;
             params.coins = [coin];
             await saveDnaProfile(params);
+            await fetchDnaProfiles();
             return;
         }
 
-        // "Alarm Kur" butonu için olay dinleyici GÜNCELLENDİ
         const alarmBtn = target.closest('.use-dna-in-alarm-btn');
         if (alarmBtn) { 
             const dnaData = JSON.parse(alarmBtn.dataset.dna);
-            openAlarmPanel(null, dnaData); // openAlarmPanel'e DNA verisini gönderiyoruz
+            openAlarmPanel(null, dnaData);
+            return;
+        }
+
+        if(target.closest('#refreshDnaProfilesBtn')) {
+            await fetchDnaProfiles();
+            return;
+        }
+
+        const deleteBtn = target.closest('.delete-dna-btn');
+        if(deleteBtn) {
+            const profileId = deleteBtn.dataset.profileId;
+            await deleteDnaProfile(profileId);
             return;
         }
     });
