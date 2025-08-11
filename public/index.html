@@ -406,21 +406,30 @@
             <div class="collapsible open">
                 <div class="collapsible-header open"><span>2. Alarm Koşulları (En az 1 tane seçin)</span><i class="fas fa-chevron-down"></i></div>
                 <div class="collapsible-content open">
-                    <div class="settings-section alarm-condition-box" data-disabled="true">
-                        <label class="filter-item">
-                            <input type="checkbox" id="alarmVolumeCondition" data-condition="volume">
-                            <span>Hacim Artışı</span>
-                        </label>
-                        <div class="alarm-rule-grid" style="margin-top: 10px;">
-                            <label>Ort. Hacim Mumu Sayısı</label>
-                            <input type="number" id="alarmVolumePeriod" value="20" min="2" step="1">
-                            <label>Son Mum Hacmi > Ortalama *</label>
-                            <input type="number" id="alarmVolumeMultiplier" value="2" step="0.5">
-                            <label title="Opsiyonel. Sadece hacim bu dolar tutarını geçerse sinyal gönder. Örn: 500000">Min. Hacim Tutarı ($)</label>
-                            <input type="number" id="alarmVolumeAmount" value="0" step="100000" min="0">
-                        </div>
-                    </div>
-                    <div class="settings-section alarm-condition-box" data-disabled="true">
+                   <div class="settings-section alarm-condition-box" data-disabled="true">
+    <label class="filter-item">
+        <input type="checkbox" id="alarmVolumeCondition" data-condition="volume">
+        <span>Hacim Artışı</span>
+    </label>
+    <div class="alarm-rule-grid" style="margin-top: 10px;">
+        </div>
+</div>
+<div class="settings-section alarm-condition-box" data-disabled="true">
+    <label class="filter-item">
+        <input type="checkbox" id="alarmVolumeCondition" data-condition="volume">
+        <span>Hacim Artışı</span>
+    </label>
+    <div class="rules-container">
+        <div class="alarm-rule-grid" style="margin-top: 10px;">
+            <label>Ort. Hacim Mumu Sayısı</label>
+            <input type="number" id="alarmVolumePeriod" value="20" min="2" step="1">
+            <label>Son Mum Hacmi > Ortalama *</label>
+            <input type="number" id="alarmVolumeMultiplier" value="2" step="0.5">
+            <label title="Opsiyonel. Sadece hacim bu dolar tutarını geçerse sinyal gönder. Örn: 500000">Min. Hacim Tutarı ($)</label>
+            <input type="number" id="alarmVolumeAmount" value="0" step="100000" min="0">
+        </div>
+    </div>
+</div>class="settings-section alarm-condition-box" data-disabled="true">
                         <label class="filter-item">
                             <input type="checkbox" id="alarmMacdCondition" data-condition="macd">
                             <span>MACD Kesişimi</span>
