@@ -276,3 +276,10 @@ input:checked + .slider:before { transform: translateX(24px); }
     opacity: 0.5;
     pointer-events: none; /* Tıklama olaylarını engeller */
 }
+/* ALARM PANELİ GÖRÜNÜM DÜZELTMESİ */
+/* Bu kural, alarm panelindeki girdi kutularının ve seçim menülerinin
+   kendi sütunlarının dışına taşmasını engeller. */
+.alarm-rule-grid input, .alarm-rule-grid select {
+    width: 100%; /* Genişliği kapsayıcısına göre ayarlar */
+    box-sizing: border-box; /* Kenar boşluklarının genişliğe dahil edilmesini sağlar */
+}
