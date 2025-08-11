@@ -76,7 +76,7 @@ tr:hover td { background-color: var(--bg-tertiary); }
 .panel-header h3 { margin: 0; color: var(--text-primary); font-size: 1.6rem; }
 .panel-controls { display: flex; gap: 10px; }
 .panel-btn { background: none; color: var(--text-secondary); cursor: pointer; border: none; font-size: 1.2rem; padding: 5px; }
-.panel-content { padding: 20px 30px; overflow-y: auto; flex-grow: 1; }
+.panel-content { padding: 20px 30px; overflow-y: auto; flex-grow: 1; min-height: 0; }
 .notification { position: fixed; bottom: 25px; left: 25px; transform: translateX(-150%); background-color: var(--bg-tertiary); color: var(--text-primary); padding: 14px 25px; border-radius: 8px; z-index: 1003; border: 1px solid var(--border-color); opacity: 0; visibility: hidden; transition: all 0.4s ease; }
 .notification.show { opacity: 1; transform: translateX(0); visibility: visible; }
 .tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 25px; overflow-x: auto; }
