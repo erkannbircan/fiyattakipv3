@@ -142,7 +142,7 @@ function setupStrategyDiscoveryListeners(parentElement) {
         const target = e.target;
         // Ana analiz butonunun görevini değiştiriyoruz.
         if (target.closest('#runSignalAnalysisBtn')) {
-            await runSignalAnalysisPreview(); // Artık 'kaydet' değil, 'önizleme' fonksiyonunu çağırıyor.
+            await runSignalAnalysisPreview(); // HATA DÜZELTİLDİ: Artık doğru fonksiyonu ('önizleme') çağırıyor.
             return;
         }
         
