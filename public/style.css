@@ -290,19 +290,25 @@ input:checked + .slider:before { transform: translateX(24px); }
     align-items: center;
     margin-bottom: 10px;
 }
-
 .form-group label, .dna-params-group label {
     margin-right: 10px;
     margin-bottom: 5px;
-    flex-basis: 150px; /* Etiketler için sabit bir genişlik */
+    flex-basis: 150px;
+    flex-grow: 0;
+    flex-shrink: 0;
 }
-
 .form-group input, .form-group select, .form-group button {
     margin-bottom: 5px;
 }
-
 .modal-content {
     width: 90%;
     max-width: 600px;
+}
+.dna-profile-card .card-body {
+    display: flex;
+    flex-direction: column;
+}
+.dna-profile-card .card-body .btn-group {
+    margin-top: auto; /* Butonları karta yaslar */
 }
 /* --------------------------- */
