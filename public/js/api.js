@@ -1,76 +1,40 @@
-import { state } from './state.js';
-import { renderDnaProfiles, showNotification, renderSignalAnalysisPreview, showPanel, showLoading, hideLoading } from './ui.js';
-
-let functions;
-
-export function initializeApi() {
-    functions = firebase.functions();
+function getKlines(pair, interval, limit = 500) {
+    return axios.get(`https://api.binance.com/api/v3/klines`, {
+        params: { symbol: pair, interval, limit }
+    }).then(res => res.data);
 }
 
-export async function fetchCryptoData(pair, withIndicators = false) {
-    try {
-        const timeout = 5000;
-        const dailyKlinesResponse = axios.get(`https://api.binance.com/api/v3/klines?symbol=${pair}&interval=1d&limit=1000`, { timeout });
-        const tickerResponse = axios.get(`https://api.binance.com/api/v3/ticker/24hr?symbol=${pair}`, { timeout });
-        
-        const promises = [dailyKlinesResponse, tickerResponse];
-        if (withIndicators) {
-            promises.push(axios.get(`https://api.binance.com/api/v3/klines?symbol=${pair}&interval=${state.settings.cryptoAnalysisInterval}&limit=400`, { timeout }));
-        }
-
-        const [dailyKlinesResult, tickerResult, analysisKlinesResult] = await Promise.all(promises);
-        const dailyKlines = dailyKlinesResult.data;
-        const tickerData = tickerResult.data;
-        if (!dailyKlines || dailyKlines.length < 2) throw new Error("Yetersiz günlük veri.");
-        
-        const latestPrice = parseFloat(tickerData.lastPrice);
-        const calculatePct = (col) => {
-            const days = state.settings.columns[col].days;
-            if (dailyKlines.length < days + 1) return { pct: 'N/A' };
-            const periodData = dailyKlines.slice(-(days + 1), -1);
-            let lowestPrice = Infinity, lowestDate = null;
-            periodData.forEach(d => { const low = parseFloat(d[3]); if (low < lowestPrice) { lowestPrice = low; lowestDate = new Date(d[0]); } });
-            if (lowestPrice === Infinity) return { pct: 'N/A' };
-            return { pct: ((latestPrice - lowestPrice) / lowestPrice * 100), lowestPrice, lowestDate: lowestDate.toLocaleDateString(state.settings.lang) };
-        };
-        const yesterday = dailyKlines[dailyKlines.length - 2];
-        const high = parseFloat(yesterday[2]), low = parseFloat(yesterday[3]), close = parseFloat(yesterday[4]);
-        const pivot = (high + low + close) / 3;
-        return {
-            pair, latestPrice, error: false, type: 'crypto', currency: 'USDT',
-            col1: calculatePct(1), col2: calculatePct(2), col3: calculatePct(3),
-            sr: { r2: pivot + (high - low), r1: (2 * pivot) - low, pivot: pivot, s1: (2 * pivot) - high, s2: pivot - (high - low) }
-        };
-    } catch (error) {
-        console.error(`${pair} verisi çekilirken hata oluştu:`, error);
-        return { pair, error: true, type: 'crypto' };
-    }
+function fetchCryptoData(pair, withIndicators = false) {
+    return axios.get(`https://api.binance.com/api/v3/ticker/24hr?symbol=${pair}`)
+        .then(res => ({ pair, latestPrice: parseFloat(res.data.lastPrice), error: false }))
+        .catch(err => ({ pair, error: true }));
 }
 
-export async function runBacktest(alarmId) {
+function runBacktest(alarmId) {
     const alarm = state.userAlarms.find(a => a.id === alarmId);
-    if(!alarm) return;
+    if (!alarm) return;
     showPanel('backtestPanel');
     const container = document.getElementById('backtest-results-container');
     container.innerHTML = `<div class="loading" style="margin:20px auto;"></div>`;
     document.getElementById('backtestAlarmName').textContent = `"${alarm.name}" Stratejisi`;
-    try {
-        const runBacktestFunc = functions.httpsCallable('runBacktest');
-        const result = await runBacktestFunc({ alarm });
-        const data = result.data;
-        let html = '';
-        for (const coin in data) {
-            const res = data[coin];
-            const successRate = res.totalSignals > 0 ? (res.positiveSignals_1h / res.totalSignals * 100) : 0;
-             html += `<div class="backtest-card"><h5>${coin.replace("USDT","")}</h5><div class="backtest-results-grid"><p><span class="label">Toplam Sinyal:</span><span class="value">${res.totalSignals}</span></p><p><span class="label">Başarı Oranı (1S):</span><span class="value ${successRate > 50 ? 'positive' : 'negative'}">${successRate.toFixed(1)}%</span></p><p><span class="label">Ort. Getiri (1S):</span><span class="value ${res.averageReturn_1h > 0 ? 'positive' : 'negative'}">${res.averageReturn_1h}%</span></p><p><span class="label">Ort. Getiri (4S):</span><span class="value ${res.averageReturn_4h > 0 ? 'positive' : 'negative'}">${res.averageReturn_4h}%</span></p></div></div>`;
-        }
-        container.innerHTML = html || '<p>Backtest sonucu bulunamadı.</p>';
-    } catch(e) {
-        container.innerHTML = `<p style="color:var(--accent-red)">Hata: ${e.message}</p>`
-    }
+    const runBacktestFunc = state.firebase.functions.httpsCallable('runBacktest');
+    return runBacktestFunc({ alarm })
+        .then(result => {
+            const data = result.data;
+            let html = '';
+            for (const coin in data) {
+                const res = data[coin];
+                const successRate = res.totalSignals > 0 ? (res.positiveSignals_1h / res.totalSignals * 100) : 0;
+                html += `<div class="backtest-card"><h5>${coin.replace("USDT","")}</h5><div class="backtest-results-grid"><p><span class="label">Toplam Sinyal:</span><span class="value">${res.totalSignals}</span></p><p><span class="label">Başarı Oranı (1S):</span><span class="value ${successRate > 50 ? 'positive' : 'negative'}">${successRate.toFixed(1)}%</span></p><p><span class="label">Ort. Getiri (1S):</span><span class="value ${res.averageReturn_1h > 0 ? 'positive' : 'negative'}">${res.averageReturn_1h}%</span></p><p><span class="label">Ort. Getiri (4S):</span><span class="value ${res.averageReturn_4h > 0 ? 'positive' : 'negative'}">${res.averageReturn_4h}%</span></p></div></div>`;
+            }
+            container.innerHTML = html || '<p>Backtest sonucu bulunamadı.</p>';
+        })
+        .catch(e => {
+            container.innerHTML = `<p style="color:var(--accent-red)">Hata: ${e.message}</p>`
+        });
 }
 
-export async function runSignalAnalysisPreview() {
+function runSignalAnalysisPreview() {
     const btn = document.getElementById('runSignalAnalysisBtn');
     showLoading(btn);
     const dnaParams = {};
@@ -84,76 +48,90 @@ export async function runSignalAnalysisPreview() {
         params: dnaParams,
         isPreview: true
     };
-    if(params.coins.length === 0) {
+    if (params.coins.length === 0) {
         showNotification("Lütfen en az bir coin seçin.", false);
         hideLoading(btn);
         return;
     }
     const resultContainer = document.getElementById('signalAnalysisResultContainer');
     resultContainer.innerHTML = '<div class="loading" style="margin: 20px auto; display:block;"></div>';
-    try {
-        const findSignalDNAFunc = functions.httpsCallable('findSignalDNA');
-        const result = await findSignalDNAFunc(params);
-        renderSignalAnalysisPreview(result.data);
-    } catch (error) {
-        console.error("findSignalDNA Hatası:", error);
-        const errorMessage = error.details ? error.details.message : error.message;
-        resultContainer.innerHTML = `<p style="color:var(--accent-red); padding: 10px;"><strong>Analiz sırasında bir sunucu hatası oluştu.</strong><br>Detay: ${errorMessage || 'Lütfen daha sonra tekrar deneyin.'}</p>`;
-    } finally {
-        hideLoading(btn);
-    }
+    const findSignalDNAFunc = state.firebase.functions.httpsCallable('findSignalDNA');
+    findSignalDNAFunc(params)
+        .then(result => {
+            renderSignalAnalysisPreview(result.data);
+        })
+        .catch(error => {
+            console.error("findSignalDNA Hatası:", error);
+            const errorMessage = error.details ? error.details.message : error.message;
+            resultContainer.innerHTML = `<p style="color:var(--accent-red); padding: 10px;"><strong>Analiz sırasında bir sunucu hatası oluştu.</strong><br>Detay: ${errorMessage || 'Lütfen daha sonra tekrar deneyin.'}</p>`;
+        })
+        .finally(() => {
+            hideLoading(btn);
+        });
 }
 
-export async function saveDnaProfile(params) {
+function saveDnaProfile(params) {
     const resultContainer = document.getElementById('signalAnalysisResultContainer');
     const coinCard = resultContainer.querySelector(`.backtest-card[data-coin="${params.coins[0]}"]`);
-    if(coinCard) coinCard.innerHTML += '<div class="loading" style="margin-top:10px;"></div>';
-    try {
-        const findSignalDNAFunc = functions.httpsCallable('findSignalDNA');
-        const finalParams = { ...params, isPreview: false };
-        const result = await findSignalDNAFunc(finalParams);
-        const data = result.data[params.coins[0]];
-        if (data && data.status === 'success') {
-            showNotification(`DNA profili (${data.profileId}) başarıyla kaydedildi!`, true);
-            if(coinCard) coinCard.querySelector('.loading').remove();
-            if(coinCard) coinCard.querySelector('.preview-actions').innerHTML = `<p style="color:var(--value-positive);"><i class="fas fa-check-circle"></i> Profil Kaydedildi</p>`;
-        } else {
-            throw new Error(data.message || 'Profil kaydedilemedi.');
-        }
-    } catch (error) {
-        showNotification(`Profil kaydedilirken hata oluştu: ${error.message}`, false);
-        if(coinCard) coinCard.querySelector('.loading').remove();
-    }
+    if (coinCard) coinCard.innerHTML += '<div class="loading" style="margin-top:10px;"></div>';
+    
+    const findSignalDNAFunc = state.firebase.functions.httpsCallable('findSignalDNA');
+    const finalParams = { ...params, isPreview: false };
+    
+    findSignalDNAFunc(finalParams)
+        .then(result => {
+            const data = result.data[params.coins[0]];
+            if (data && data.status === 'success') {
+                showNotification(`DNA profili (${data.profileId}) başarıyla kaydedildi!`, true);
+                if (coinCard) {
+                    const loadingEl = coinCard.querySelector('.loading');
+                    if(loadingEl) loadingEl.remove();
+                    const actionsEl = coinCard.querySelector('.preview-actions');
+                    if(actionsEl) actionsEl.innerHTML = `<p style="color:var(--value-positive);"><i class="fas fa-check-circle"></i> Profil Kaydedildi</p>`;
+                }
+            } else {
+                throw new Error(data.message || 'Profil kaydedilemedi.');
+            }
+        })
+        .catch(error => {
+            showNotification(`Profil kaydedilirken hata oluştu: ${error.message}`, false);
+            if(coinCard) {
+                 const loadingEl = coinCard.querySelector('.loading');
+                 if(loadingEl) loadingEl.remove();
+            }
+        });
 }
 
-export async function fetchDnaProfiles() {
+function fetchDnaProfiles() {
     const container = document.getElementById('dnaProfilesContainer');
-    try {
-        const manageDnaProfilesFunc = functions.httpsCallable('manageDnaProfiles');
-        const result = await manageDnaProfilesFunc({ action: 'get' });
-        if(result.data.success){
-            renderDnaProfiles(result.data.profiles);
-        } else {
-            throw new Error(result.data.error || "Bilinmeyen bir hata oluştu.");
-        }
-    } catch (error) {
-        console.error("DNA profilleri çekilirken hata oluştu:", error);
-        showNotification("Profiller yüklenemedi.", false);
-        if(container) {
-            container.innerHTML = `<p style="color:var(--accent-red); padding: 10px;"><b>Profiller yüklenirken bir hata oluştu.</b><br><small>Detay: ${error.message}</small></p>`;
-        }
-    }
+    const getProfilesFunc = state.firebase.functions.httpsCallable('manageDnaProfiles');
+    return getProfilesFunc({ action: 'get' })
+        .then(result => {
+            if (result.data.success) {
+                renderDnaProfiles(result.data.profiles);
+            } else {
+                throw new Error(result.data.error || "Bilinmeyen bir hata oluştu.");
+            }
+        })
+        .catch(error => {
+            console.error("DNA profilleri çekilirken hata oluştu:", error);
+            showNotification("Profiller yüklenemedi.", false);
+            if (container) {
+                container.innerHTML = `<p style="color:var(--accent-red); padding: 10px;"><b>Profiller yüklenirken bir hata oluştu.</b><br><small>Detay: ${error.message}</small></p>`;
+            }
+        });
 }
 
-export async function deleteDnaProfile(profileId) {
+function deleteDnaProfile(profileId) {
     if (!confirm(`"${profileId}" profilini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) return;
-    try {
-        const manageDnaProfilesFunc = functions.httpsCallable('manageDnaProfiles');
-        await manageDnaProfilesFunc({ action: 'delete', profileId: profileId });
-        showNotification("Profil başarıyla silindi.", true);
-        await fetchDnaProfiles();
-    } catch (error) {
-        console.error("Profil silinirken hata oluştu:", error);
-        showNotification("Profil silinemedi.", false);
-    }
+    const deleteProfileFunc = state.firebase.functions.httpsCallable('manageDnaProfiles');
+    deleteProfileFunc({ action: 'delete', profileId: profileId })
+        .then(() => {
+            showNotification("Profil başarıyla silindi.", true);
+            fetchDnaProfiles();
+        })
+        .catch(error => {
+            console.error("Profil silinirken hata oluştu:", error);
+            showNotification("Profil silinemedi.", false);
+        });
 }
