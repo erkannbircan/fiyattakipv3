@@ -184,7 +184,7 @@ function toggleReportsAutoRefresh(forceState) {
         state.reportsRefreshTimer = setInterval(renderAlarmReports, state.settings.refreshInterval * 1000);
         if(forceState === undefined) showNotification("Rapor yenileme aktif.", true);
     } else {
-         if(forceState === undefined) showNotification("Rapor yenileme durduruldu.", true);
+       if(forceState === undefined) showNotification("Rapor yenileme durduruldu.", true);
     }
 }
 
