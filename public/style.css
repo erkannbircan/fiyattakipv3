@@ -283,3 +283,26 @@ input:checked + .slider:before { transform: translateX(24px); }
     width: 100%; /* Genişliği kapsayıcısına göre ayarlar */
     box-sizing: border-box; /* Kenar boşluklarının genişliğe dahil edilmesini sağlar */
 }
+/* --- ARAYÜZ DÜZELTMELERİ --- */
+.form-group, .dna-params-group > div {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.form-group label, .dna-params-group label {
+    margin-right: 10px;
+    margin-bottom: 5px;
+    flex-basis: 150px; /* Etiketler için sabit bir genişlik */
+}
+
+.form-group input, .form-group select, .form-group button {
+    margin-bottom: 5px;
+}
+
+.modal-content {
+    width: 90%;
+    max-width: 600px;
+}
+/* --------------------------- */
