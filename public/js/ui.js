@@ -238,50 +238,51 @@ function renderSupportResistance() {
 function showChart(pair) {
     document.getElementById('chartPanelTitle').textContent = pair.replace("USDT", "");
     const container = document.getElementById('chartContainer');
-    container.innerHTML = '<div class="loading" style="margin: auto;"></div>';
+    container.innerHTML = ''; // Önceki grafiği veya yükleniyor ikonunu temizle
     showPanel('chartPanel');
 
-    let savedStateObject = undefined;
-    const savedStateString = state.settings.chartStates?.[pair];
-    
-    console.log("--- YÜKLEME ADIMI ---");
-    console.log(`1. Grafik açılıyor: ${pair}`);
-    console.log("2. Veritabanından okunan metin (string):", savedStateString);
-
-    if (savedStateString && typeof savedStateString === 'string') {
-        try {
-            savedStateObject = JSON.parse(savedStateString);
-            console.log("3. Metinden çevrilen (Parsed) obje:", savedStateObject);
-        } catch (e) {
-            console.error("3. HATA: Kayıtlı metin objeye çevrilemedi (JSON Parse Hatası)!", e);
-        }
-    } else {
-        console.log("3. Bu coin için kayıtlı bir grafik durumu bulunamadı.");
-    }
+    // Kullanıcı ID'si ve Client ID, adaptörün çalışması için gereklidir.
+    const userId = state.firebase.auth.currentUser.uid;
+    const clientId = 'test_client'; // Burası şimdilik sabit kalabilir.
 
     try {
-        console.log("4. TradingView widget'ı bu obje ile başlatılıyor:", savedStateObject);
+        console.log("Yeni Adaptör ile TradingView widget'ı başlatılıyor.");
+        
         state.tradingViewWidget = new TradingView.widget({
+            // Temel Ayarlar
             symbol: `BINANCE:${pair}`,
-            interval: "D",
-            autosize: true,
-            container_id: "chartContainer",
-            theme: "dark",
-            style: "1",
+            interval: 'D',
+            container: "chartContainer",
+            datafeed: new Datafeeds.UDFCompatibleDatafeed("https://demo-feed-data.tradingview.com"),
+            library_path: "charting_library/",
+
+            // --- YENİ ADAPTÖR ENTEGRASYONU ---
+            load_last_chart: true,
+            client_id: clientId,
+            user_id: userId,
+            save_load_adapter: createFirebaseSaveLoadAdapter(pair),
+            // --- BİTTİ ---
+
+            // Diğer Ayarlar
             locale: "tr",
-            toolbar_bg: "#1e222d",
-            enable_publishing: false,
-            withdateranges: true,
-            hide_side_toolbar: false,
-            allow_symbol_change: true,
-            details: true,
-            studies: [],
-            saved_data: savedStateObject,
+            theme: "dark",
+            autosize: true,
+            // Özellikleri etkinleştirme/devre dışı bırakma
+            disabled_features: ["use_localstorage_for_settings"],
+            enabled_features: ["study_templates"],
         });
+
     } catch (error) {
-        console.error("5. HATA: TradingView widget başlatılamadı!", error);
+        console.error("TradingView widget başlatılırken kritik hata oluştu:", error);
         container.innerHTML = `<p style="color:var(--accent-red); text-align:center;">Grafik yüklenemedi.</p>`;
     }
+}
+
+// Artık bu fonksiyona ihtiyacımız kalmadı, çünkü adaptör kaydetmeyi otomatik yapıyor.
+// Ancak başka bir yerde kullanılıyorsa diye silmek yerine içini boşaltabiliriz.
+function saveChartState() {
+    console.log("saveChartState fonksiyonu artık kullanılmıyor. Kaydetme işlemi adaptör tarafından otomatik yapılıyor.");
+    // Bu fonksiyonun içi artık boş.
 }
 
 function renderAlarms() {
