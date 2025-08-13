@@ -465,3 +465,30 @@ function updateAdminUI() {
     document.getElementById('strategy-discovery-tab').style.display = isAdmin ? 'block' : 'none';
     document.getElementById('alarm-reports-tab').style.display = isAdmin ? 'block' : 'none';
 }
+// Bu değişkeni state objenizin olduğu yere veya global alana ekleyin
+// state.refreshTimerId = null; 
+
+function toggleAutoRefresh(forceStop = false) {
+    // Önceki zamanlayıcı varsa temizle
+    if (state.refreshTimerId) {
+        clearInterval(state.refreshTimerId);
+        state.refreshTimerId = null;
+    }
+
+    // "Açık" ise ve forceStop değilse yeni zamanlayıcıyı kur
+    const autoRefreshEnabled = document.getElementById('autoRefreshToggle').checked;
+    if (autoRefreshEnabled && !forceStop) {
+        const intervalSeconds = parseInt(document.getElementById('refreshInterval').value, 10);
+        
+        // Geçersiz bir aralık değeri girilmesini engelle
+        if (isNaN(intervalSeconds) || intervalSeconds < 10) {
+            console.error("Geçersiz yenileme aralığı:", intervalSeconds);
+            return;
+        }
+
+        state.refreshTimerId = setInterval(fetchAllDataAndRender, intervalSeconds * 1000);
+        console.log(`Otomatik yenileme ${intervalSeconds} saniyede bir çalışacak şekilde ayarlandı.`);
+    } else {
+        console.log("Otomatik yenileme durduruldu.");
+    }
+}
