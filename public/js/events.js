@@ -1,17 +1,15 @@
 function setupGlobalEventListeners() {
-    // Fonksiyonu 'async' olarak işaretliyoruz ki içinde 'await' kullanabilelim
     document.body.addEventListener('click', async (e) => {
         if (e.target.closest('.close-btn') || e.target === document.getElementById('modalOverlay')) {
             
             const chartPanel = document.getElementById('chartPanel');
             if (chartPanel && chartPanel.classList.contains('show')) {
                 console.log("Grafik paneli kapatılıyor, ÖNCE kaydetme işlemi tetikleniyor...");
-                // await ile saveChartState'in tamamen bitmesini BEKLİYORUZ.
+                // await, artık saveChartState'in döndürdüğü Promise'in çözülmesini bekleyecek.
                 await saveChartState();
                 console.log("Kaydetme işlemi bitti, ŞİMDİ panel kapatılabilir.");
             }
             
-            // Paneli kapatma işlemi, kaydetme bittikten SONRA çalışır.
             closeAllPanels();
         }
     });
