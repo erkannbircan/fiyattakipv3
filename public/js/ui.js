@@ -457,23 +457,36 @@ function openAlarmPanel(alarm = null, suggestedParams = null) {
     showPanel('alarmSettingsPanel');
 }
 
+// ui.js içindeki renderSignalAnalysisPreview fonksiyonunu bununla değiştirin
 function renderSignalAnalysisPreview(data) {
     const resultContainer = document.getElementById('signalAnalysisResultContainer');
     let html = '';
 
     const getPerformanceClass = (value) => parseFloat(value) > 0 ? 'positive' : 'negative';
 
+    // Veri gelip gelmediğini en başta kontrol et
+    if (!data || Object.keys(data).length === 0) {
+        resultContainer.innerHTML = `<p>Analiz için sonuç bulunamadı.</p>`;
+        return;
+    }
+
     for (const coin in data) {
         const res = data[coin];
-        const paramsString = JSON.stringify(res.params);
 
         html += `<div class="backtest-card" data-coin="${coin}" style="margin-bottom:15px; border-left: 3px solid var(--accent-blue);">
                     <h4>${coin.replace("USDT","")} Analiz Sonuçları</h4>`;
-
+        
+        // --- KESİN ÇÖZÜM: HATA KONTROLÜ ---
+        // Önce gelen cevabın bir hata olup olmadığını kontrol ediyoruz.
         if (res.status === 'error' || res.status === 'info') {
             const messageColor = res.status === 'error' ? 'var(--accent-red)' : 'var(--text-secondary)';
             html += `<p style="color:${messageColor}; padding: 10px 0;">${res.message}</p>`;
-        } else if (res.status === 'preview') {
+        
+        // Sadece cevap başarılı ise ('preview') bu bloğu çalıştır.
+        } else if (res.status === 'preview' && res.params && res.dnaSummary) {
+            const paramsString = JSON.stringify(res.params);
+            
+            // DNA özetini (ortalama değerleri) alarm kurma butonu için hazırlıyoruz
             const dnaForAlarm = {
                 coin: res.params.coins[0],
                 timeframe: res.params.timeframe,
@@ -528,10 +541,14 @@ function renderSignalAnalysisPreview(data) {
                     </button>
                 </div>
             `;
+        } else {
+             html += `<p style="color:var(--accent-red); padding: 10px 0;">Sunucudan gelen veri anlaşılamadı veya eksik.</p>`;
         }
+        // --- HATA KONTROLÜ BİTTİ ---
+
         html += `</div>`;
     }
-    resultContainer.innerHTML = html || `<p>Analiz için sonuç bulunamadı.</p>`;
+    resultContainer.innerHTML = html;
 }
 async function renderAlarmReports() {
     if (!state.userDocRef) return;
