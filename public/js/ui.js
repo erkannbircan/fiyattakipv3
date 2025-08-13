@@ -1,4 +1,12 @@
-function translatePage(lang) { document.querySelectorAll('[data-lang]').forEach(el => { const key = el.getAttribute('data-lang'); if (translations[lang]?.[key] && typeof translations[lang][key] === 'string') el.textContent = translations[lang][key]; }); }
+function translatePage(lang) {
+    document.querySelectorAll('[data-lang]').forEach(el => {
+        const key = el.getAttribute('data-lang');
+        if (translations[lang]?.[key] && typeof translations[lang][key] === 'string') {
+            el.textContent = translations[lang][key];
+        }
+    });
+}
+
 function showPage(pageId) {
     document.getElementById('app-loader').style.display = 'none';
     document.getElementById('login-page').style.display = 'none';
@@ -8,21 +16,20 @@ function showPage(pageId) {
         if (page) page.style.display = 'flex';
     }
 }
-function showPanel(panelId) { document.getElementById(panelId)?.classList.add('show'); document.getElementById('modalOverlay').classList.add('show'); document.body.classList.add('modal-open'); }
-// Fonksiyonu 'async' yapıyoruz çünkü içinde 'await' kullanacağız.
+
+function showPanel(panelId) {
+    document.getElementById(panelId)?.classList.add('show');
+    document.getElementById('modalOverlay').classList.add('show');
+    document.body.classList.add('modal-open');
+}
+
 function closeAllPanels() {
     // Bu fonksiyon artık sadece ve sadece panelleri kapatır.
-    // İçinde kaydetme ile ilgili hiçbir mantık yoktur.
     document.querySelectorAll('.panel.show').forEach(p => p.classList.remove('show'));
     document.getElementById('modalOverlay').classList.remove('show');
     document.body.classList.remove('modal-open');
 }
 
-    // SONRA KAPAT: Tüm panelleri gizle.
-    document.querySelectorAll('.panel.show').forEach(p => p.classList.remove('show'));
-    document.getElementById('modalOverlay').classList.remove('show');
-    document.body.classList.remove('modal-open');
-}
 function showNotification(message, isSuccess = true) {
     const notification = document.getElementById("notification");
     notification.textContent = message;
@@ -30,8 +37,24 @@ function showNotification(message, isSuccess = true) {
     notification.classList.add('show');
     setTimeout(() => notification.classList.remove('show'), 3000);
 }
-function showLoading(button) { if (!button) return; button.dataset.originalHtml = button.innerHTML; button.innerHTML = '<div class="loading"></div>'; button.disabled = true; }
-function hideLoading(button) { if (!button) return; if (button.dataset.originalHtml) { button.innerHTML = button.dataset.originalHtml; } button.disabled = false; }
+
+function showLoading(button) {
+    if (!button) return;
+    button.dataset.originalHtml = button.innerHTML;
+    button.innerHTML = '<div class="loading"></div>';
+    button.disabled = true;
+}
+
+function hideLoading(button) {
+    if (!button) return;
+    if (button.dataset.originalHtml) {
+        button.innerHTML = button.dataset.originalHtml;
+    }
+    button.disabled = false;
+}
+
+// --- HATA BURADAYDI: FAZLADAN '}' KARAKTERİ SİLİNDİ ---
+
 const formatPrice = (price) => {
     const num = parseFloat(price);
     if (isNaN(num)) return 'N/A';
@@ -40,7 +63,15 @@ const formatPrice = (price) => {
     if (num < 10) return num.toFixed(3);
     return num.toFixed(2);
 };
-const formatVolume = (volume) => { const num = parseFloat(volume); if (isNaN(num)) return 'N/A'; if (num >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(2)}B`; if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M`; if (num >= 1_000) return `${(num / 1_000).toFixed(2)}K`; return num.toFixed(0); };
+
+const formatVolume = (volume) => {
+    const num = parseFloat(volume);
+    if (isNaN(num)) return 'N/A';
+    if (num >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(2)}B`;
+    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M`;
+    if (num >= 1_000) return `${(num / 1_000).toFixed(2)}K`;
+    return num.toFixed(0);
+};
 
 function applySettingsToUI() {
     document.getElementById('langSelect').value = state.settings.lang;
@@ -50,7 +81,7 @@ function applySettingsToUI() {
     document.getElementById('telegramPhoneInput').value = state.settings.telegramPhone || '';
 
     for (let i = 1; i <= 3; i++) {
-        if(state.settings.columns[i]) {
+        if (state.settings.columns[i]) {
             document.getElementById(`col${i}_name_input`).value = state.settings.columns[i].name;
             document.getElementById(`col${i}_days_input`).value = state.settings.columns[i].days;
             document.getElementById(`col${i}_threshold_input`).value = state.settings.columns[i].threshold;
@@ -121,7 +152,7 @@ function renderAllPortfolioTabs() {
 
 function renderPortfolioTabs(containerId) {
     const tabsContainer = document.getElementById(containerId);
-    if(!tabsContainer) return;
+    if (!tabsContainer) return;
     tabsContainer.innerHTML = '';
     for (const name in state.userPortfolios) {
         const tab = document.createElement('div');
@@ -153,11 +184,13 @@ function updateAllTableRows(data) {
 
     const formatPct = (pct) => (typeof pct === 'number') ? `${pct.toFixed(2)}%` : 'N/A';
     const getCellStyle = (colData, threshold) => {
-        const pct = colData?.pct; let classes = '', style = '';
+        const pct = colData?.pct;
+        let classes = '',
+            style = '';
         if (typeof pct !== 'number') return { classes: '', style: '' };
-        if (pct < 0) { classes = 'negative'; }
-        else if (pct >= threshold) { classes = 'positive-high'; style = `style="color: ${state.settings.colors.high};"`; }
-        else { classes = 'positive-low'; style = `style="color: ${state.settings.colors.low};"`; }
+        if (pct < 0) { classes = 'negative'; } else if (pct >= threshold) { classes = 'positive-high';
+            style = `style="color: ${state.settings.colors.high};"`; } else { classes = 'positive-low';
+            style = `style="color: ${state.settings.colors.low};"`; }
         return { classes, style };
     };
 
@@ -192,7 +225,7 @@ function renderSupportResistance() {
     if (!container) return;
     container.innerHTML = '';
     const dictContainer = document.getElementById('pivot-dictionary-container');
-    if(dictContainer) dictContainer.innerHTML = `
+    if (dictContainer) dictContainer.innerHTML = `
         <div class="pivot-dictionary">
             <p><span>P:</span> Pivot Noktası (Referans)</p>
             <p><span>R1, R2:</span> Direnç Seviyeleri (Yükseliş Hedefleri)</p>
@@ -203,12 +236,13 @@ function renderSupportResistance() {
     const pivotPortfolioName = document.querySelector('#pivotPortfolioTabs .portfolio-tab.active')?.dataset.portfolioName || state.activePortfolio;
     const pivotCoinList = state.userPortfolios[pivotPortfolioName] || [];
     const dataToRender = state.allCryptoData.filter(asset => pivotCoinList.includes(asset.pair) && !asset.error && asset.sr);
-    
+
     dataToRender.forEach(asset => {
         if ((filter === 'above' && asset.latestPrice < asset.sr.pivot) || (filter === 'below' && asset.latestPrice > asset.sr.pivot)) return;
 
         const { s2, s1, pivot, r1, r2 } = asset.sr;
-        const min = s2, max = r2;
+        const min = s2,
+            max = r2;
         if (max <= min) return;
         const range = max - min;
         const getPosition = (value) => Math.max(0, Math.min(100, ((value - min) / range) * 100));
@@ -245,9 +279,8 @@ function showChart(pair) {
     document.getElementById('chartPanelTitle').textContent = pair.replace("USDT", "");
     const container = document.getElementById('chartContainer');
     container.innerHTML = '<div class="loading" style="margin: auto;"></div>';
-    
-    // showPanel'i widget oluşturulmadan önce çağır.
-    showPanel('chartPanel'); 
+
+    showPanel('chartPanel');
 
     const savedStudies = state.settings.chartIndicators?.[pair] || [];
 
@@ -272,6 +305,33 @@ function showChart(pair) {
     } catch (error) {
         console.error("TradingView widget hatası:", error);
         container.innerHTML = `<p style="color:var(--accent-red); text-align:center;">Grafik yüklenemedi.</p>`;
+    }
+}
+
+function saveChartState() {
+    // Bu fonksiyon artık grafik panelini kapatırken çağrılacak.
+    if (state.tradingViewWidget && typeof state.tradingViewWidget.getStudiesList === 'function') {
+        const currentPair = document.getElementById('chartPanelTitle').textContent + 'USDT';
+
+        const studiesList = state.tradingViewWidget.getStudiesList();
+
+        const updatePath = `settings.chartIndicators.${currentPair}`;
+
+        if (state.userDocRef) {
+            state.userDocRef.update({
+                    [updatePath]: studiesList
+                })
+                .then(() => {
+                    console.log(`Grafik indikatörleri kaydedildi: ${currentPair}`, studiesList);
+                    if (!state.settings.chartIndicators) {
+                        state.settings.chartIndicators = {};
+                    }
+                    state.settings.chartIndicators[currentPair] = studiesList;
+                })
+                .catch(error => {
+                    console.error("Grafik indikatörleri kaydedilirken hata:", error);
+                });
+        }
     }
 }
 
@@ -305,25 +365,20 @@ function renderAlarms() {
     });
 }
 
-// ui.js dosyasındaki openAlarmPanel fonksiyonunun tamamını bu kodla değiştirin.
-
 function openAlarmPanel(alarm = null, suggestedParams = null) {
     document.getElementById('alarmPanelTitle').textContent = alarm ? 'Alarmı Düzenle' : 'Yeni Alarm Oluştur';
     const alarmId = alarm ? alarm.id : '';
     document.getElementById('alarmIdInput').value = alarmId;
-    
-    // Önceki öneriyi temizle
+
     const dnaRecDiv = document.querySelector('#alarmSettingsPanel .dna-recommendation');
     if (dnaRecDiv) dnaRecDiv.remove();
 
-    // Tüm koşulları ve kutuları sıfırla
     document.querySelectorAll('#alarmSettingsPanel [data-condition]').forEach(el => {
         el.checked = false;
         const parentBox = el.closest('.alarm-condition-box');
-        if(parentBox) parentBox.dataset.disabled = "true";
+        if (parentBox) parentBox.dataset.disabled = "true";
     });
 
-    // Varsayılan değerleri ayarla
     document.getElementById('alarmNameInput').value = '';
     document.getElementById('alarmTimeframe').value = '15m';
     document.getElementById('alarmVolumeMultiplier').value = 2;
@@ -331,21 +386,20 @@ function openAlarmPanel(alarm = null, suggestedParams = null) {
     document.getElementById('alarmMacdHistogramValue').value = 0;
     document.getElementById('alarmRsiValue').value = 30;
 
-    if (suggestedParams) { // DNA ÖNERİSİ GELDİYSE
+    if (suggestedParams) {
         const { coin, timeframe, direction, dna, dna_analysis } = suggestedParams;
         document.getElementById('alarmNameInput').value = `${coin.replace('USDT','')} DNA Alarmı`;
         state.tempAlarmCoins = [coin];
         document.getElementById('alarmTimeframe').value = timeframe;
-        
+
         const recommendationDiv = document.createElement('div');
         recommendationDiv.className = 'dna-recommendation';
         recommendationDiv.innerHTML = `💡 <strong>AI Önerisi:</strong> Bu alarm, "${coin.replace('USDT','')}" için bulunan başarılı DNA'ya göre ayarlanıyor.`;
         const firstCollapsible = document.querySelector('#alarmSettingsPanel .collapsible-content');
         if (firstCollapsible) firstCollapsible.prepend(recommendationDiv);
-        
+
         document.getElementById('alarmMacdSignalType').value = direction === 'up' ? 'buy' : 'sell';
 
-        // Koşulları önerilen DNA'ya göre doldur
         if (dna.avgVolumeMultiplier) {
             document.getElementById('alarmVolumeCondition').checked = true;
             document.getElementById('alarmVolumeMultiplier').value = parseFloat(dna.avgVolumeMultiplier).toFixed(1);
@@ -353,54 +407,48 @@ function openAlarmPanel(alarm = null, suggestedParams = null) {
         if (dna.avgMacdHist) {
             document.getElementById('alarmMacdHistogramCondition').checked = true;
             document.getElementById('alarmMacdHistogramOperator').value = dna.avgMacdHist > 0 ? 'above' : 'below';
-            document.getElementById('alarmMacdHistogramValue').value = parseFloat(dna.avgMacdHist).toFixed(6); 
+            document.getElementById('alarmMacdHistogramValue').value = parseFloat(dna.avgMacdHist).toFixed(6);
         }
-         if (dna.avgAdx) {
+        if (dna.avgAdx) {
             document.getElementById('alarmTrendFilterEnabled').checked = true;
             document.getElementById('alarmADXThreshold').value = Math.max(20, Math.floor(dna.avgAdx));
         }
-         if (dna.avgRsi) {
+        if (dna.avgRsi) {
             document.getElementById('alarmRsiCondition').checked = true;
             document.getElementById('alarmRsiOperator').value = direction === 'up' ? 'below' : 'above';
             document.getElementById('alarmRsiValue').value = Math.round(dna.avgRsi);
         }
-        // MACD kesişimi her DNA alarmı için temel koşuldur
         document.getElementById('alarmMacdCondition').checked = true;
-        
-    } else { // MEVCUT BİR ALARM DÜZENLENİYORSA
+
+    } else {
         document.getElementById('alarmNameInput').value = alarm?.name || '';
         state.tempAlarmCoins = alarm?.coins?.length > 0 ? [...alarm.coins] : [...(state.userPortfolios[state.activePortfolio] || [])];
         const conditions = alarm?.conditions || {};
         document.getElementById('alarmTimeframe').value = alarm?.timeframe || '15m';
 
-        // Gerekli input alanlarının değerlerini doldur
-        if(conditions.volume) {
+        if (conditions.volume) {
             document.getElementById('alarmVolumePeriod').value = conditions.volume.period ?? 20;
             document.getElementById('alarmVolumeMultiplier').value = conditions.volume.multiplier ?? 2;
         }
-        if(conditions.macdHistogram) {
-             document.getElementById('alarmMacdHistogramOperator').value = conditions.macdHistogram.operator ?? 'above';
-             document.getElementById('alarmMacdHistogramValue').value = conditions.macdHistogram.value ?? 0;
+        if (conditions.macdHistogram) {
+            document.getElementById('alarmMacdHistogramOperator').value = conditions.macdHistogram.operator ?? 'above';
+            document.getElementById('alarmMacdHistogramValue').value = conditions.macdHistogram.value ?? 0;
         }
-        if(conditions.rsi){
+        if (conditions.rsi) {
             document.getElementById('alarmRsiOperator').value = conditions.rsi.operator ?? 'above';
             document.getElementById('alarmRsiValue').value = conditions.rsi.value ?? 30;
         }
         document.getElementById('alarmADXThreshold').value = alarm?.adxThreshold ?? 25;
     }
 
-    // *** KİLİT DÜZELTME: Hem yeni hem de mevcut alarm için, tüm kutuların durumunu sondan güncelliyoruz. ***
     document.querySelectorAll('#alarmSettingsPanel [data-condition]').forEach(el => {
-        // Mevcut bir alarm düzenleniyorsa, durumu conditions'tan al
         if (alarm && alarm.conditions) {
             const conditionName = el.dataset.condition;
-            // adx için eski trendFilterEnabled kontrolü
             const isEnabled = conditionName === 'adx' ? alarm.trendFilterEnabled : alarm.conditions[conditionName]?.enabled;
             el.checked = !!isEnabled;
         }
-        // Kutunun disabled durumunu, checkbox'ın mevcut durumuna göre ayarla
         const parentBox = el.closest('.alarm-condition-box');
-        if (parentBox) { // Null kontrolü ile çökme engelleniyor.
+        if (parentBox) {
             parentBox.dataset.disabled = String(!el.checked);
         }
     });
@@ -408,7 +456,7 @@ function openAlarmPanel(alarm = null, suggestedParams = null) {
     createCoinManager('alarm-coin-manager-container', state.tempAlarmCoins, 'alarm');
     showPanel('alarmSettingsPanel');
 }
-// ui.js içindeki renderSignalAnalysisPreview fonksiyonunu bununla değiştirin
+
 function renderSignalAnalysisPreview(data) {
     const resultContainer = document.getElementById('signalAnalysisResultContainer');
     let html = '';
@@ -421,12 +469,11 @@ function renderSignalAnalysisPreview(data) {
 
         html += `<div class="backtest-card" data-coin="${coin}" style="margin-bottom:15px; border-left: 3px solid var(--accent-blue);">
                     <h4>${coin.replace("USDT","")} Analiz Sonuçları</h4>`;
-        
+
         if (res.status === 'error' || res.status === 'info') {
             const messageColor = res.status === 'error' ? 'var(--accent-red)' : 'var(--text-secondary)';
             html += `<p style="color:${messageColor}; padding: 10px 0;">${res.message}</p>`;
         } else if (res.status === 'preview') {
-            // DNA özetini (ortalama değerleri) alarm kurma butonu için hazırlıyoruz
             const dnaForAlarm = {
                 coin: res.params.coins[0],
                 timeframe: res.params.timeframe,
@@ -489,29 +536,29 @@ function renderSignalAnalysisPreview(data) {
 async function renderAlarmReports() {
     if (!state.userDocRef) return;
     const tableBody = document.getElementById('alarmReportsTable');
-    if(!tableBody) return;
+    if (!tableBody) return;
 
     if (!state.trackedReports || state.trackedReports.length === 0) {
         tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Takip edilen rapor bulunmuyor. Rapor ID'sini girerek ekleyebilirsiniz.</td></tr>`;
         return;
     }
-    
+
     try {
         const reportsSnapshot = await state.userDocRef.collection('alarm_reports')
-                                        .where('reportId', 'in', state.trackedReports)
-                                        .orderBy('timestamp', 'desc')
-                                        .get();
-        
+            .where('reportId', 'in', state.trackedReports)
+            .orderBy('timestamp', 'desc')
+            .get();
+
         if (reportsSnapshot.empty) {
             tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Takip edilen rapor bulunmuyor.</td></tr>`;
             return;
         }
-    
+
         const reports = reportsSnapshot.docs.map(doc => doc.data());
         const coinPairs = [...new Set(reports.map(r => r.coin))];
         const pricesData = await Promise.all(coinPairs.map(pair => axios.get(`https://api.binance.com/api/v3/ticker/price?symbol=${pair}`).then(res => res.data).catch(() => ({ symbol: pair, price: null }))));
         const priceMap = new Map(pricesData.map(p => [p.symbol, parseFloat(p.price)]));
-    
+
         tableBody.innerHTML = '';
         reports.forEach(report => {
             const currentPrice = priceMap.get(report.coin);
@@ -522,7 +569,7 @@ async function renderAlarmReports() {
                 performancePct = (report.signalDirection === 'SATIŞ' ? -change : change);
                 perfClass = performancePct > 0 ? 'positive' : 'negative';
             }
-            
+
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${report.coin.replace('USDT', '')}</td>
@@ -536,7 +583,7 @@ async function renderAlarmReports() {
             `;
             tableBody.appendChild(row);
         });
-    } catch(error) {
+    } catch (error) {
         console.error("Error fetching alarm reports:", error);
         tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color: var(--accent-red);">Raporlar yüklenirken bir hata oluştu.</td></tr>`;
     }
@@ -544,9 +591,9 @@ async function renderAlarmReports() {
 
 function renderIndicatorCards(type, data) {
     const container = document.getElementById('crypto-indicator-cards-container');
-    if(!container) return;
+    if (!container) return;
     container.innerHTML = '';
-    if(!data || data.length === 0) {
+    if (!data || data.length === 0) {
         container.innerHTML = `<p style="text-align:center; color: var(--text-secondary);">Analiz edilecek coin bulunmuyor.</p>`;
         return;
     }
@@ -559,7 +606,7 @@ function renderIndicatorCards(type, data) {
             container.appendChild(card);
             return;
         }
-        
+
         card.innerHTML = `
             <div class="indicator-card-header">
                 <h4>${asset.pair.replace("USDT", "")}</h4>
@@ -577,9 +624,9 @@ function renderIndicatorCards(type, data) {
     });
 }
 
-function renderIndicatorFilters() { }
-function renderDictionary() { }
-// ui.js dosyasının en sonuna bu yeni fonksiyonu ekleyin
+function renderIndicatorFilters() {}
+
+function renderDictionary() {}
 
 function renderDnaProfiles(profiles) {
     const container = document.getElementById('dnaProfilesContainer');
@@ -591,56 +638,13 @@ function renderDnaProfiles(profiles) {
     }
 
     let html = '<div class="table-wrapper"><table><thead><tr>' +
-               '<th>Profil Adı</th><th>Parametreler</th><th>Olay Sayısı</th><th>Sil</th>' +
-               '</tr></thead><tbody>';
-
-    profiles.forEach(profile => {
-        // Profil ID'sinden coin, zaman dilimi gibi bilgileri ayıklayarak daha okunaklı bir isim oluştur
-        const nameParts = profile.id.split('_');
-        const profileName = `${nameParts[0]} / ${nameParts[1]} / ${nameParts[2] === 'up' ? 'Artış' : 'Azalış'} %${nameParts[3].replace('pct','')}`;
-        
-        html += `<tr>
-                    <td><strong>${profileName}</strong></td>
-                    <td><small>${profile.featureOrder.join(', ')}</small></td>
-                    <td>${profile.eventCount}</td>
-                    <td>
-                        <button class="action-btn delete-dna-btn" data-profile-id="${profile.id}" title="Profili Sil">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                 </tr>`;
-    });
-
-    html += '</tbody></table></div>';
-    container.innerHTML = html;
-}
-// ui.js dosyasının en sonuna bu yeni fonksiyonu ekleyin
-
-function renderDnaProfiles(profiles) {
-    const container = document.getElementById('dnaProfilesContainer');
-    if (!container) return;
-
-    if (!profiles || profiles.length === 0) {
-        container.innerHTML = `<p style="text-align: center; color: var(--text-secondary);">Henüz kaydedilmiş bir DNA profili bulunmuyor.</p>`;
-        return;
-    }
-
-    let html = `<div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Profil Adı</th>
-                                <th>Parametreler</th>
-                                <th>Olay Sayısı</th>
-                                <th>Sil</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
+        '<th>Profil Adı</th><th>Parametreler</th><th>Olay Sayısı</th><th>Sil</th>' +
+        '</tr></thead><tbody>';
 
     profiles.forEach(profile => {
         const nameParts = profile.id.split('_');
         const profileName = `${nameParts[0]} / ${nameParts[1]} / ${nameParts[2] === 'up' ? 'Artış' : 'Azalış'} %${nameParts[3].replace('pct','')}`;
-        
+
         html += `<tr>
                     <td><strong>${profileName}</strong></td>
                     <td><small>${profile.featureOrder.join(', ')}</small></td>
