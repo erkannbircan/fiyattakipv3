@@ -232,7 +232,7 @@ function saveSettings() {
             console.error("HATA: 'state.userDocRef' bulunamadı. Kullanıcı oturumu geçerli değil.");
             showNotification("Kullanıcı oturumu bulunamadı. Ayarlar kaydedilemedi.", false);
             hideLoading(btn);
-        }
+        });
 
     } catch (e) {
         console.error("KRİTİK HATA: 'saveSettings' fonksiyonu içinde beklenmedik bir hata oluştu!", e);
