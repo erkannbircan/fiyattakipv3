@@ -1,15 +1,8 @@
 function setupGlobalEventListeners() {
-    document.body.addEventListener('click', async (e) => {
+    // Bu fonksiyon artık çok basit: sadece closeAllPanels'i çağırır.
+    // async/await mantığı artık closeAllPanels'in kendi içinde.
+    document.body.addEventListener('click', (e) => {
         if (e.target.closest('.close-btn') || e.target === document.getElementById('modalOverlay')) {
-            
-            const chartPanel = document.getElementById('chartPanel');
-            if (chartPanel && chartPanel.classList.contains('show')) {
-                console.log("Grafik paneli kapatılıyor, ÖNCE kaydetme işlemi tetikleniyor...");
-                // await, artık saveChartState'in döndürdüğü Promise'in çözülmesini bekleyecek.
-                await saveChartState();
-                console.log("Kaydetme işlemi bitti, ŞİMDİ panel kapatılabilir.");
-            }
-            
             closeAllPanels();
         }
     });
@@ -366,6 +359,5 @@ function setupSaveSettingsButtonListener() {
         console.warn("setupSaveSettingsButtonListener: 'saveSettingsBtn' ID'li buton bulunamadı.");
     }
 }
-
 
 
