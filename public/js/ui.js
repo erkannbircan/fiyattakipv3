@@ -10,12 +10,14 @@ function showPage(pageId) {
 }
 function showPanel(panelId) { document.getElementById(panelId)?.classList.add('show'); document.getElementById('modalOverlay').classList.add('show'); document.body.classList.add('modal-open'); }
 function closeAllPanels() {
-    if (document.getElementById('chartPanel').classList.contains('show')) {
-        saveChartState();
-    }
+    // Artık kaydetme mantığı burada değil, bu fonksiyon sadece kapatmaya odaklanıyor.
     document.querySelectorAll('.panel.show').forEach(p => p.classList.remove('show'));
     document.getElementById('modalOverlay').classList.remove('show');
+    
+    // --- MANTIK HATASI DÜZELTİLDİ ---
+    // Panel kapandığında, sayfanın tekrar kaydırılabilmesi için 'modal-open' sınıfını KALDIRIRIZ.
     document.body.classList.remove('modal-open');
+    // --- BİTTİ ---
 }
 function showNotification(message, isSuccess = true) {
     const notification = document.getElementById("notification");
