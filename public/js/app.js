@@ -344,44 +344,37 @@ async function handleDeletePortfolio() {
     }
 }
 
-// Bu fonksiyon artık bir Promise döndürecek.
-function saveChartState() {
-    console.log("1. ADIM: Kaydetme işlemi başlatıldı.");
+// Fonksiyonu 'async' olarak işaretliyoruz, bu sayede modern ve temiz bir Promise yapısı kuruyoruz.
+async function saveChartState() {
+    console.log("Kaydetme fonksiyonu (saveChartState) çağrıldı.");
 
-    // Yeni bir Promise oluşturup onu döndürüyoruz.
-    return new Promise((resolve, reject) => {
-        if (state.tradingViewWidget && typeof state.tradingViewWidget.getStudiesList === 'function') {
-            const currentPair = document.getElementById('chartPanelTitle').textContent + 'USDT';
-            const studiesList = state.tradingViewWidget.getStudiesList();
-            
-            console.log(`2. ADIM: ${currentPair} için bulunan indikatörler:`, studiesList);
-            
-            const updatePath = `settings.chartIndicators.${currentPair}`;
-            
-            if (state.userDocRef) {
-                console.log("3. ADIM: Firebase'e kayıt işlemi gönderiliyor...");
-                state.userDocRef.update({ [updatePath]: studiesList })
-                    .then(() => {
-                        console.log("4. ADIM (BAŞARILI): Firebase'e kayıt tamamlandı!");
-                        if (!state.settings.chartIndicators) {
-                            state.settings.chartIndicators = {};
-                        }
-                        state.settings.chartIndicators[currentPair] = studiesList;
-                        resolve(); // İşlem başarılı, sözü tut.
-                    })
-                    .catch(error => {
-                        console.error("4. ADIM (HATA): Firebase'e kayıt başarısız!", error);
-                        reject(error); // İşlem başarısız, sözü reddet.
-                    });
-            } else {
-                 console.warn("Kaydetme işlemi yapılamadı çünkü kullanıcı referansı (userDocRef) bulunamadı.");
-                 resolve(); // Yine de devam etmesi için sözü tut.
-            }
-        } else {
-            console.warn("Kaydetme işlemi yapılamadı çünkü TradingView widget'ı hazır değil.");
-            resolve(); // Panelin kapanmasını engellememek için sözü tut.
+    if (!state.tradingViewWidget || typeof state.tradingViewWidget.getStudiesList !== 'function') {
+        console.warn("Kaydetme mümkün değil: TradingView widget'ı bulunamadı veya hazır değil.");
+        return; // Fonksiyondan erken çık.
+    }
+
+    const currentPair = document.getElementById('chartPanelTitle').textContent + 'USDT';
+    const studiesList = state.tradingViewWidget.getStudiesList();
+    const updatePath = `settings.chartIndicators.${currentPair}`;
+    
+    if (!state.userDocRef) {
+        console.error("Kaydetme başarısız: Kullanıcı oturumu (userDocRef) bulunamadı.");
+        return;
+    }
+
+    try {
+        console.log(`Firebase'e kaydediliyor: ${currentPair}`, studiesList);
+        // await ile Firebase'e yazma işleminin BİTMESİNİ BEKLİYORUZ.
+        await state.userDocRef.update({ [updatePath]: studiesList });
+        
+        console.log("Firebase kaydı BAŞARILI.");
+        if (!state.settings.chartIndicators) {
+            state.settings.chartIndicators = {};
         }
-    });
+        state.settings.chartIndicators[currentPair] = studiesList;
+    } catch (error) {
+        console.error("Firebase kaydı sırasında HATA oluştu!", error);
+    }
 }
 
 async function saveAlarm() {
