@@ -10,15 +10,13 @@ function showPage(pageId) {
 }
 function showPanel(panelId) { document.getElementById(panelId)?.classList.add('show'); document.getElementById('modalOverlay').classList.add('show'); document.body.classList.add('modal-open'); }
 // Fonksiyonu 'async' yapıyoruz çünkü içinde 'await' kullanacağız.
-async function closeAllPanels() {
-    const chartPanel = document.getElementById('chartPanel');
-    // ÖNCE KONTROL ET: Grafik paneli açık mı?
-    if (chartPanel && chartPanel.classList.contains('show')) {
-        console.log("Grafik paneli açık. Kaydetme işlemi bekleniyor...");
-        // saveChartState'in bitmesini BEKLE.
-        await saveChartState();
-        console.log("Kaydetme işlemi bitti. Şimdi paneller kapatılıyor.");
-    }
+function closeAllPanels() {
+    // Bu fonksiyon artık sadece ve sadece panelleri kapatır.
+    // İçinde kaydetme ile ilgili hiçbir mantık yoktur.
+    document.querySelectorAll('.panel.show').forEach(p => p.classList.remove('show'));
+    document.getElementById('modalOverlay').classList.remove('show');
+    document.body.classList.remove('modal-open');
+}
 
     // SONRA KAPAT: Tüm panelleri gizle.
     document.querySelectorAll('.panel.show').forEach(p => p.classList.remove('show'));
