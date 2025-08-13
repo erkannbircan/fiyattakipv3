@@ -344,37 +344,36 @@ async function handleDeletePortfolio() {
     }
 }
 
-function saveChartState() {
-    // --- HATA AYIKLAMA İÇİN EKLENDİ ---
-    console.log("1. ADIM: saveChartState fonksiyonu başarıyla ÇAĞRILDI.");
-    // --- BİTTİ ---
+// Fonksiyonu 'async' olarak işaretliyoruz ki 'await' kullanabilelim.
+async function saveChartState() {
+    console.log("1. ADIM: Kaydetme işlemi başlatıldı.");
 
+    // Widget'ın var olup olmadığını ve fonksiyonun kullanılabilir olup olmadığını kontrol et
     if (state.tradingViewWidget && typeof state.tradingViewWidget.getStudiesList === 'function') {
         const currentPair = document.getElementById('chartPanelTitle').textContent + 'USDT';
         const studiesList = state.tradingViewWidget.getStudiesList();
         
-        // --- HATA AYIKLAMA İÇİN EKLENDİ ---
         console.log(`2. ADIM: ${currentPair} için bulunan indikatörler:`, studiesList);
-        // --- BİTTİ ---
-
+        
         const updatePath = `settings.chartIndicators.${currentPair}`;
         
         if (state.userDocRef) {
             console.log("3. ADIM: Firebase'e kayıt işlemi gönderiliyor...");
-            state.userDocRef.update({ [updatePath]: studiesList })
-                .then(() => {
-                    console.log("4. ADIM (BAŞARILI): Firebase'e kayıt tamamlandı!");
-                    if (!state.settings.chartIndicators) {
-                        state.settings.chartIndicators = {};
-                    }
-                    state.settings.chartIndicators[currentPair] = studiesList;
-                })
-                .catch(error => {
-                    console.error("4. ADIM (HATA): Firebase'e kayıt başarısız!", error);
-                });
+            try {
+                // await ile Firebase'e yazma işleminin BİTMESİNİ BEKLİYORUZ.
+                await state.userDocRef.update({ [updatePath]: studiesList });
+                
+                console.log("4. ADIM (BAŞARILI): Firebase'e kayıt tamamlandı!");
+                if (!state.settings.chartIndicators) {
+                    state.settings.chartIndicators = {};
+                }
+                state.settings.chartIndicators[currentPair] = studiesList;
+            } catch (error) {
+                console.error("4. ADIM (HATA): Firebase'e kayıt başarısız!", error);
+            }
         }
     } else {
-        console.warn("saveChartState çağrıldı ancak TradingView widget'ı hazır değil.");
+        console.warn("Kaydetme işlemi yapılamadı çünkü TradingView widget'ı hazır değil.");
     }
 }
 
