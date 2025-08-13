@@ -386,20 +386,35 @@ async function handleDeletePortfolio() {
 function saveChartState() {
     if (state.tradingViewWidget && typeof state.tradingViewWidget.save === 'function') {
         const currentPair = document.getElementById('chartPanelTitle').textContent + 'USDT';
+        
         state.tradingViewWidget.save(async (chartState) => {
+            console.log("--- KAYDETME ADIMI ---");
+            console.log("1. TradingView'den alınan ORİJİNAL obje:", chartState);
+            
             const chartStateString = JSON.stringify(chartState);
+            console.log("2. Metne çevrilmiş (Stringified) hali:", chartStateString);
+
             if (state.settings.chartStates[currentPair] !== chartStateString) {
                 state.settings.chartStates[currentPair] = chartStateString;
+                
                 if (state.userDocRef) {
+                    // --- DEĞİŞİKLİK BURADA: Nokta Notasyonu Kullanımı ---
+                    const updatePath = `settings.chartStates.${currentPair}`;
+                    console.log(`3. Firebase'e gönderilecek yol (path): "${updatePath}"`);
+
                     try {
-                        // Sadece chartStates'i güncelle, tüm settings'i değil.
-                        await state.userDocRef.update({ 'settings.chartStates': state.settings.chartStates });
+                        // Direkt olarak ilgili alanı güncelliyoruz.
+                        await state.userDocRef.update({ [updatePath]: chartStateString });
+                        console.log("4. Firebase güncellemesi BAŞARILI.");
                         showNotification("Grafik ayarları kaydedildi!", true);
                     } catch (error) {
-                        console.error("Grafik durumu kaydedilirken hata:", error);
+                        console.error("4. Firebase güncellemesi BAŞARISIZ!", error);
                         showNotification("Grafik ayarları kaydedilemedi.", false);
                     }
+                    // --- DEĞİŞİKLİK BİTTİ ---
                 }
+            } else {
+                console.log("Değişiklik olmadığı için kayıt yapılmadı.");
             }
         });
     }
