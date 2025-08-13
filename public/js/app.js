@@ -160,11 +160,16 @@ function saveSettings() {
         state.userDocRef.update({ settings: state.settings }).then(() => {
             applySettingsToUI();
             closeAllPanels();
-            showNotification(translations[state.settings.lang].settings_saved, true);
-            fetchAllDataAndRender();
-        }).catch(error => {
-            showNotification("Ayarları kaydederken hata oluştu.", false);
-        }).finally(() => hideLoading(btn));
+            showNotification("Ayarlar başarıyla kaydedildi.", true); // Başarı bildirimi göster
+    closeAllPanels(); // Tüm panelleri (ayarlar dahil) kapat
+    // --- BİTİŞ ---
+  } catch (error) {
+    console.error("Ayarları kaydederken hata oluştu:", error);
+    // --- YENİ EKLENEN KOD ---
+    showNotification("Hata: Ayarlar kaydedilemedi.", false); // Hata bildirimi göster
+    // --- BİTİŞ ---
+  } finally {
+    hideLoading(btn);
     }
 }
 
