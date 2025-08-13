@@ -74,14 +74,24 @@ const formatVolume = (volume) => {
 };
 
 function applySettingsToUI() {
+    // --- YENİ EKLENEN GÜVENLİK KONTROLÜ ---
+    // Fonksiyonun başında, state.settings objesinin var olup olmadığını kontrol et.
+    // Eğer yoksa veya boşsa, bir hata mesajı yazdır ve fonksiyondan çık.
+    if (!state.settings) {
+        console.error("applySettingsToUI çağrıldı ancak state.settings tanımsız. Ayarlar yüklenemedi.");
+        return;
+    }
+    // --- GÜVENLİK KONTROLÜ BİTTİ ---
+
     document.getElementById('langSelect').value = state.settings.lang;
     document.getElementById('autoRefreshToggle').checked = state.settings.autoRefresh;
     document.getElementById('refreshInterval').value = state.settings.refreshInterval;
+    // ... (fonksiyonun geri kalanı aynı)
     document.getElementById('refreshInterval').min = { admin: 10, qualified: 120, new_user: 300 }[state.currentUserRole] || 300;
     document.getElementById('telegramPhoneInput').value = state.settings.telegramPhone || '';
 
     for (let i = 1; i <= 3; i++) {
-        if (state.settings.columns[i]) {
+        if(state.settings.columns && state.settings.columns[i]) {
             document.getElementById(`col${i}_name_input`).value = state.settings.columns[i].name;
             document.getElementById(`col${i}_days_input`).value = state.settings.columns[i].days;
             document.getElementById(`col${i}_threshold_input`).value = state.settings.columns[i].threshold;
@@ -97,13 +107,22 @@ function applySettingsToUI() {
     document.querySelector(`#cryptoPivotFilters button[data-filter="${state.settings.cryptoPivotFilter}"]`)?.classList.add('active');
     document.querySelector(`#cryptoIntervalFilters button[data-interval="${state.settings.cryptoAnalysisInterval}"]`)?.classList.add('active');
 
-    Object.keys(AVAILABLE_INDICATORS).forEach(key => {
-        const checkbox = document.querySelector(`#crypto-indicator-filters-grid input[data-indicator="${key}"]`);
-        if (checkbox) checkbox.checked = !!state.settings.cryptoAnalysisIndicators[key];
-    });
+    if (typeof AVAILABLE_INDICATORS !== 'undefined') {
+        Object.keys(AVAILABLE_INDICATORS).forEach(key => {
+            const checkbox = document.querySelector(`#crypto-indicator-filters-grid input[data-indicator="${key}"]`);
+            if (checkbox) checkbox.checked = !!state.settings.cryptoAnalysisIndicators[key];
+        });
+    }
+    
     translatePage(state.settings.lang);
-    toggleAutoRefresh();
-    toggleReportsAutoRefresh(false);
+    
+    // Bu fonksiyonların varlığını kontrol etmek iyi bir pratiktir
+    if (typeof toggleAutoRefresh === 'function') {
+        toggleAutoRefresh();
+    }
+    if (typeof toggleReportsAutoRefresh === 'function') {
+        toggleReportsAutoRefresh(false);
+    }
 }
 
 function updateAdminUI() {
