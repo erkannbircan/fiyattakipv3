@@ -1,20 +1,17 @@
 function setupGlobalEventListeners() {
-    document.body.addEventListener('click', (e) => {
-        // Kapatma butonuna veya arka plana mı tıklandı?
+    // Fonksiyonu 'async' olarak işaretliyoruz ki içinde 'await' kullanabilelim
+    document.body.addEventListener('click', async (e) => {
         if (e.target.closest('.close-btn') || e.target === document.getElementById('modalOverlay')) {
             
-            // --- YENİ EKLENEN KONTROL BLOĞU ---
-            // Paneli kapatmadan ÖNCE kontrol et:
-            // Eğer açık olan panel "chartPanel" ise...
             const chartPanel = document.getElementById('chartPanel');
             if (chartPanel && chartPanel.classList.contains('show')) {
-                // ...o zaman kaydetme fonksiyonunu ÇAĞIR!
-                console.log("Grafik paneli kapatılıyor, kaydetme işlemi tetikleniyor...");
-                saveChartState();
+                console.log("Grafik paneli kapatılıyor, ÖNCE kaydetme işlemi tetikleniyor...");
+                // await ile saveChartState'in tamamen bitmesini BEKLİYORUZ.
+                await saveChartState();
+                console.log("Kaydetme işlemi bitti, ŞİMDİ panel kapatılabilir.");
             }
-            // --- KONTROL BLOĞU BİTTİ ---
-
-            // Şimdi her zamanki gibi tüm panelleri kapat.
+            
+            // Paneli kapatma işlemi, kaydetme bittikten SONRA çalışır.
             closeAllPanels();
         }
     });
