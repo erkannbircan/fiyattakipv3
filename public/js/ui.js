@@ -9,15 +9,21 @@ function showPage(pageId) {
     }
 }
 function showPanel(panelId) { document.getElementById(panelId)?.classList.add('show'); document.getElementById('modalOverlay').classList.add('show'); document.body.classList.add('modal-open'); }
-function closeAllPanels() {
-    // Artık kaydetme mantığı burada değil, bu fonksiyon sadece kapatmaya odaklanıyor.
+// Fonksiyonu 'async' yapıyoruz çünkü içinde 'await' kullanacağız.
+async function closeAllPanels() {
+    const chartPanel = document.getElementById('chartPanel');
+    // ÖNCE KONTROL ET: Grafik paneli açık mı?
+    if (chartPanel && chartPanel.classList.contains('show')) {
+        console.log("Grafik paneli açık. Kaydetme işlemi bekleniyor...");
+        // saveChartState'in bitmesini BEKLE.
+        await saveChartState();
+        console.log("Kaydetme işlemi bitti. Şimdi paneller kapatılıyor.");
+    }
+
+    // SONRA KAPAT: Tüm panelleri gizle.
     document.querySelectorAll('.panel.show').forEach(p => p.classList.remove('show'));
     document.getElementById('modalOverlay').classList.remove('show');
-    
-    // --- MANTIK HATASI DÜZELTİLDİ ---
-    // Panel kapandığında, sayfanın tekrar kaydırılabilmesi için 'modal-open' sınıfını KALDIRIRIZ.
     document.body.classList.remove('modal-open');
-    // --- BİTTİ ---
 }
 function showNotification(message, isSuccess = true) {
     const notification = document.getElementById("notification");
@@ -241,7 +247,9 @@ function showChart(pair) {
     document.getElementById('chartPanelTitle').textContent = pair.replace("USDT", "");
     const container = document.getElementById('chartContainer');
     container.innerHTML = '<div class="loading" style="margin: auto;"></div>';
-    showPanel('chartPanel');
+    
+    // showPanel'i widget oluşturulmadan önce çağır.
+    showPanel('chartPanel'); 
 
     const savedStudies = state.settings.chartIndicators?.[pair] || [];
 
@@ -261,12 +269,7 @@ function showChart(pair) {
             allow_symbol_change: true,
             details: true,
             studies: savedStudies,
-            
-            // --- KESİN ÇÖZÜM İÇİN EKLENEN ÖZELLİK ---
-            // Widget'ın tarayıcının yerel hafızasından ayar okumasını engeller.
-            // Bu, istenmeyen "Hacim" gibi varsayılan indikatörlerin yüklenmesini önler.
             disabled_features: ["use_localstorage_for_settings"],
-            // --- BİTTİ ---
         });
     } catch (error) {
         console.error("TradingView widget hatası:", error);
