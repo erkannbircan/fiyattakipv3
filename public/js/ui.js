@@ -241,7 +241,19 @@ function showChart(pair) {
     container.innerHTML = '<div class="loading" style="margin: auto;"></div>';
     showPanel('chartPanel');
 
-    const savedState = state.settings.chartStates?.[pair];
+    // --- DEĞİŞİKLİK BURADA ---
+    let savedStateObject = undefined;
+    const savedStateString = state.settings.chartStates?.[pair]; // Veritabanından metin olarak oku
+
+    // Eğer kayıtlı bir metin varsa, onu objeye çevir (zarftan çıkar)
+    if (savedStateString && typeof savedStateString === 'string') {
+        try {
+            savedStateObject = JSON.parse(savedStateString);
+        } catch (e) {
+            console.error("Kaydedilmiş grafik durumu (JSON) ayrıştırılamadı:", e);
+        }
+    }
+    // --- DEĞİŞİKLİK BİTTİ ---
 
     try {
         state.tradingViewWidget = new TradingView.widget({
@@ -258,8 +270,9 @@ function showChart(pair) {
             hide_side_toolbar: false,
             allow_symbol_change: true,
             details: true,
-            studies: [], 
-            saved_data: savedState || undefined,
+            studies: [],
+            // Obje halini widget'a veriyoruz
+            saved_data: savedStateObject,
         });
     } catch (error) {
         console.error("TradingView widget error:", error);
