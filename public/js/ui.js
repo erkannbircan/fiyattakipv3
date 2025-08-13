@@ -241,22 +241,11 @@ function showChart(pair) {
     container.innerHTML = '<div class="loading" style="margin: auto;"></div>';
     showPanel('chartPanel');
 
-    // Veriyi YENİ ve temiz yoldan okuyoruz.
-    const savedStateString = state.settings.chartStates_v2?.[pair]; 
-    let savedStateObject = undefined;
-
-    // Eğer bu yeni yolda bir veri varsa, onu objeye çeviriyoruz.
-    if (savedStateString && typeof savedStateString === 'string') {
-        try {
-            savedStateObject = JSON.parse(savedStateString);
-        } catch (e) {
-            console.error("Kaydedilmiş grafik durumu (JSON) ayrıştırılamadı:", e);
-        }
-    }
+    const savedStudies = state.settings.chartIndicators?.[pair] || [];
+    console.log(`Grafik açılıyor. ${pair} için bulunan kayıtlı indikatörler:`, savedStudies);
 
     try {
         state.tradingViewWidget = new TradingView.widget({
-            // Bu ayarlar projenizin orijinal yapısıyla uyumludur.
             symbol: `BINANCE:${pair}`,
             interval: "D",
             autosize: true,
@@ -270,9 +259,13 @@ function showChart(pair) {
             hide_side_toolbar: false,
             allow_symbol_change: true,
             details: true,
-            studies: [],
-            // Temiz veriyi widget'a veriyoruz.
-            saved_data: savedStateObject,
+            studies: savedStudies,
+            
+            // --- YENİ EKLENEN ÖZELLİK ---
+            // Widget'ın tarayıcının yerel hafızasından ayar okumasını engeller.
+            // Bu, istenmeyen varsayılan indikatörlerin yüklenmesini önler.
+            disabled_features: ["use_localstorage_for_settings"],
+            // --- BİTTİ ---
         });
     } catch (error) {
         console.error("TradingView widget hatası:", error);
