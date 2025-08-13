@@ -100,7 +100,8 @@ async function fetchAllDataAndRender() {
     if (refreshBtn) showLoading(refreshBtn);
     
     const currentCoinList = state.userPortfolios[state.activePortfolio] || [];
-    state.allCryptoData = await Promise.all(currentCoinList.map(pair => fetchCryptoData(pair, false)));
+    const promises = currentCoinList.map(pair => fetchCryptoData(pair, false));
+    state.allCryptoData = await Promise.all(promises);
     
     sortAndRenderTable();
     renderSupportResistance();
@@ -114,7 +115,8 @@ async function fetchAiDataAndRender() {
     if(!container) return;
     container.innerHTML = '<div class="loading" style="margin: 20px auto; display:block;"></div>';
     
-    const aiData = await Promise.all((state.cryptoAiPairs || []).map(pair => fetchCryptoData(pair, true)));
+    const promises = (state.cryptoAiPairs || []).map(pair => fetchCryptoData(pair, true));
+    const aiData = await Promise.all(promises);
     
     renderIndicatorCards('crypto', aiData);
 }
@@ -128,7 +130,7 @@ function sortAndRenderTable() {
         if (a.error) return 1; if (b.error) return -1;
         if (valA === undefined || valA === null || valA === 'N/A') return 1;
         if (valB === undefined || valB === null || valB === 'N/A') return -1;
-        if (typeof valA === 'string') return order === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        if (typeof valA === 'string') return order === 'asc' ? valA.localeCompare(valA) : valB.localeCompare(valA);
         return order === 'asc' ? valA - valB : valB - valA;
     });
 
