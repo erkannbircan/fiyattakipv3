@@ -65,8 +65,37 @@ function loadSettingsAndRole(userData) {
     state.settings.columns = { ...defaultSettings.columns, ...(userData.settings?.columns || {}) };
     state.settings.colors = { ...defaultSettings.colors, ...(userData.settings?.colors || {}) };
     state.settings.cryptoAnalysisIndicators = { ...defaultSettings.cryptoAnalysisIndicators, ...(userData.settings?.cryptoAnalysisIndicators || {}) };
-    state.settings.chartStates = userData.settings?.chartStates || {};
     state.trackedReports = userData.settings?.trackedReportIds || [];
+
+    // --- YENİ EKLENEN TEMİZLİK VE KONTROL BLOĞU ---
+    const chartStatesFromDB = userData.settings?.chartStates || {};
+    let sanitizedChartStates = {};
+    let needsUpdate = false;
+
+    // Her bir kayıtlı chart state'i kontrol et
+    for (const pair in chartStatesFromDB) {
+        const state = chartStatesFromDB[pair];
+        // Eğer veri doğru formatta (string) ise, koru.
+        if (typeof state === 'string') {
+            sanitizedChartStates[pair] = state;
+        } else {
+            // Eğer veri eski formatta (object) ise, bunu temizleyeceğimizi işaretle.
+            console.warn(`Eski/bozuk grafik verisi bulundu ve temizleniyor: ${pair}`);
+            needsUpdate = true;
+        }
+    }
+
+    // Temizlenmiş veriyi state'e ata
+    state.settings.chartStates = sanitizedChartStates;
+
+    // Eğer temizleme yapıldıysa, veritabanını da güncelle
+    if (needsUpdate && state.userDocRef) {
+        console.log("Veritabanındaki eski grafik verileri temizleniyor...");
+        state.userDocRef.update({ 'settings.chartStates': sanitizedChartStates })
+            .then(() => console.log("Veritabanı başarıyla temizlendi."))
+            .catch(err => console.error("Veritabanı temizlenirken hata oluştu:", err));
+    }
+    // --- TEMİZLİK BLOĞU BİTTİ ---
 
     state.currentUserRole = userData.role;
     const limits = { admin: {coin: Infinity}, qualified: {coin: 50}, new_user: {coin: 15} };
