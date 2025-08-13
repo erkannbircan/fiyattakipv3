@@ -386,21 +386,13 @@ async function handleDeletePortfolio() {
 function saveChartState() {
     if (state.tradingViewWidget && typeof state.tradingViewWidget.save === 'function') {
         const currentPair = document.getElementById('chartPanelTitle').textContent + 'USDT';
-        
-        // TradingView'den chartState objesini alıyoruz
         state.tradingViewWidget.save(async (chartState) => {
-            
-            // --- DEĞİŞİKLİK BURADA ---
-            // objeyi veritabanına göndermeden önce JSON metnine çeviriyoruz (zarfa koyuyoruz).
             const chartStateString = JSON.stringify(chartState);
-            // --- DEĞİŞİKLİK BİTTİ ---
-
-            // Sadece bir değişiklik varsa veritabanını güncelliyoruz.
             if (state.settings.chartStates[currentPair] !== chartStateString) {
-                state.settings.chartStates[currentPair] = chartStateString; // Metin halini kaydediyoruz
-                
+                state.settings.chartStates[currentPair] = chartStateString;
                 if (state.userDocRef) {
                     try {
+                        // Sadece chartStates'i güncelle, tüm settings'i değil.
                         await state.userDocRef.update({ 'settings.chartStates': state.settings.chartStates });
                         showNotification("Grafik ayarları kaydedildi!", true);
                     } catch (error) {
