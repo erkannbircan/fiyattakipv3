@@ -244,7 +244,6 @@ function showChart(pair) {
     showPanel('chartPanel');
 
     const savedStudies = state.settings.chartIndicators?.[pair] || [];
-    console.log(`Grafik açılıyor. ${pair} için bulunan kayıtlı indikatörler:`, savedStudies);
 
     try {
         state.tradingViewWidget = new TradingView.widget({
@@ -263,9 +262,9 @@ function showChart(pair) {
             details: true,
             studies: savedStudies,
             
-            // --- YENİ EKLENEN ÖZELLİK ---
+            // --- KESİN ÇÖZÜM İÇİN EKLENEN ÖZELLİK ---
             // Widget'ın tarayıcının yerel hafızasından ayar okumasını engeller.
-            // Bu, istenmeyen varsayılan indikatörlerin yüklenmesini önler.
+            // Bu, istenmeyen "Hacim" gibi varsayılan indikatörlerin yüklenmesini önler.
             disabled_features: ["use_localstorage_for_settings"],
             // --- BİTTİ ---
         });
@@ -273,13 +272,6 @@ function showChart(pair) {
         console.error("TradingView widget hatası:", error);
         container.innerHTML = `<p style="color:var(--accent-red); text-align:center;">Grafik yüklenemedi.</p>`;
     }
-}
-
-// Artık bu fonksiyona ihtiyacımız kalmadı, çünkü adaptör kaydetmeyi otomatik yapıyor.
-// Ancak başka bir yerde kullanılıyorsa diye silmek yerine içini boşaltabiliriz.
-function saveChartState() {
-    console.log("saveChartState fonksiyonu artık kullanılmıyor. Kaydetme işlemi adaptör tarafından otomatik yapılıyor.");
-    // Bu fonksiyonun içi artık boş.
 }
 
 function renderAlarms() {
