@@ -392,5 +392,24 @@ function setupSaveSettingsButtonListener() {
         console.warn("setupSaveSettingsButtonListener: 'saveSettingsBtn' ID'li buton bulunamadı.");
     }
 }
+function setupUpdateAnalysisButtonListener() {
+    const updateBtn = document.getElementById('updateCryptoAnalysisBtn');
+    if (updateBtn) {
+        // Buton zaten bir dinleyiciye sahipse, tekrar eklemeyi önle
+        if (updateBtn.dataset.listenerAttached) {
+            return;
+        }
+        
+        updateBtn.addEventListener('click', () => {
+            // Butona tıklandığında doğrudan updateAnalysisSettings fonksiyonunu çağır.
+            updateAnalysisSettings(); 
+        });
 
+        // Dinleyicinin eklendiğini işaretle
+        updateBtn.dataset.listenerAttached = 'true';
+        console.log("Analiz Ayarlarını Güncelle butonu için olay dinleyici başarıyla eklendi.");
+    } else {
+        console.warn("setupUpdateAnalysisButtonListener: 'updateCryptoAnalysisBtn' ID'li buton bulunamadı.");
+    }
+}
 
