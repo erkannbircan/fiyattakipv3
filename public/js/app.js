@@ -142,45 +142,69 @@ function sortAndRenderTable() {
 }
 
 function saveSettings() {
+    console.log("--- Ayarları Kaydetme İşlemi Başlatıldı ---"); // 1. Adım: İşlem başlangıcını bildir
+
     const btn = document.getElementById('saveSettingsBtn');
     showLoading(btn);
 
-    // Ayarların okunmasıyla ilgili kodlar aynı kalıyor...
-    let interval = parseInt(document.getElementById('refreshInterval').value);
-    const minInterval = { admin: 10, qualified: 120, new_user: 300 }[state.currentUserRole] || 300;
-    if (interval < minInterval) interval = minInterval;
+    try {
+        // 2. Adım: Ayarları DOM'dan okuyalım
+        console.log("2. Adım: Arayüzdeki ayarlar okunuyor...");
+        let interval = parseInt(document.getElementById('refreshInterval').value);
+        const minInterval = { admin: 10, qualified: 120, new_user: 300 }[state.currentUserRole] || 300;
+        if (interval < minInterval) interval = minInterval;
 
-    state.settings.lang = document.getElementById('langSelect').value;
-    state.settings.autoRefresh = document.getElementById('autoRefreshToggle').checked;
-    state.settings.refreshInterval = interval;
-    state.settings.telegramPhone = document.getElementById('telegramPhoneInput').value;
-    state.settings.columns = {
-        1: { name: document.getElementById('col1_name_input').value, days: parseInt(document.getElementById('col1_days_input').value), threshold: parseFloat(document.getElementById('col1_threshold_input').value) },
-        2: { name: document.getElementById('col2_name_input').value, days: parseInt(document.getElementById('col2_days_input').value), threshold: parseFloat(document.getElementById('col2_threshold_input').value) },
-        3: { name: document.getElementById('col3_name_input').value, days: parseInt(document.getElementById('col3_days_input').value), threshold: parseFloat(document.getElementById('col3_threshold_input').value) }
-    };
-    state.settings.colors = { high: document.getElementById('high_color_input').value, low: document.getElementById('low_color_input').value };
-    
-    if (state.userDocRef) {
-        state.userDocRef.update({ settings: state.settings })
-            .then(() => {
-                // BAŞARILI OLURSA:
-                applySettingsToUI();
-                closeAllPanels();
-                showNotification("Ayarlar başarıyla kaydedildi.", true);
-            })
-            .catch((error) => {
-                // HATA OLURSA:
-                console.error("Ayarları kaydederken hata oluştu:", error);
-                showNotification("Hata: Ayarlar kaydedilemedi.", false);
-            })
-            .finally(() => {
-                // HER DURUMDA ÇALIŞIR:
-                hideLoading(btn);
-            });
-    } else {
-        // userDocRef yoksa (teorik bir durum, ama iyi bir pratiktir)
-        showNotification("Kullanıcı oturumu bulunamadı. Ayarlar kaydedilemedi.", false);
+        const newSettings = {
+            lang: document.getElementById('langSelect').value,
+            autoRefresh: document.getElementById('autoRefreshToggle').checked,
+            refreshInterval: interval,
+            telegramPhone: document.getElementById('telegramPhoneInput').value,
+            columns: {
+                1: { name: document.getElementById('col1_name_input').value, days: parseInt(document.getElementById('col1_days_input').value), threshold: parseFloat(document.getElementById('col1_threshold_input').value) },
+                2: { name: document.getElementById('col2_name_input').value, days: parseInt(document.getElementById('col2_days_input').value), threshold: parseFloat(document.getElementById('col2_threshold_input').value) },
+                3: { name: document.getElementById('col3_name_input').value, days: parseInt(document.getElementById('col3_days_input').value), threshold: parseFloat(document.getElementById('col3_threshold_input').value) }
+            },
+            colors: {
+                high: document.getElementById('high_color_input').value,
+                low: document.getElementById('low_color_input').value
+            },
+            // Diğer ayarları state'den koruyarak üzerine yaz
+            chartStates: state.settings.chartStates,
+            cryptoAnalysisIndicators: state.settings.cryptoAnalysisIndicators
+        };
+        
+        // 3. Adım: Kaydedilecek veriyi konsola yazdıralım
+        console.log("3. Adım: Firebase'e gönderilecek 'settings' objesi:", newSettings);
+
+        if (state.userDocRef) {
+            console.log("4. Adım: Firebase 'update' komutu gönderiliyor...");
+            // state.settings'i tamamen yeni obje ile güncelle
+            state.settings = newSettings; 
+            
+            state.userDocRef.update({ settings: newSettings })
+                .then(() => {
+                    console.log("5. Adım (BAŞARILI): Firebase güncellemesi tamamlandı!"); // 5. Adım (Başarılı)
+                    applySettingsToUI();
+                    closeAllPanels();
+                    showNotification("Ayarlar başarıyla kaydedildi.", true);
+                })
+                .catch((error) => {
+                    console.error("5. Adım (HATA): Firebase güncellemesi başarısız!", error); // 5. Adım (Hatalı)
+                    showNotification("Hata: Ayarlar kaydedilemedi. Konsolu kontrol edin.", false);
+                })
+                .finally(() => {
+                    console.log("6. Adım: İşlem tamamlandı, buton normale dönüyor.");
+                    hideLoading(btn);
+                });
+        } else {
+            console.error("HATA: 'state.userDocRef' bulunamadı. Kullanıcı oturumu geçerli değil.");
+            showNotification("Kullanıcı oturumu bulunamadı. Ayarlar kaydedilemedi.", false);
+            hideLoading(btn);
+        }
+
+    } catch (e) {
+        console.error("KRİTİK HATA: 'saveSettings' fonksiyonu içinde beklenmedik bir hata oluştu!", e);
+        showNotification("Beklenmedik bir hata oluştu. Lütfen konsolu kontrol edin.", false);
         hideLoading(btn);
     }
 }
