@@ -96,6 +96,7 @@ async function initializeTrackerPage(userData) {
     renderAlarmReports();
 
     setupTrackerPageEventListeners();
+      setupUpdateAnalysisButtonListener();
 }
 
 async function fetchAllDataAndRender() {
