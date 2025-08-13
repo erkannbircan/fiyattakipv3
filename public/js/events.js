@@ -113,7 +113,6 @@ function setupTabEventListeners(parentElement) {
 function setupPanelEventListeners(parentElement) {
     parentElement.addEventListener('click', (e) => {
         if (e.target.closest('#settingsBtn')) showPanel('settingsPanel');
-        if (e.target.closest('#saveSettingsBtn')) saveSettings();
         if (e.target.closest('#saveChartBtn')) saveChartState();
         if (e.target.closest('#saveAlarmBtn')) saveAlarm();
         if (e.target.closest('#savePortfolioBtn')) handlePortfolioSave();
@@ -336,3 +335,28 @@ async function sendTestTelegramMessage() {
         hideLoading(btn);
     }
 }
+function setupSaveSettingsButtonListener() {
+    const saveBtn = document.getElementById('saveSettingsBtn');
+    if (saveBtn) {
+        // Buton zaten bir dinleyiciye sahipse, tekrar eklemeyi önle
+        if (saveBtn.dataset.listenerAttached) {
+            return;
+        }
+        
+        saveBtn.addEventListener('click', () => {
+            // Önceki hata ayıklama kodunu temizleyip,
+            // doğrudan saveSettings fonksiyonunu çağırıyoruz.
+            saveSettings(); 
+        });
+
+        // Dinleyicinin eklendiğini işaretle
+        saveBtn.dataset.listenerAttached = 'true';
+        console.log("Ayarları Kaydet butonu için olay dinleyici başarıyla eklendi.");
+    } else {
+        // Eğer buton bulunamazsa diye bir uyarı ekleyelim.
+        console.warn("setupSaveSettingsButtonListener: 'saveSettingsBtn' ID'li buton bulunamadı.");
+    }
+}
+
+
+
