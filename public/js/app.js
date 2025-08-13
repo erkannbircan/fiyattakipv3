@@ -344,17 +344,17 @@ async function handleDeletePortfolio() {
     }
 }
 
-// Fonksiyonu 'async' olarak işaretliyoruz, bu sayede modern ve temiz bir Promise yapısı kuruyoruz.
-async function saveChartState() {
+// Fonksiyon artık parametre olarak bir 'widget' alıyor.
+async function saveChartState(widget) {
     console.log("Kaydetme fonksiyonu (saveChartState) çağrıldı.");
 
-    if (!state.tradingViewWidget || typeof state.tradingViewWidget.getStudiesList !== 'function') {
-        console.warn("Kaydetme mümkün değil: TradingView widget'ı bulunamadı veya hazır değil.");
+    if (!widget || typeof widget.getStudiesList !== 'function') {
+        console.warn("Kaydetme mümkün değil: Geçerli bir TradingView widget'ı sağlanmadı.");
         return; // Fonksiyondan erken çık.
     }
 
     const currentPair = document.getElementById('chartPanelTitle').textContent + 'USDT';
-    const studiesList = state.tradingViewWidget.getStudiesList();
+    const studiesList = widget.getStudiesList();
     const updatePath = `settings.chartIndicators.${currentPair}`;
     
     if (!state.userDocRef) {
@@ -364,7 +364,6 @@ async function saveChartState() {
 
     try {
         console.log(`Firebase'e kaydediliyor: ${currentPair}`, studiesList);
-        // await ile Firebase'e yazma işleminin BİTMESİNİ BEKLİYORUZ.
         await state.userDocRef.update({ [updatePath]: studiesList });
         
         console.log("Firebase kaydı BAŞARILI.");
