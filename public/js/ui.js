@@ -258,7 +258,7 @@ function showChart(pair) {
             hide_side_toolbar: false,
             allow_symbol_change: true,
             details: true,
-            studies: ["MASimple@tv-basicstudies", "Volume@tv-basicstudies", "RSI@tv-basicstudies"],
+            studies: [], 
             saved_data: savedState || undefined,
         });
     } catch (error) {
