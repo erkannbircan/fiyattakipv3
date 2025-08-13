@@ -1,6 +1,20 @@
 function setupGlobalEventListeners() {
     document.body.addEventListener('click', (e) => {
+        // Kapatma butonuna veya arka plana mı tıklandı?
         if (e.target.closest('.close-btn') || e.target === document.getElementById('modalOverlay')) {
+            
+            // --- YENİ EKLENEN KONTROL BLOĞU ---
+            // Paneli kapatmadan ÖNCE kontrol et:
+            // Eğer açık olan panel "chartPanel" ise...
+            const chartPanel = document.getElementById('chartPanel');
+            if (chartPanel && chartPanel.classList.contains('show')) {
+                // ...o zaman kaydetme fonksiyonunu ÇAĞIR!
+                console.log("Grafik paneli kapatılıyor, kaydetme işlemi tetikleniyor...");
+                saveChartState();
+            }
+            // --- KONTROL BLOĞU BİTTİ ---
+
+            // Şimdi her zamanki gibi tüm panelleri kapat.
             closeAllPanels();
         }
     });
