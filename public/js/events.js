@@ -1,8 +1,20 @@
 function setupGlobalEventListeners() {
-    // Bu fonksiyon artık çok basit: sadece closeAllPanels'i çağırır.
-    // async/await mantığı artık closeAllPanels'in kendi içinde.
-    document.body.addEventListener('click', (e) => {
+    document.body.addEventListener('click', async (e) => {
         if (e.target.closest('.close-btn') || e.target === document.getElementById('modalOverlay')) {
+            
+            const chartPanel = document.getElementById('chartPanel');
+            // 1. Grafik paneli açık mı diye kontrol et.
+            if (chartPanel && chartPanel.classList.contains('show')) {
+                // 2. Widget referansını, panel yok edilmeden ÖNCE yakala.
+                const widgetToSave = state.tradingViewWidget;
+                
+                console.log("Grafik paneli kapatılıyor, kaydetme işlemi tetikleniyor...");
+                // 3. Yakaladığın referansı kaydetme fonksiyonuna pasla ve bitmesini BEKLE.
+                await saveChartState(widgetToSave);
+                console.log("Kaydetme işlemi bitti. Şimdi panel kapatılabilir.");
+            }
+            
+            // 4. Tüm işler bittikten sonra panelleri kapat.
             closeAllPanels();
         }
     });
