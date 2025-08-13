@@ -145,6 +145,7 @@ function saveSettings() {
     const btn = document.getElementById('saveSettingsBtn');
     showLoading(btn);
 
+    // Ayarların okunmasıyla ilgili kodlar aynı kalıyor...
     let interval = parseInt(document.getElementById('refreshInterval').value);
     const minInterval = { admin: 10, qualified: 120, new_user: 300 }[state.currentUserRole] || 300;
     if (interval < minInterval) interval = minInterval;
@@ -153,23 +154,34 @@ function saveSettings() {
     state.settings.autoRefresh = document.getElementById('autoRefreshToggle').checked;
     state.settings.refreshInterval = interval;
     state.settings.telegramPhone = document.getElementById('telegramPhoneInput').value;
-    state.settings.columns = { 1: { name: document.getElementById('col1_name_input').value, days: parseInt(document.getElementById('col1_days_input').value), threshold: parseFloat(document.getElementById('col1_threshold_input').value) }, 2: { name: document.getElementById('col2_name_input').value, days: parseInt(document.getElementById('col2_days_input').value), threshold: parseFloat(document.getElementById('col2_threshold_input').value) }, 3: { name: document.getElementById('col3_name_input').value, days: parseInt(document.getElementById('col3_days_input').value), threshold: parseFloat(document.getElementById('col3_threshold_input').value) } };
+    state.settings.columns = {
+        1: { name: document.getElementById('col1_name_input').value, days: parseInt(document.getElementById('col1_days_input').value), threshold: parseFloat(document.getElementById('col1_threshold_input').value) },
+        2: { name: document.getElementById('col2_name_input').value, days: parseInt(document.getElementById('col2_days_input').value), threshold: parseFloat(document.getElementById('col2_threshold_input').value) },
+        3: { name: document.getElementById('col3_name_input').value, days: parseInt(document.getElementById('col3_days_input').value), threshold: parseFloat(document.getElementById('col3_threshold_input').value) }
+    };
     state.settings.colors = { high: document.getElementById('high_color_input').value, low: document.getElementById('low_color_input').value };
     
     if (state.userDocRef) {
-        state.userDocRef.update({ settings: state.settings }).then(() => {
-            applySettingsToUI();
-            closeAllPanels();
-            showNotification("Ayarlar başarıyla kaydedildi.", true); // Başarı bildirimi göster
-    closeAllPanels(); // Tüm panelleri (ayarlar dahil) kapat
-    // --- BİTİŞ ---
-  } catch (error) {
-    console.error("Ayarları kaydederken hata oluştu:", error);
-    // --- YENİ EKLENEN KOD ---
-    showNotification("Hata: Ayarlar kaydedilemedi.", false); // Hata bildirimi göster
-    // --- BİTİŞ ---
-  } finally {
-    hideLoading(btn);
+        state.userDocRef.update({ settings: state.settings })
+            .then(() => {
+                // BAŞARILI OLURSA:
+                applySettingsToUI();
+                closeAllPanels();
+                showNotification("Ayarlar başarıyla kaydedildi.", true);
+            })
+            .catch((error) => {
+                // HATA OLURSA:
+                console.error("Ayarları kaydederken hata oluştu:", error);
+                showNotification("Hata: Ayarlar kaydedilemedi.", false);
+            })
+            .finally(() => {
+                // HER DURUMDA ÇALIŞIR:
+                hideLoading(btn);
+            });
+    } else {
+        // userDocRef yoksa (teorik bir durum, ama iyi bir pratiktir)
+        showNotification("Kullanıcı oturumu bulunamadı. Ayarlar kaydedilemedi.", false);
+        hideLoading(btn);
     }
 }
 
