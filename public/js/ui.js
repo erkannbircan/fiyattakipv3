@@ -234,18 +234,14 @@ function renderSupportResistance() {
         container.appendChild(card);
     });
 }
-
 function showChart(pair) {
     document.getElementById('chartPanelTitle').textContent = pair.replace("USDT", "");
     const container = document.getElementById('chartContainer');
     container.innerHTML = '<div class="loading" style="margin: auto;"></div>';
     showPanel('chartPanel');
 
-    // --- DEĞİŞİKLİK BURADA ---
     let savedStateObject = undefined;
-    const savedStateString = state.settings.chartStates?.[pair]; // Veritabanından metin olarak oku
-
-    // Eğer kayıtlı bir metin varsa, onu objeye çevir (zarftan çıkar)
+    const savedStateString = state.settings.chartStates?.[pair]; 
     if (savedStateString && typeof savedStateString === 'string') {
         try {
             savedStateObject = JSON.parse(savedStateString);
@@ -253,7 +249,6 @@ function showChart(pair) {
             console.error("Kaydedilmiş grafik durumu (JSON) ayrıştırılamadı:", e);
         }
     }
-    // --- DEĞİŞİKLİK BİTTİ ---
 
     try {
         state.tradingViewWidget = new TradingView.widget({
@@ -271,7 +266,6 @@ function showChart(pair) {
             allow_symbol_change: true,
             details: true,
             studies: [],
-            // Obje halini widget'a veriyoruz
             saved_data: savedStateObject,
         });
     } catch (error) {
