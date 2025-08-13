@@ -238,7 +238,8 @@ function saveSettings() {
         console.error("KRİTİK HATA: 'saveSettings' fonksiyonu içinde beklenmedik bir hata oluştu!", e);
         showNotification("Beklenmedik bir hata oluştu. Lütfen konsolu kontrol edin.", false);
         hideLoading(btn);
-    }
+    });
+}
 }
 
 function toggleAutoRefresh() {
