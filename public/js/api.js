@@ -135,3 +135,8 @@ function deleteDnaProfile(profileId) {
             showNotification("Profil silinemedi.", false);
         });
 }
+
+function matchDnaProfile(coin, timeframe) {
+    console.warn(`'matchDnaProfile' fonksiyonu eski yapıya aittir ve artık kullanılmamaktadır.`);
+    return Promise.resolve({ matches: [] });
+}
