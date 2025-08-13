@@ -234,6 +234,7 @@ function renderSupportResistance() {
         container.appendChild(card);
     });
 }
+
 function showChart(pair) {
     document.getElementById('chartPanelTitle').textContent = pair.replace("USDT", "");
     const container = document.getElementById('chartContainer');
@@ -241,16 +242,25 @@ function showChart(pair) {
     showPanel('chartPanel');
 
     let savedStateObject = undefined;
-    const savedStateString = state.settings.chartStates?.[pair]; 
+    const savedStateString = state.settings.chartStates?.[pair];
+    
+    console.log("--- YÜKLEME ADIMI ---");
+    console.log(`1. Grafik açılıyor: ${pair}`);
+    console.log("2. Veritabanından okunan metin (string):", savedStateString);
+
     if (savedStateString && typeof savedStateString === 'string') {
         try {
             savedStateObject = JSON.parse(savedStateString);
+            console.log("3. Metinden çevrilen (Parsed) obje:", savedStateObject);
         } catch (e) {
-            console.error("Kaydedilmiş grafik durumu (JSON) ayrıştırılamadı:", e);
+            console.error("3. HATA: Kayıtlı metin objeye çevrilemedi (JSON Parse Hatası)!", e);
         }
+    } else {
+        console.log("3. Bu coin için kayıtlı bir grafik durumu bulunamadı.");
     }
 
     try {
+        console.log("4. TradingView widget'ı bu obje ile başlatılıyor:", savedStateObject);
         state.tradingViewWidget = new TradingView.widget({
             symbol: `BINANCE:${pair}`,
             interval: "D",
@@ -269,7 +279,7 @@ function showChart(pair) {
             saved_data: savedStateObject,
         });
     } catch (error) {
-        console.error("TradingView widget error:", error);
+        console.error("5. HATA: TradingView widget başlatılamadı!", error);
         container.innerHTML = `<p style="color:var(--accent-red); text-align:center;">Grafik yüklenemedi.</p>`;
     }
 }
