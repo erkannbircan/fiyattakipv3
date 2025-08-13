@@ -22,7 +22,8 @@ function initializeAuthListener() {
                 let userData = doc.data();
                 if (!doc.exists) {
                     userData = {
-                        email: user.email, role: 'new_user',
+                        email: user.email,
+                        role: 'new_user',
                         portfolios: { "Varsayılan": ["BTCUSDT", "ETHUSDT", "SOLUSDT"] },
                         activePortfolio: "Varsayılan",
                         coins_ai: ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
@@ -51,10 +52,10 @@ function initializeAuthListener() {
             }
         } else {
             showPage('login-page');
-            state.pageInitialized = false; 
+            state.pageInitialized = false;
             state.userDocRef = null;
-            if(state.autoRefreshTimer) clearInterval(state.autoRefreshTimer);
-            if(state.reportsRefreshTimer) clearInterval(state.reportsRefreshTimer);
+            if (state.autoRefreshTimer) clearInterval(state.autoRefreshTimer);
+            if (state.reportsRefreshTimer) clearInterval(state.reportsRefreshTimer);
         }
     });
 }
@@ -67,89 +68,59 @@ function loadSettingsAndRole(userData) {
     state.settings.cryptoAnalysisIndicators = { ...defaultSettings.cryptoAnalysisIndicators, ...(userData.settings?.cryptoAnalysisIndicators || {}) };
     state.trackedReports = userData.settings?.trackedReportIds || [];
 
-    // --- YENİ EKLENEN TEMİZLİK VE KONTROL BLOĞU ---
-    const chartStatesFromDB = userData.settings?.chartStates || {};
-    let sanitizedChartStates = {};
-    let needsUpdate = false;
-
-    // Her bir kayıtlı chart state'i kontrol et
-    for (const pair in chartStatesFromDB) {
-        const state = chartStatesFromDB[pair];
-        // Eğer veri doğru formatta (string) ise, koru.
-        if (typeof state === 'string') {
-            sanitizedChartStates[pair] = state;
-        } else {
-            // Eğer veri eski formatta (object) ise, bunu temizleyeceğimizi işaretle.
-            console.warn(`Eski/bozuk grafik verisi bulundu ve temizleniyor: ${pair}`);
-            needsUpdate = true;
-        }
-    }
-
-    // Temizlenmiş veriyi state'e ata
-    state.settings.chartStates = sanitizedChartStates;
-
-    // Eğer temizleme yapıldıysa, veritabanını da güncelle
-    if (needsUpdate && state.userDocRef) {
-        console.log("Veritabanındaki eski grafik verileri temizleniyor...");
-        state.userDocRef.update({ 'settings.chartStates': sanitizedChartStates })
-            .then(() => console.log("Veritabanı başarıyla temizlendi."))
-            .catch(err => console.error("Veritabanı temizlenirken hata oluştu:", err));
-    }
-    // --- TEMİZLİK BLOĞU BİTTİ ---
+    // Önceki denemelerden kalan bozuk chartStates'e dokunmamak için yeni bir yol kullanıyoruz.
+    state.settings.chartStates_v2 = userData.settings?.chartStates_v2 || {};
 
     state.currentUserRole = userData.role;
-    const limits = { admin: {coin: Infinity}, qualified: {coin: 50}, new_user: {coin: 15} };
+    const limits = { admin: { coin: Infinity }, qualified: { coin: 50 }, new_user: { coin: 15 } };
     state.coinLimit = limits[state.currentUserRole]?.coin ?? 15;
     document.getElementById('userEmail').textContent = state.firebase.auth.currentUser.email;
 }
 
 async function initializeTrackerPage(userData) {
     state.pageInitialized = true;
-    
+
     state.userPortfolios = userData.portfolios || { "Varsayılan": ["BTCUSDT", "ETHUSDT", "SOLUSDT"] };
     state.activePortfolio = userData.activePortfolio || Object.keys(state.userPortfolios)[0];
     state.cryptoAiPairs = userData.coins_ai || ["BTCUSDT", "ETHUSDT", "SOLUSDT"];
     state.discoveryCoins = userData.coins_discovery || ["BTCUSDT", "ETHUSDT"];
     state.userAlarms = userData.alarms || [];
-    
+
     renderIndicatorFilters();
     renderDictionary();
     applySettingsToUI();
     renderAllPortfolioTabs();
-    
+
     await fetchAllDataAndRender();
     fetchAiDataAndRender();
     renderAlarmReports();
+
     setupTrackerPageEventListeners();
-    
-    // YENİ EKLENEN SATIR:
-    // Ayarlar butonu için özel dinleyiciyi burada çağırıyoruz.
-    setupSaveSettingsButtonListener(); 
 }
 
 async function fetchAllDataAndRender() {
     const refreshBtn = document.getElementById('refreshBtn');
     if (refreshBtn) showLoading(refreshBtn);
-    
+
     const currentCoinList = state.userPortfolios[state.activePortfolio] || [];
     const promises = currentCoinList.map(pair => fetchCryptoData(pair, false));
     state.allCryptoData = await Promise.all(promises);
-    
+
     sortAndRenderTable();
     renderSupportResistance();
     if (refreshBtn) hideLoading(refreshBtn);
     const updateTimeEl = document.getElementById('updateTime');
-    if(updateTimeEl) updateTimeEl.textContent = new Date().toLocaleString(state.settings.lang);
+    if (updateTimeEl) updateTimeEl.textContent = new Date().toLocaleString(state.settings.lang);
 }
 
 async function fetchAiDataAndRender() {
     const container = document.getElementById('crypto-indicator-cards-container');
-    if(!container) return;
+    if (!container) return;
     container.innerHTML = '<div class="loading" style="margin: 20px auto; display:block;"></div>';
-    
+
     const promises = (state.cryptoAiPairs || []).map(pair => fetchCryptoData(pair, true));
     const aiData = await Promise.all(promises);
-    
+
     renderIndicatorCards('crypto', aiData);
 }
 
@@ -157,7 +128,7 @@ function sortAndRenderTable() {
     const { key, order } = state.currentSort;
     let sortedData = (order === 'default') ? [...state.allCryptoData] : [...state.allCryptoData].sort((a, b) => {
         let valA, valB;
-        if (key.startsWith('col')) { valA = a[key]?.pct; valB = b[key]?.pct; } 
+        if (key.startsWith('col')) { valA = a[key]?.pct; valB = b[key]?.pct; }
         else { valA = a[key]; valB = b[key]; }
         if (a.error) return 1; if (b.error) return -1;
         if (valA === undefined || valA === null || valA === 'N/A') return 1;
@@ -174,93 +145,81 @@ function sortAndRenderTable() {
 }
 
 function saveSettings() {
-    console.log("--- Ayarları Kaydetme İşlemi Başlatıldı ---"); // 1. Adım: İşlem başlangıcını bildir
-
     const btn = document.getElementById('saveSettingsBtn');
     showLoading(btn);
 
-    try {
-        // 2. Adım: Ayarları DOM'dan okuyalım
-        console.log("2. Adım: Arayüzdeki ayarlar okunuyor...");
-        let interval = parseInt(document.getElementById('refreshInterval').value);
-        const minInterval = { admin: 10, qualified: 120, new_user: 300 }[state.currentUserRole] || 300;
-        if (interval < minInterval) interval = minInterval;
+    let interval = parseInt(document.getElementById('refreshInterval').value);
+    const minInterval = { admin: 10, qualified: 120, new_user: 300 }[state.currentUserRole] || 300;
+    if (interval < minInterval) interval = minInterval;
 
-        const newSettings = {
-            lang: document.getElementById('langSelect').value,
-            autoRefresh: document.getElementById('autoRefreshToggle').checked,
-            refreshInterval: interval,
-            telegramPhone: document.getElementById('telegramPhoneInput').value,
-            columns: {
-                1: { name: document.getElementById('col1_name_input').value, days: parseInt(document.getElementById('col1_days_input').value), threshold: parseFloat(document.getElementById('col1_threshold_input').value) },
-                2: { name: document.getElementById('col2_name_input').value, days: parseInt(document.getElementById('col2_days_input').value), threshold: parseFloat(document.getElementById('col2_threshold_input').value) },
-                3: { name: document.getElementById('col3_name_input').value, days: parseInt(document.getElementById('col3_days_input').value), threshold: parseFloat(document.getElementById('col3_threshold_input').value) }
-            },
-            colors: {
-                high: document.getElementById('high_color_input').value,
-                low: document.getElementById('low_color_input').value
-            },
-            // Diğer ayarları state'den koruyarak üzerine yaz
-            chartStates: state.settings.chartStates,
-            cryptoAnalysisIndicators: state.settings.cryptoAnalysisIndicators
-        };
-        
-        // 3. Adım: Kaydedilecek veriyi konsola yazdıralım
-        console.log("3. Adım: Firebase'e gönderilecek 'settings' objesi:", newSettings);
+    // Sadece güncellenecek ayarları bir obje olarak alıyoruz.
+    // chartStates veya diğer hassas verilere dokunmuyoruz.
+    const settingsToUpdate = {
+        lang: document.getElementById('langSelect').value,
+        autoRefresh: document.getElementById('autoRefreshToggle').checked,
+        refreshInterval: interval,
+        telegramPhone: document.getElementById('telegramPhoneInput').value,
+        columns: {
+            1: { name: document.getElementById('col1_name_input').value, days: parseInt(document.getElementById('col1_days_input').value), threshold: parseFloat(document.getElementById('col1_threshold_input').value) },
+            2: { name: document.getElementById('col2_name_input').value, days: parseInt(document.getElementById('col2_days_input').value), threshold: parseFloat(document.getElementById('col2_threshold_input').value) },
+            3: { name: document.getElementById('col3_name_input').value, days: parseInt(document.getElementById('col3_days_input').value), threshold: parseFloat(document.getElementById('col3_threshold_input').value) }
+        },
+        colors: { high: document.getElementById('high_color_input').value, low: document.getElementById('low_color_input').value }
+    };
 
-        if (state.userDocRef) {
-            console.log("4. Adım: Firebase 'update' komutu gönderiliyor...");
-            // state.settings'i tamamen yeni obje ile güncelle
-            state.settings = newSettings; 
-            
-            state.userDocRef.update({ settings: newSettings })
-                .then(() => {
-                    console.log("5. Adım (BAŞARILI): Firebase güncellemesi tamamlandı!"); // 5. Adım (Başarılı)
-                    applySettingsToUI();
-                    closeAllPanels();
-                    showNotification("Ayarlar başarıyla kaydedildi.", true);
-                })
-                .catch((error) => {
-                    console.error("5. Adım (HATA): Firebase güncellemesi başarısız!", error); // 5. Adım (Hatalı)
-                    showNotification("Hata: Ayarlar kaydedilemedi. Konsolu kontrol edin.", false);
-                })
-                .finally(() => {
-                    console.log("6. Adım: İşlem tamamlandı, buton normale dönüyor.");
-                    hideLoading(btn);
-                });
-        } else {
-            console.error("HATA: 'state.userDocRef' bulunamadı. Kullanıcı oturumu geçerli değil.");
-            showNotification("Kullanıcı oturumu bulunamadı. Ayarlar kaydedilemedi.", false);
-            hideLoading(btn);
-        });
+    // state.settings objesini yeni ayarlarla güncelliyoruz.
+    Object.assign(state.settings, settingsToUpdate);
 
-    } catch (e) {
-        console.error("KRİTİK HATA: 'saveSettings' fonksiyonu içinde beklenmedik bir hata oluştu!", e);
-        showNotification("Beklenmedik bir hata oluştu. Lütfen konsolu kontrol edin.", false);
-        hideLoading(btn);
-    });
-}
+    if (state.userDocRef) {
+        // Veritabanında SADECE 'settings' alanını güncelliyoruz.
+        state.userDocRef.update({ settings: state.settings })
+            .then(() => {
+                applySettingsToUI();
+                closeAllPanels();
+                showNotification("Ayarlar başarıyla kaydedildi.", true);
+            })
+            .catch((error) => {
+                console.error("Ayarları kaydederken hata oluştu:", error);
+                showNotification("Hata: Ayarlar kaydedilemedi.", false);
+            })
+            .finally(() => {
+                hideLoading(btn);
+            });
+    }
 }
 
 function toggleAutoRefresh() {
-    if(state.autoRefreshTimer) clearInterval(state.autoRefreshTimer);
-    if(state.settings.autoRefresh) {
-        state.autoRefreshTimer = setInterval(fetchAllDataAndRender, state.settings.refreshInterval * 1000);
+    if (state.autoRefreshTimer) {
+        clearInterval(state.autoRefreshTimer);
+        state.autoRefreshTimer = null;
+    }
+    if (state.settings.autoRefresh) {
+        const intervalSeconds = state.settings.refreshInterval;
+        if (!isNaN(intervalSeconds) && intervalSeconds >= 10) {
+            state.autoRefreshTimer = setInterval(fetchAllDataAndRender, intervalSeconds * 1000);
+        }
     }
 }
 
 function toggleReportsAutoRefresh(forceState) {
     const btn = document.getElementById('autoRefreshReportsToggle');
+    if (!btn) return;
     let shouldBeActive = forceState !== undefined ? forceState : !btn.classList.contains('active');
-    
-    if (state.reportsRefreshTimer) clearInterval(state.reportsRefreshTimer);
+
+    if (state.reportsRefreshTimer) {
+        clearInterval(state.reportsRefreshTimer);
+        state.reportsRefreshTimer = null;
+    }
     btn.classList.toggle('active', shouldBeActive);
 
-    if(shouldBeActive) {
-        state.reportsRefreshTimer = setInterval(renderAlarmReports, state.settings.refreshInterval * 1000);
-        if(forceState === undefined) showNotification("Rapor yenileme aktif.", true);
+    if (shouldBeActive) {
+        const intervalSeconds = state.settings.refreshInterval;
+        if (!isNaN(intervalSeconds) && intervalSeconds >= 10) {
+            state.reportsRefreshTimer = setInterval(renderAlarmReports, intervalSeconds * 1000);
+            if (forceState === undefined) showNotification("Rapor yenileme aktif.", true);
+        }
     } else {
-       if(forceState === undefined) showNotification("Rapor yenileme durduruldu.", true);
+        if (forceState === undefined) showNotification("Rapor yenileme durduruldu.", true);
     }
 }
 
@@ -291,6 +250,7 @@ async function handleAddCoin(listName) {
             continue;
         }
         try {
+            // Bu API çağrısı sadece varlık kontrolü için, bu yüzden axios kullanımı devam edebilir.
             await axios.get(`https://api.binance.com/api/v3/ticker/price?symbol=${newPair}`);
             assetList.push(newPair);
             addedCoins.push(newPair);
@@ -298,7 +258,7 @@ async function handleAddCoin(listName) {
             showNotification(translations[state.settings.lang].invalid_asset(symbol), false);
         }
     }
-    
+
     if (addedCoins.length > 0) {
         updateCoinList(listName, assetList);
         await saveCoinListToFirestore(listName);
@@ -317,7 +277,7 @@ async function handleRemoveCoin(listName, pair) {
     else return;
 
     const updatedList = (assetList || []).filter(p => p !== pair);
-    
+
     if (listName === 'crypto') state.userPortfolios[state.activePortfolio] = updatedList;
     else if (listName === 'ai') state.cryptoAiPairs = updatedList;
     else if (listName === 'discovery') state.discoveryCoins = updatedList;
@@ -342,7 +302,7 @@ async function saveCoinListToFirestore(listName) {
 
 async function setActivePortfolio(name) {
     state.activePortfolio = name;
-    if(state.userDocRef) { await state.userDocRef.update({ activePortfolio: name }); }
+    if (state.userDocRef) { await state.userDocRef.update({ activePortfolio: name }); }
     renderAllPortfolioTabs();
     await fetchAllDataAndRender();
     createCoinManager('crypto-coin-manager-container', state.userPortfolios[state.activePortfolio] || [], 'crypto');
@@ -384,20 +344,15 @@ async function handleDeletePortfolio() {
     }
 }
 
-function function saveChartState() {
+function saveChartState() {
     if (state.tradingViewWidget && typeof state.tradingViewWidget.save === 'function') {
         const currentPair = document.getElementById('chartPanelTitle').textContent + 'USDT';
-        
         state.tradingViewWidget.save(async (chartState) => {
-            // Veriyi her zaman metin formatına çeviriyoruz.
             const chartStateString = JSON.stringify(chartState);
-
-            // Veritabanını güncellemek için YENİ veri yolunu hazırlıyoruz.
             const updatePath = `settings.chartStates_v2.${currentPair}`;
-            
+            state.settings.chartStates_v2[currentPair] = chartStateString;
             if (state.userDocRef) {
                 try {
-                    // Sadece ilgili coinin verisini, yeni yola kaydediyoruz.
                     await state.userDocRef.update({ [updatePath]: chartStateString });
                     showNotification("Grafik ayarları kaydedildi!", true);
                 } catch (error) {
@@ -433,29 +388,13 @@ async function saveAlarm() {
         trendFilterEnabled: document.getElementById('alarmTrendFilterEnabled').checked,
         adxThreshold: safeParseInt('alarmADXThreshold', 25),
         conditions: {
-            volume: {
-                enabled: document.getElementById('alarmVolumeCondition').checked,
-                period: safeParseInt('alarmVolumePeriod', 20),
-                multiplier: safeParseFloat('alarmVolumeMultiplier', 2),
-                amount: safeParseFloat('alarmVolumeAmount', 0)
-            },
-            macd: {
-                enabled: document.getElementById('alarmMacdCondition').checked,
-                signalType: document.getElementById('alarmMacdSignalType').value
-            },
-            macdHistogram: {
-                enabled: document.getElementById('alarmMacdHistogramCondition').checked,
-                operator: document.getElementById('alarmMacdHistogramOperator').value,
-                value: safeParseFloat('alarmMacdHistogramValue', 0)
-            },
-            rsi: {
-                enabled: document.getElementById('alarmRsiCondition').checked,
-                operator: document.getElementById('alarmRsiOperator').value,
-                value: safeParseFloat('alarmRsiValue', 30)
-            }
+            volume: { enabled: document.getElementById('alarmVolumeCondition').checked, period: safeParseInt('alarmVolumePeriod', 20), multiplier: safeParseFloat('alarmVolumeMultiplier', 2), amount: safeParseFloat('alarmVolumeAmount', 0) },
+            macd: { enabled: document.getElementById('alarmMacdCondition').checked, signalType: document.getElementById('alarmMacdSignalType').value },
+            macdHistogram: { enabled: document.getElementById('alarmMacdHistogramCondition').checked, operator: document.getElementById('alarmMacdHistogramOperator').value, value: safeParseFloat('alarmMacdHistogramValue', 0) },
+            rsi: { enabled: document.getElementById('alarmRsiCondition').checked, operator: document.getElementById('alarmRsiOperator').value, value: safeParseFloat('alarmRsiValue', 30) }
         }
     };
-    
+
     const dnaRecDiv = document.querySelector('#alarmSettingsPanel .dna-recommendation');
     if (dnaRecDiv && dnaRecDiv.dataset.dnaAnalysis) {
         newAlarm.dna_analysis = JSON.parse(dnaRecDiv.dataset.dnaAnalysis);
@@ -481,10 +420,9 @@ async function saveAlarm() {
 
 async function addReportToTrack(reportId) {
     if (!reportId || state.trackedReports.includes(reportId)) return;
-    
     try {
         const reportDoc = await state.userDocRef.collection('alarm_reports').doc(reportId).get();
-        if(!reportDoc.exists) {
+        if (!reportDoc.exists) {
             showNotification("Bu ID'ye sahip bir rapor bulunamadı.", false);
             return;
         }
@@ -503,10 +441,10 @@ async function updateAnalysisSettings() {
     showLoading(btn);
 
     const activeInterval = document.querySelector('#cryptoIntervalFilters button.active');
-    if(activeInterval) state.settings.cryptoAnalysisInterval = activeInterval.dataset.interval;
-    
+    if (activeInterval) state.settings.cryptoAnalysisInterval = activeInterval.dataset.interval;
+
     const activePreset = document.querySelector('#strategyPresetFilters button.active');
-    if(activePreset) {
+    if (activePreset) {
         const selectedPreset = activePreset.dataset.preset;
         const newIndicators = {};
         if (selectedPreset === 'custom') {
@@ -518,14 +456,14 @@ async function updateAnalysisSettings() {
     }
 
     try {
-        await state.userDocRef.update({ 
+        await state.userDocRef.update({
             'settings.cryptoAnalysisIndicators': state.settings.cryptoAnalysisIndicators,
             'settings.cryptoAnalysisInterval': state.settings.cryptoAnalysisInterval,
-            coins_ai: state.cryptoAiPairs 
+            coins_ai: state.cryptoAiPairs
         });
         await fetchAiDataAndRender();
         showNotification("Analiz ayarları güncellendi.", true);
-    } catch(e) {
+    } catch (e) {
         showNotification("Ayarlar güncellenemedi.", false);
     } finally {
         hideLoading(btn);
@@ -539,31 +477,4 @@ function updateAdminUI() {
     document.getElementById('alarms-tab').style.display = isAdmin ? 'block' : 'none';
     document.getElementById('strategy-discovery-tab').style.display = isAdmin ? 'block' : 'none';
     document.getElementById('alarm-reports-tab').style.display = isAdmin ? 'block' : 'none';
-}
-// Bu değişkeni state objenizin olduğu yere veya global alana ekleyin
-// state.refreshTimerId = null; 
-
-function toggleAutoRefresh(forceStop = false) {
-    // Önceki zamanlayıcı varsa temizle
-    if (state.refreshTimerId) {
-        clearInterval(state.refreshTimerId);
-        state.refreshTimerId = null;
-    }
-
-    // "Açık" ise ve forceStop değilse yeni zamanlayıcıyı kur
-    const autoRefreshEnabled = document.getElementById('autoRefreshToggle').checked;
-    if (autoRefreshEnabled && !forceStop) {
-        const intervalSeconds = parseInt(document.getElementById('refreshInterval').value, 10);
-        
-        // Geçersiz bir aralık değeri girilmesini engelle
-        if (isNaN(intervalSeconds) || intervalSeconds < 10) {
-            console.error("Geçersiz yenileme aralığı:", intervalSeconds);
-            return;
-        }
-
-        state.refreshTimerId = setInterval(fetchAllDataAndRender, intervalSeconds * 1000);
-        console.log(`Otomatik yenileme ${intervalSeconds} saniyede bir çalışacak şekilde ayarlandı.`);
-    } else {
-        console.log("Otomatik yenileme durduruldu.");
-    }
 }
