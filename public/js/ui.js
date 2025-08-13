@@ -238,42 +238,44 @@ function renderSupportResistance() {
 function showChart(pair) {
     document.getElementById('chartPanelTitle').textContent = pair.replace("USDT", "");
     const container = document.getElementById('chartContainer');
-    container.innerHTML = ''; // Önceki grafiği veya yükleniyor ikonunu temizle
+    container.innerHTML = '<div class="loading" style="margin: auto;"></div>';
     showPanel('chartPanel');
 
-    // Kullanıcı ID'si ve Client ID, adaptörün çalışması için gereklidir.
-    const userId = state.firebase.auth.currentUser.uid;
-    const clientId = 'test_client'; // Burası şimdilik sabit kalabilir.
+    // Veriyi YENİ ve temiz yoldan okuyoruz.
+    const savedStateString = state.settings.chartStates_v2?.[pair]; 
+    let savedStateObject = undefined;
+
+    // Eğer bu yeni yolda bir veri varsa, onu objeye çeviriyoruz.
+    if (savedStateString && typeof savedStateString === 'string') {
+        try {
+            savedStateObject = JSON.parse(savedStateString);
+        } catch (e) {
+            console.error("Kaydedilmiş grafik durumu (JSON) ayrıştırılamadı:", e);
+        }
+    }
 
     try {
-        console.log("Yeni Adaptör ile TradingView widget'ı başlatılıyor.");
-        
         state.tradingViewWidget = new TradingView.widget({
-            // Temel Ayarlar
+            // Bu ayarlar projenizin orijinal yapısıyla uyumludur.
             symbol: `BINANCE:${pair}`,
-            interval: 'D',
-            container: "chartContainer",
-            datafeed: new Datafeeds.UDFCompatibleDatafeed("https://demo-feed-data.tradingview.com"),
-            library_path: "charting_library/",
-
-            // --- YENİ ADAPTÖR ENTEGRASYONU ---
-            load_last_chart: true,
-            client_id: clientId,
-            user_id: userId,
-            save_load_adapter: createFirebaseSaveLoadAdapter(pair),
-            // --- BİTTİ ---
-
-            // Diğer Ayarlar
-            locale: "tr",
-            theme: "dark",
+            interval: "D",
             autosize: true,
-            // Özellikleri etkinleştirme/devre dışı bırakma
-            disabled_features: ["use_localstorage_for_settings"],
-            enabled_features: ["study_templates"],
+            container_id: "chartContainer",
+            theme: "dark",
+            style: "1",
+            locale: "tr",
+            toolbar_bg: "#1e222d",
+            enable_publishing: false,
+            withdateranges: true,
+            hide_side_toolbar: false,
+            allow_symbol_change: true,
+            details: true,
+            studies: [],
+            // Temiz veriyi widget'a veriyoruz.
+            saved_data: savedStateObject,
         });
-
     } catch (error) {
-        console.error("TradingView widget başlatılırken kritik hata oluştu:", error);
+        console.error("TradingView widget hatası:", error);
         container.innerHTML = `<p style="color:var(--accent-red); text-align:center;">Grafik yüklenemedi.</p>`;
     }
 }
