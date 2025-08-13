@@ -304,7 +304,28 @@ function setupStrategyDiscoveryListeners(parentElement) {
 function setupAiPageActionListeners(parentElement) {
     parentElement.addEventListener('click', async (e) => {
         const target = e.target;
-        if (target.closest('#updateCryptoAnalysisBtn')) { await updateAnalysisSettings(); return; }
+
+        // --- YENİ EKLENEN KOD BLOĞU: FİLTRE BUTONLARI ---
+        // Strateji veya Zaman Aralığı filtresine mi tıklandı?
+        const filterButton = target.closest('#strategyPresetFilters button, #cryptoIntervalFilters button');
+        if (filterButton && !filterButton.classList.contains('active')) {
+            // Önce aynı gruptaki diğer aktif butonu pasif yap
+            const parent = filterButton.parentElement;
+            parent.querySelector('.active')?.classList.remove('active');
+            // Tıklanan butonu aktif yap
+            filterButton.classList.add('active');
+            
+            // Not: Seçimler, sadece "Güncelle" butonuna basıldığında okunur.
+            // Bu yüzden burada state'i güncellemeye gerek yok, sadece görsel değişiklik yeterli.
+            return; // Diğer click olaylarını tetiklememek için işlemi burada bitir.
+        }
+        // --- YENİ KOD BLOĞU BİTTİ ---
+
+        // Mevcut kodunuz: Analiz Ayarlarını Güncelle butonu
+        if (target.closest('#updateCryptoAnalysisBtn')) {
+            await updateAnalysisSettings();
+            return;
+        }
     });
 }
 
