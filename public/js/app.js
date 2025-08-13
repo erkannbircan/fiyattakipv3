@@ -383,38 +383,26 @@ async function handleDeletePortfolio() {
     }
 }
 
-function saveChartState() {
+function function saveChartState() {
     if (state.tradingViewWidget && typeof state.tradingViewWidget.save === 'function') {
         const currentPair = document.getElementById('chartPanelTitle').textContent + 'USDT';
         
         state.tradingViewWidget.save(async (chartState) => {
-            console.log("--- KAYDETME ADIMI ---");
-            console.log("1. TradingView'den alınan ORİJİNAL obje:", chartState);
-            
+            // Veriyi her zaman metin formatına çeviriyoruz.
             const chartStateString = JSON.stringify(chartState);
-            console.log("2. Metne çevrilmiş (Stringified) hali:", chartStateString);
 
-            if (state.settings.chartStates[currentPair] !== chartStateString) {
-                state.settings.chartStates[currentPair] = chartStateString;
-                
-                if (state.userDocRef) {
-                    // --- DEĞİŞİKLİK BURADA: Nokta Notasyonu Kullanımı ---
-                    const updatePath = `settings.chartStates.${currentPair}`;
-                    console.log(`3. Firebase'e gönderilecek yol (path): "${updatePath}"`);
-
-                    try {
-                        // Direkt olarak ilgili alanı güncelliyoruz.
-                        await state.userDocRef.update({ [updatePath]: chartStateString });
-                        console.log("4. Firebase güncellemesi BAŞARILI.");
-                        showNotification("Grafik ayarları kaydedildi!", true);
-                    } catch (error) {
-                        console.error("4. Firebase güncellemesi BAŞARISIZ!", error);
-                        showNotification("Grafik ayarları kaydedilemedi.", false);
-                    }
-                    // --- DEĞİŞİKLİK BİTTİ ---
+            // Veritabanını güncellemek için YENİ veri yolunu hazırlıyoruz.
+            const updatePath = `settings.chartStates_v2.${currentPair}`;
+            
+            if (state.userDocRef) {
+                try {
+                    // Sadece ilgili coinin verisini, yeni yola kaydediyoruz.
+                    await state.userDocRef.update({ [updatePath]: chartStateString });
+                    showNotification("Grafik ayarları kaydedildi!", true);
+                } catch (error) {
+                    console.error("Grafik durumu kaydedilirken hata:", error);
+                    showNotification("Grafik ayarları kaydedilemedi.", false);
                 }
-            } else {
-                console.log("Değişiklik olmadığı için kayıt yapılmadı.");
             }
         });
     }
