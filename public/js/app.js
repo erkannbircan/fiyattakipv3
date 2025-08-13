@@ -91,8 +91,11 @@ async function initializeTrackerPage(userData) {
     await fetchAllDataAndRender();
     fetchAiDataAndRender();
     renderAlarmReports();
-
     setupTrackerPageEventListeners();
+    
+    // YENİ EKLENEN SATIR:
+    // Ayarlar butonu için özel dinleyiciyi burada çağırıyoruz.
+    setupSaveSettingsButtonListener(); 
 }
 
 async function fetchAllDataAndRender() {
