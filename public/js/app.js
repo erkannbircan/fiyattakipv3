@@ -449,36 +449,76 @@ async function addReportToTrack(reportId) {
 }
 
 async function updateAnalysisSettings() {
+    console.log("--- Analiz Ayarlarını Güncelleme Başladı ---");
     const btn = document.getElementById('updateCryptoAnalysisBtn');
     showLoading(btn);
 
     const activeInterval = document.querySelector('#cryptoIntervalFilters button.active');
-    if (activeInterval) state.settings.cryptoAnalysisInterval = activeInterval.dataset.interval;
-
-    const activePreset = document.querySelector('#strategyPresetFilters button.active');
-    if (activePreset) {
-        const selectedPreset = activePreset.dataset.preset;
-        const newIndicators = {};
-        if (selectedPreset === 'custom') {
-            document.querySelectorAll('#crypto-indicator-filters-grid input:checked').forEach(cb => newIndicators[cb.dataset.indicator] = true);
-        } else if (STRATEGY_PRESETS[selectedPreset]) {
-            Object.assign(newIndicators, STRATEGY_PRESETS[selectedPreset].indicators);
-        }
-        state.settings.cryptoAnalysisIndicators = newIndicators;
+    if (activeInterval) {
+        state.settings.cryptoAnalysisInterval = activeInterval.dataset.interval;
+        console.log("Seçilen Zaman Aralığı:", state.settings.cryptoAnalysisInterval);
+    } else {
+        console.warn("Aktif bir zaman aralığı bulunamadı.");
     }
 
+    const STRATEGY_PRESETS = {
+        momentum: { name: "Momentum", indicators: { rsi: true, macd: true } },
+        trend: { name: "Trend Takip", indicators: { ema: true, macd: true } },
+    };
+
+    const activePresetButton = document.querySelector('#strategyPresetFilters button.active');
+    const newIndicators = {};
+
+    if (activePresetButton) {
+        const selectedPreset = activePresetButton.dataset.preset;
+        console.log("Seçilen Strateji Filtresi:", selectedPreset);
+
+        if (selectedPreset === 'custom') {
+            console.log("'Özel' filtresi aktif. Onay kutuları okunuyor...");
+            const checkboxes = document.querySelectorAll('#crypto-indicator-filters-grid input[type="checkbox"]');
+            console.log(`Toplam ${checkboxes.length} adet onay kutusu bulundu.`);
+            
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    newIndicators[cb.dataset.indicator] = true;
+                    console.log(`- ${cb.dataset.indicator} seçildi.`);
+                }
+            });
+
+            if (Object.keys(newIndicators).length === 0) {
+                 console.warn("'Özel' filtresi seçili ancak hiçbir indikatör işaretlenmemiş.");
+            }
+
+        } else if (STRATEGY_PRESETS[selectedPreset]) {
+            Object.assign(newIndicators, STRATEGY_PRESETS[selectedPreset].indicators);
+            console.log(`'${selectedPreset}' preseti için indikatörler yüklendi:`, newIndicators);
+        }
+        state.settings.cryptoAnalysisIndicators = newIndicators;
+        
+    } else {
+        console.error("Hiçbir strateji filtresi aktif olarak bulunamadı!");
+    }
+
+    console.log("Analiz için kullanılacak son indikatör listesi:", state.settings.cryptoAnalysisIndicators);
+    
     try {
+        console.log("Ayarlar Firebase'e kaydediliyor...");
         await state.userDocRef.update({
             'settings.cryptoAnalysisIndicators': state.settings.cryptoAnalysisIndicators,
             'settings.cryptoAnalysisInterval': state.settings.cryptoAnalysisInterval,
-            coins_ai: state.cryptoAiPairs
+            'coins_ai': state.cryptoAiPairs
         });
+        console.log("Firebase'e kayıt başarılı. Yeni veriler çekiliyor...");
+        
         await fetchAiDataAndRender();
+        
         showNotification("Analiz ayarları güncellendi.", true);
     } catch (e) {
+        console.error("Analiz ayarları güncellenirken hata:", e);
         showNotification("Ayarlar güncellenemedi.", false);
     } finally {
         hideLoading(btn);
+        console.log("--- Analiz Ayarlarını Güncelleme Bitti ---");
     }
 }
 
