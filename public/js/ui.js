@@ -660,25 +660,26 @@ function renderDnaProfiles(profiles) {
     if (!container) return;
 
     if (!profiles || profiles.length === 0) {
-        container.innerHTML = `<p style="text-align: center; color: var(--text-secondary);">Henüz kaydedilmiş bir DNA profili bulunmuyor.</p>`;
+        container.innerHTML = `<p style="text-align: center; color: var(--text-secondary); padding: 20px;">Henüz kaydedilmiş bir DNA profili bulunmuyor.</p>`;
         return;
     }
 
-    // Tablo başlığını oluştur
     let html = '<div class="table-wrapper"><table><thead><tr>' +
-        '<th>Profil Adı</th><th>Parametreler</th><th>Olay Sayısı</th><th>İşlemler</th>' +
+        '<th>Profil Adı</th><th>Parametreler</th><th>Olay Sayısı</th><th style="text-align: right;">İşlemler</th>' +
         '</tr></thead><tbody>';
 
     profiles.forEach(profile => {
         // GÜVENLİ YÖNTEM: Profil adını doğrudan 'name' alanından alıyoruz.
         // Eğer 'name' alanı yoksa, ID'yi göstererek hata oluşmasını engelliyoruz.
         const profileName = profile.name || profile.id;
+        const featureText = profile.featureOrder ? profile.featureOrder.join(', ') : 'N/A';
+        const eventCount = profile.eventCount || 'N/A';
 
         html += `<tr>
                     <td><strong>${profileName}</strong></td>
-                    <td><small>${profile.featureOrder.join(', ')}</small></td>
-                    <td style="text-align: center;">${profile.eventCount}</td>
-                    <td style="text-align: center;">
+                    <td><small>${featureText}</small></td>
+                    <td style="text-align: center;">${eventCount}</td>
+                    <td style="text-align: right;">
                         <button class="action-btn delete-dna-btn" data-profile-id="${profile.id}" title="Profili Sil">
                             <i class="fas fa-trash"></i>
                         </button>
