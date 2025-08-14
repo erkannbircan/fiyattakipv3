@@ -1,91 +1,117 @@
-// scanner.js dosyasının tamamını bu kodla değiştirin.
+// Yeni Dosya: scanner.js
 
-let scannerInterval = null;
-
-function startScanner() {
+/**
+ * Tarama işlemini başlatan ana fonksiyon.
+ */
+async function startScanner() {
     const btn = document.getElementById('startScannerBtn');
-    if (scannerInterval) {
-        clearInterval(scannerInterval);
-        scannerInterval = null;
-        btn.innerHTML = '<i class="fas fa-play"></i> Taramayı Başlat';
-        document.getElementById('scannerTimeframe').disabled = false;
-        showNotification("Tarama durduruldu.", true);
-        return;
-    }
+    showLoading(btn);
 
-    btn.innerHTML = '<i class="fas fa-stop"></i> Taramayı Durdur';
-    document.getElementById('scannerTimeframe').disabled = true;
-    showNotification("Tarama başlatıldı...", true);
-    
-    runScan();
-    scannerInterval = setInterval(runScan, 60000);
-}
+    const resultsTable = document.getElementById('scannerResultsTable');
+    resultsTable.innerHTML = `<tr><td colspan="4" style="text-align: center;">Profiller ve piyasa verileri yükleniyor...</td></tr>`;
 
-async function runScan() {
-    const timeframe = document.getElementById('scannerTimeframe').value;
-    const coinsToScan = state.userPortfolios[state.activePortfolio] || [];
-    const tableBody = document.getElementById('scannerResultsTable');
-
-    if (coinsToScan.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">Taranacak coin bulunmuyor.</td></tr>`;
-        return;
-    }
-
-    tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center;"><div class="loading"></div></td></tr>`;
-
-    // Her coin için eşleşme fonksiyonunu çağırıp sonuçları tek bir listede topluyoruz
-    const scanPromises = coinsToScan.map(coin => 
-        matchDnaProfile(coin, timeframe)
-            .then(result => result.matches) // Artık 'matches' dizisini alıyoruz
-            .catch(error => {
-                console.error(`Tarama hatası (${coin}):`, error);
-                return []; // Hata durumunda boş dizi döndür
-            })
-    );
-
-    const resultsArrays = await Promise.all(scanPromises);
-    const allResults = resultsArrays.flat(); // Tüm sonuçları tek bir dizide birleştir
-    
-    // Sonuçları skora göre yüksekten düşüğe sırala
-    allResults.sort((a, b) => b.score - a.score);
-
-    renderScannerResults(allResults);
-}
-
-function renderScannerResults(results) {
-    const tableBody = document.getElementById('scannerResultsTable');
-    tableBody.innerHTML = '';
-
-    if (results.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">Aktif bir eşleşme bulunamadı.</td></tr>`;
-        return;
-    }
-
-    // Her bir eşleşme için yeni bir satır oluştur
-    results.forEach(res => {
-        const row = document.createElement('tr');
-        const scoreColor = res.score > 75 ? 'var(--value-positive)' : (res.score > 50 ? 'var(--accent-yellow)' : 'var(--text-secondary)');
-        const directionIcon = res.direction === 'up' 
-            ? '<i class="fas fa-arrow-up" style="color: var(--accent-green);"></i>' 
-            : '<i class="fas fa-arrow-down" style="color: var(--accent-red);"></i>';
+    try {
+        // 1. Aktif olan tüm DNA profillerini getir.
+        const getProfilesFunc = state.firebase.functions.httpsCallable('manageDnaProfiles');
+        const profilesResult = await getProfilesFunc({ action: 'get' });
         
-        // Profil ID'sinden daha okunaklı bir isim oluştur
-        const profileName = res.profileId.replace(/_/g, ' ').replace('pct', '%');
+        const activeProfiles = profilesResult.data.profiles.filter(p => p.isActive);
 
-        row.innerHTML = `
-            <td>${res.coin.replace('USDT', '')} ${directionIcon}</td>
-            <td><strong style="color: ${scoreColor};">${res.score} / 100</strong></td>
-            <td><small>${profileName}</small></td>
-            <td>Yükleniyor...</td>
-        `;
-        tableBody.appendChild(row);
+        if (activeProfiles.length === 0) {
+            resultsTable.innerHTML = `<tr><td colspan="4" style="text-align: center;">Taranacak aktif DNA profili bulunamadı.</td></tr>`;
+            hideLoading(btn);
+            return;
+        }
 
-        axios.get(`https://api.binance.com/api/v3/ticker/price?symbol=${res.coin}`)
-            .then(response => {
-                row.cells[3].textContent = `$${formatPrice(response.data.price)}`;
-            })
-            .catch(() => {
-                row.cells[3].textContent = 'Fiyat alınamadı';
-            });
-    });
+        // 2. Tarama için gerekli tüm coinleri ve parametreleri topla.
+        const coinsToScan = [...new Set(activeProfiles.map(p => p.coin))];
+        const uniqueParams = [...new Set(activeProfiles.map(p => JSON.stringify(p.featureOrder)))].map(s => JSON.parse(s));
+
+        // 3. Tarama işlemini çalıştır.
+        await runScan(activeProfiles, coinsToScan, uniqueParams);
+
+    } catch (error) {
+        console.error("Tarama başlatılırken hata oluştu:", error);
+        resultsTable.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--accent-red);">Hata: ${error.message}</td></tr>`;
+    } finally {
+        hideLoading(btn);
+    }
+}
+
+
+/**
+ * Piyasayı tarar ve eşleşmeleri bulur.
+ * @param {object[]} profiles - Aktif DNA profilleri.
+ * @param {string[]} coins - Taranacak coin listesi.
+ */
+async function runScan(profiles, coins) {
+    console.log(`Tarama başlıyor: ${coins.length} coin, ${profiles.length} profile karşı taranacak.`);
+    const resultsTable = document.getElementById('scannerResultsTable');
+    resultsTable.innerHTML = `<tr><td colspan="4" style="text-align: center;">${coins.length} coin için anlık veriler analiz ediliyor...</td></tr>`;
+
+    // Tüm coinler için en son mum verilerini paralel olarak çek.
+    // Her coin için en az 200 mum çekerek indikatörlerin hesaplanmasını sağlıyoruz.
+    const promises = coins.map(coin => getKlines(coin, '15m', 200));
+    const klinesData = await Promise.all(promises);
+
+    const matches = [];
+
+    // Her bir coinin güncel verisini, ilgili profillerle karşılaştır.
+    for (let i = 0; i < coins.length; i++) {
+        const coin = coins[i];
+        const klines = klinesData[i];
+
+        if (!klines || klines.length < 50) continue;
+
+        const relevantProfiles = profiles.filter(p => p.coin === coin);
+        
+        for (const profile of relevantProfiles) {
+            // Profilin istediği parametreleri (featureOrder) kullanarak özellik vektörünü oluştur.
+            const featureParams = {};
+            profile.featureOrder.forEach(f => featureParams[f] = true);
+            
+            // Son mumdan bir önceki mumu baz alarak anlık DNA'yı çıkarıyoruz.
+            const currentFeatures = getFeatureVector(klines, klines.length - 2, featureParams);
+
+            if (currentFeatures && currentFeatures.vector) {
+                // EŞLEŞTİRME MOTORU'nu burada kullanıyoruz.
+                const distance = matchDnaProfile(currentFeatures.vector, profile);
+
+                // Uzaklık belirli bir eşik değerinin altındaysa bu bir eşleşmedir.
+                // Bu eşik değeri (örn: 1.5) ayarlanabilir bir parametre olabilir.
+                if (distance !== null && distance < 1.5) {
+                    matches.push({
+                        coin: coin,
+                        profileName: profile.name,
+                        distance: distance.toFixed(4),
+                        time: new Date().toLocaleTimeString()
+                    });
+                }
+            }
+        }
+    }
+    
+    renderScannerResults(matches);
+}
+
+
+/**
+ * Tarama sonuçlarını ekrandaki tabloya yazar.
+ * @param {object[]} matches - Bulunan eşleşmelerin listesi.
+ */
+function renderScannerResults(matches) {
+    const tableBody = document.getElementById('scannerResultsTable');
+    if (matches.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center;">Eşleşme bulunamadı.</td></tr>`;
+        return;
+    }
+
+    tableBody.innerHTML = matches.map(match => `
+        <tr>
+            <td>${match.coin.replace('USDT', '')}</td>
+            <td>${match.profileName}</td>
+            <td>${match.distance}</td>
+            <td>${match.time}</td>
+        </tr>
+    `).join('');
 }
