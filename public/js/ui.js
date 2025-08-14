@@ -475,37 +475,33 @@ function openAlarmPanel(alarm = null, suggestedParams = null) {
     createCoinManager('alarm-coin-manager-container', state.tempAlarmCoins, 'alarm');
     showPanel('alarmSettingsPanel');
 }
-
-// ui.js içindeki renderSignalAnalysisPreview fonksiyonunu bununla değiştirin
 function renderSignalAnalysisPreview(data) {
     const resultContainer = document.getElementById('signalAnalysisResultContainer');
-    let html = '';
-
-    const getPerformanceClass = (value) => parseFloat(value) > 0 ? 'positive' : 'negative';
-
-    // Veri gelip gelmediğini en başta kontrol et
+    
+    // Gelen verinin varlığını ve boş olup olmadığını en başta kontrol et.
     if (!data || Object.keys(data).length === 0) {
-        resultContainer.innerHTML = `<p>Analiz için sonuç bulunamadı.</p>`;
+        resultContainer.innerHTML = `<p style="text-align: center; color: var(--text-secondary); padding: 20px;">Analiz için sonuç bulunamadı veya belirtilen koşullarda fırsat yok.</p>`;
         return;
     }
 
-    for (const coin in data) {
-        const res = data[coin];
+    const getPerformanceClass = (value) => parseFloat(value) > 0 ? 'positive' : 'negative';
 
-        html += `<div class="backtest-card" data-coin="${coin}" style="margin-bottom:15px; border-left: 3px solid var(--accent-blue);">
-                    <h4>${coin.replace("USDT","")} Analiz Sonuçları</h4>`;
-        
-        // --- KESİN ÇÖZÜM: HATA KONTROLÜ ---
-        // Önce gelen cevabın bir hata olup olmadığını kontrol ediyoruz.
+    // Object.keys ile gelen objeyi bir diziye çevirip .map ile her bir coin için HTML üretiyoruz.
+    const html = Object.keys(data).map(coin => {
+        const res = data[coin];
+        const coinSymbol = coin.replace("USDT", "");
+        let contentHtml = ''; // Her kart için içeriği sıfırdan oluştur.
+
+        // Gelen cevabın durumuna göre farklı HTML blokları oluştur.
         if (res.status === 'error' || res.status === 'info') {
             const messageColor = res.status === 'error' ? 'var(--accent-red)' : 'var(--text-secondary)';
-            html += `<p style="color:${messageColor}; padding: 10px 0;">${res.message}</p>`;
+            contentHtml = `<p style="color:${messageColor}; padding: 10px 0;">${res.message}</p>`;
         
-        // Sadece cevap başarılı ise ('preview') bu bloğu çalıştır.
-        } else if (res.status === 'preview' && res.params && res.dnaSummary) {
+        // Sadece durum 'preview' ise ve beklediğimiz zengin veri mevcutsa detaylı kartı göster.
+        } else if (res.status === 'preview' && res.params && res.dnaSummary && res.avgReturns) {
             const paramsString = JSON.stringify(res.params);
             
-            // DNA özetini (ortalama değerleri) alarm kurma butonu için hazırlıyoruz
+            // DNA özetini (ortalama değerleri) "Alarm Kur" butonu için hazırlıyoruz.
             const dnaForAlarm = {
                 coin: res.params.coins[0],
                 timeframe: res.params.timeframe,
@@ -521,52 +517,47 @@ function renderSignalAnalysisPreview(data) {
             });
             const dnaForAlarmString = JSON.stringify(dnaForAlarm);
 
-            html += `
+            contentHtml = `
                 <p class="section-description" style="margin-bottom: 15px;">${res.message}</p>
                 
                 <h5 class="setting-subtitle" style="margin-top:0;">Ortalama Getiri Performansı</h5>
                 <div class="backtest-results-grid" style="grid-template-columns: repeat(4, 1fr); gap: 10px;">
-                    <div class="backtest-card" style="padding:10px;">
-                        <p class="label">15 Dakika</p>
-                        <p class="value ${getPerformanceClass(res.avgReturns['15m'])}">${res.avgReturns['15m']}%</p>
-                    </div>
-                    <div class="backtest-card" style="padding:10px;">
-                        <p class="label">1 Saat</p>
-                        <p class="value ${getPerformanceClass(res.avgReturns['1h'])}">${res.avgReturns['1h']}%</p>
-                    </div>
-                    <div class="backtest-card" style="padding:10px;">
-                        <p class="label">4 Saat</p>
-                        <p class="value ${getPerformanceClass(res.avgReturns['4h'])}">${res.avgReturns['4h']}%</p>
-                    </div>
-                    <div class="backtest-card" style="padding:10px;">
-                        <p class="label">1 Gün</p>
-                        <p class="value ${getPerformanceClass(res.avgReturns['1d'])}">${res.avgReturns['1d']}%</p>
-                    </div>
+                    ${Object.entries(res.avgReturns).map(([period, value]) => `
+                        <div class="backtest-card" style="padding:10px;">
+                            <p class="label">${period.replace('m', ' Dakika').replace('h', ' Saat').replace('d', ' Gün')}</p>
+                            <p class="value ${getPerformanceClass(value)}">${value}%</p>
+                        </div>
+                    `).join('')}
                 </div>
 
                 <h5 class="setting-subtitle">Fırsat Anının DNA Özeti (Ortalama Değerler)</h5>
                 <div class="backtest-results-grid" style="grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));">
                     ${res.dnaSummary.featureOrder.map((feature, index) => `
-                        <p><span class="label">${feature}:</span> <span class="value">${parseFloat(res.dnaSummary.mean[index]).toFixed(2)}</span></p>
+                        <p><span class="label">${feature}:</span> <span class="value">${parseFloat(res.dnaSummary.mean[index]).toFixed(3)}</span></p>
                     `).join('')}
                 </div>
 
                 <div class="preview-actions" style="margin-top: 20px; display:flex; gap:10px; flex-wrap:wrap;">
-                    <button class="primary-button save-dna-btn" data-params='${paramsString}'>
+                    <button class="btn btn-primary save-dna-btn" data-params='${paramsString}'>
                         <i class="fas fa-save"></i> DNA Profili Oluştur
                     </button>
-                    <button class="action-btn-sm use-dna-in-alarm-btn" data-dna='${dnaForAlarmString}' style="background-color: var(--bg-tertiary);">
+                    <button class="btn btn-secondary use-dna-in-alarm-btn" data-dna='${dnaForAlarmString}'>
                         <i class="fas fa-bell"></i> Bu Stratejiden Alarm Kur
                     </button>
                 </div>
             `;
         } else {
-             html += `<p style="color:var(--accent-red); padding: 10px 0;">Sunucudan gelen veri anlaşılamadı veya eksik.</p>`;
+             // Eğer durum 'preview' olmasına rağmen beklenen veri gelmediyse veya tanımsızsa, bunu belirt.
+             contentHtml = `<p style="color:var(--accent-red); padding: 10px 0;">Sunucudan gelen önizleme verisi anlaşılamadı veya eksik. (${res.message || ''})</p>`;
         }
-        // --- HATA KONTROLÜ BİTTİ ---
 
-        html += `</div>`;
-    }
+        // Her coin için ana kart yapısını döndür.
+        return `<div class="backtest-card" data-coin="${coin}" style="margin-bottom:15px; border-left: 3px solid var(--accent-blue);">
+                    <h4>${coinSymbol} Analiz Sonuçları</h4>
+                    ${contentHtml}
+                </div>`;
+    }).join(''); // Tüm kartları birleştirerek tek bir HTML metni oluştur.
+
     resultContainer.innerHTML = html;
 }
 async function renderAlarmReports() {
