@@ -664,19 +664,21 @@ function renderDnaProfiles(profiles) {
         return;
     }
 
+    // Tablo başlığını oluştur
     let html = '<div class="table-wrapper"><table><thead><tr>' +
-        '<th>Profil Adı</th><th>Parametreler</th><th>Olay Sayısı</th><th>Sil</th>' +
+        '<th>Profil Adı</th><th>Parametreler</th><th>Olay Sayısı</th><th>İşlemler</th>' +
         '</tr></thead><tbody>';
 
     profiles.forEach(profile => {
-        const nameParts = profile.id.split('_');
-        const profileName = `${nameParts[0]} / ${nameParts[1]} / ${nameParts[2] === 'up' ? 'Artış' : 'Azalış'} %${nameParts[3].replace('pct','')}`;
+        // GÜVENLİ YÖNTEM: Profil adını doğrudan 'name' alanından alıyoruz.
+        // Eğer 'name' alanı yoksa, ID'yi göstererek hata oluşmasını engelliyoruz.
+        const profileName = profile.name || profile.id;
 
         html += `<tr>
                     <td><strong>${profileName}</strong></td>
                     <td><small>${profile.featureOrder.join(', ')}</small></td>
-                    <td>${profile.eventCount}</td>
-                    <td>
+                    <td style="text-align: center;">${profile.eventCount}</td>
+                    <td style="text-align: center;">
                         <button class="action-btn delete-dna-btn" data-profile-id="${profile.id}" title="Profili Sil">
                             <i class="fas fa-trash"></i>
                         </button>
