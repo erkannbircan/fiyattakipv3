@@ -345,11 +345,18 @@ function setupPivotPageActionListeners(parentElement) {
 }
 
 function setupScannerEventListeners(parentElement) {
-    parentElement.addEventListener('click', (e) => {
-        if (e.target.closest('#startScannerBtn')) {
-            startScanner();
-        }
-    });
+    // NOT: Bu olay dinleyici `setupTrackerPageEventListeners` içinde zaten çağrılıyor,
+    // bu yüzden sadece içeriğinin doğru olduğundan emin olalım.
+    const scannerContent = document.getElementById(&#39;live-scanner-content&#39;);
+    if (scannerContent) {
+        scannerContent.addEventListener(&#39;click&#39;, (e) =&gt; {
+            // Sadece &quot;Taramayı Başlat&quot; butonuna tıklandığında çalışmasını sağlıyoruz.
+            if (e.target.closest(&#39;#startScannerBtn&#39;)) {
+                // Yeni oluşturduğumuz scanner.js dosyasındaki ana fonksiyonu çağırıyoruz.
+                startScanner();
+            }
+        });
+    }
 }
 
 async function sendTestTelegramMessage() {
