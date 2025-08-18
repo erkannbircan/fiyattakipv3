@@ -82,7 +82,9 @@ function applySettingsToUI() {
     document.getElementById('langSelect').value = state.settings.lang;
     document.getElementById('autoRefreshToggle').checked = state.settings.autoRefresh;
     document.getElementById('refreshInterval').value = state.settings.refreshInterval;
+    document.getElementById('liveScannerInterval').value = state.settings.liveScannerInterval;
     document.getElementById('refreshInterval').min = { admin: 10, qualified: 120, new_user: 300 }[state.currentUserRole] || 300;
+    
     document.getElementById('telegramPhoneInput').value = state.settings.telegramPhone || '';
 
     for (let i = 1; i <= 3; i++) {
@@ -118,7 +120,32 @@ function applySettingsToUI() {
         toggleReportsAutoRefresh(false);
     }
 }
+function updateScannerStatusUI(status) {
+    const statusTextEl = document.getElementById('scannerStatusText');
+    const lastScanTimeEl = document.getElementById('lastScanTime');
+    const toggle = document.getElementById('toggleAutoScanner');
 
+    if (!statusTextEl || !lastScanTimeEl || !toggle) return;
+
+    switch (status) {
+        case 'running':
+            statusTextEl.textContent = 'ÇALIŞIYOR...';
+            statusTextEl.className = 'status-running';
+            break;
+        case 'stopped':
+            statusTextEl.textContent = 'DURDURULDU';
+            statusTextEl.className = 'status-stopped';
+            toggle.checked = false;
+            break;
+        case 'idle':
+        default:
+            statusTextEl.textContent = 'BEKLEMEDE';
+            statusTextEl.className = 'status-running';
+            lastScanTimeEl.textContent = new Date().toLocaleTimeString('tr-TR', { timeZone: 'Europe/Istanbul' });
+            toggle.checked = true;
+            break;
+    }
+}
 function updateAdminUI() {
     const isAdmin = state.currentUserRole === 'admin';
     document.getElementById('analyzeAllCryptoBtn').style.display = isAdmin ? 'flex' : 'none';
