@@ -167,47 +167,62 @@
                             <div id="discovery-coin-manager-container" style="margin-bottom: 20px;"></div>
 
                             <h5 class="setting-subtitle">2. Temel Koşul (Kârlı Senaryo Tanımı)</h5>
-                            <div class="discovery-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 15px 20px;">
-    <div>
-        <label for="signalAnalysisTimeframe">Sinyal Zaman Dilimi</label>
-        <select id="signalAnalysisTimeframe">
-            <option value="15m">15 Dakika</option>
-            <option value="1h" selected="">1 Saat</option>
-            <option value="4h">4 Saat</option>
-            <option value="1d">1 Gün</option>
-        </select>
-    </div>
-    <div>
-        <label for="signalAnalysisPeriod">Geçmiş Periyot</label>
-         <select id="signalAnalysisPeriod">
-            <option value="7">Son 1 Hafta</option>
-            <option value="30" selected="">Son 1 Ay</option>
-            <option value="90">Son 3 Ay</option>
-            <option value="180">Son 6 Ay</option>
-        </select>
-    </div>
-    <div style="grid-column: 1 / -1;"><hr style="border-color: var(--border-color); margin: 5px 0;"></div>
-    <div style="display: flex; flex-direction: column; gap: 5px;">
-        <label for="signalAnalysisDirection">Değişim Yönü</label>
-        <select id="signalAnalysisDirection">
-            <option value="up">Artış (+%)</option>
-            <option value="down">Azalış (-%)</option>
-        </select>
-    </div>
-    <div style="display: flex; flex-direction: column; gap: 5px;">
-         <label for="signalAnalysisChange">Fiyat Değişimi (%)</label>
-         <input type="number" id="signalAnalysisChange" value="5" step="1">
-    </div>
-    <div style="display: flex; flex-direction: column; gap: 5px;">
-        <label for="signalAnalysisTargetPeriod">Hedef Periyot</label>
-        <select id="signalAnalysisTargetPeriod">
-            <option value="15m">Sonraki 15 Dakika</option>
-            <option value="1h" selected="">Sonraki 1 Saat</option>
-            <option value="4h">Sonraki 4 Saat</option>
-            <option value="1d">Sonraki 1 Gün</option>
-        </select>
-    </div>
-</div>
+                            <div class="discovery-grid" style="grid-template-columns: 1fr 1fr; gap: 15px 20px;">
+                                <div>
+                                    <label for="signalAnalysisTimeframe">Sinyal Zaman Dilimi</label>
+                                    <select id="signalAnalysisTimeframe">
+                                        <option value="15m">15 Dakika</option>
+                                        <option value="1h" selected>1 Saat</option>
+                                        <option value="4h">4 Saat</option>
+                                        <option value="1d">1 Gün</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="signalAnalysisPeriod">Geçmiş Periyot</label>
+                                        <select id="signalAnalysisPeriod">
+                                        <option value="7">Son 1 Hafta</option>
+                                        <option value="30" selected>Son 1 Ay</option>
+                                        <option value="90">Son 3 Ay</option>
+                                        <option value="180">Son 6 Ay</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="signalAnalysisDirection">Değişim Yönü</label>
+                                    <select id="signalAnalysisDirection">
+                                        <option value="up">Artış (+%)</option>
+                                        <option value="down">Azalış (-%)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                        <label for="signalAnalysisChange">Fiyat Değişimi (%)</label>
+                                        <input type="number" id="signalAnalysisChange" value="5" step="1">
+                                </div>
+                            </div>
+                            
+                            <h5 class="setting-subtitle" style="margin-top: 25px;">3. DNA Analiz Ayarları</h5>
+                            <div class="discovery-grid" style="grid-template-columns: 1fr;">
+                                <div>
+                                    <label for="signalLookbackCandles" title="Başarılı bir yükselişten hemen önce, kaç mumluk bir 'hazırlık evresini' analiz etmek istersiniz?">
+                                        DNA için Geriye Bakılacak Mum Sayısı (Hazırlık Evresi)
+                                    </label>
+                                    <input type="number" id="signalLookbackCandles" value="3" step="1" min="1" max="10">
+                                </div>
+                            </div>
+
+                            <h5 class="setting-subtitle" style="margin-top: 25px;">4. DNA'da Aranacak Parametreler</h5>
+                            <div class="filters-grid" id="signalDnaParamsGrid">
+                                <label class="filter-item"><input type="checkbox" data-param="rsi" checked> RSI</label>
+                                <label class="filter-item"><input type="checkbox" data-param="macd" checked> MACD</label>
+                                <label class="filter-item"><input type="checkbox" data-param="adx"> ADX</label>
+                                <label class="filter-item"><input type="checkbox" data-param="volume" checked> Hacim Çarpanı</label>
+                            </div>
+                        </div>
+                        <div class="analysis-actions">
+                            <button id="runSignalAnalysisBtn"><i class="fas fa-search-dollar"></i> Stratejiyi Analiz Et</button>
+                        </div>
+                        <div id="signalAnalysisResultContainer" style="margin-top: 20px;"></div>
+                    </div>
+                </div>
                             
                             <h5 class="setting-subtitle" style="margin-top: 25px;">3. DNA'da Aranacak Parametreler</h5>
                             <div class="filters-grid" id="signalDnaParamsGrid">
