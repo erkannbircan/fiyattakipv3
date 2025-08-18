@@ -169,7 +169,7 @@ function runSignalAnalysisPreview() {
             hideLoading(btn);
         });
 }
-
+// ... dosyanın diğer kısımları aynı kalacak ...
 
 function saveDnaProfile(params) {
     const resultContainer = document.getElementById('signalAnalysisResultContainer');
@@ -212,12 +212,15 @@ function saveDnaProfile(params) {
         });
 }
 
-function fetchDnaProfiles() {
-    const container = document.getElementById('dnaProfilesContainer');
+// *** DEĞİŞİKLİK: Fonksiyon artık bir containerId parametresi alıyor ***
+function fetchDnaProfiles(containerId) {
+    const container = document.getElementById(containerId);
     
-    // Loading gösterimi
     if (container) {
         container.innerHTML = '<div class="loading" style="margin: 20px auto; display:block;"></div>';
+    } else {
+        console.error(`fetchDnaProfiles: '${containerId}' ID'li element bulunamadı.`);
+        return Promise.reject(new Error("Container not found"));
     }
     
     const getProfilesFunc = state.firebase.functions.httpsCallable('manageDnaProfiles');
@@ -227,7 +230,8 @@ function fetchDnaProfiles() {
             console.log("fetchDnaProfiles sonucu:", result);
             
             if (result.data && result.data.success) {
-                renderDnaProfiles(result.data.profiles);
+                // *** DEĞİŞİKLİK: Gelen containerId'yi render fonksiyonuna pasla ***
+                renderDnaProfiles(result.data.profiles, containerId);
             } else {
                 throw new Error(result.data?.error || "Profiller getirilemedi.");
             }
@@ -241,7 +245,6 @@ function fetchDnaProfiles() {
                 switch (error.code) {
                     case 'unauthenticated':
                         errorMessage = "Oturum süresi dolmuş. Lütfen tekrar giriş yapın.";
-                        // Kullanıcıyı login sayfasına yönlendir
                         state.firebase.auth.signOut();
                         break;
                     case 'internal':
@@ -261,13 +264,14 @@ function fetchDnaProfiles() {
                     <p style="color:var(--accent-red); padding: 10px;">
                         <b>Profiller yüklenirken bir hata oluştu.</b><br>
                         <small>Detay: ${errorMessage}</small><br>
-                        <button onclick="fetchDnaProfiles()" style="margin-top: 10px; padding: 5px 10px;">
+                        <button onclick="fetchDnaProfiles('${containerId}')" style="margin-top: 10px; padding: 5px 10px;">
                             Tekrar Dene
                         </button>
                     </p>`;
             }
         });
 }
+
 function deleteDnaProfile(profileId) {
     if (!confirm(`"${profileId}" profilini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
         return;
@@ -279,7 +283,9 @@ function deleteDnaProfile(profileId) {
         .then(result => {
             console.log("deleteDnaProfile sonucu:", result);
             showNotification("Profil başarıyla silindi.", true);
-            fetchDnaProfiles(); // Listeyi yenile
+            // *** DEĞİŞİKLİK: Her iki listeyi de yenilemek en güvenlisi ***
+            fetchDnaProfiles('dnaProfilesContainerAi');
+            fetchDnaProfiles('dnaProfilesContainerDiscovery');
         })
         .catch(error => {
             console.error("Profil silinirken hata oluştu:", error);
@@ -288,6 +294,3 @@ function deleteDnaProfile(profileId) {
             showNotification("Profil silinemedi: " + errorMessage, false);
         });
 }
-
-
-
