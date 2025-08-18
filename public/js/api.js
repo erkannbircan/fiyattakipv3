@@ -136,45 +136,27 @@ function runSignalAnalysisPreview(params) {
             resultContainer.innerHTML = `<p style="color:var(--accent-red); padding: 10px;"><strong>Analiz sırasında bir hata oluştu.</strong><br>Detay: ${errorMessage}<br><small>Hata Kodu: ${error.code || 'Bilinmiyor'}</small></p>`;
         });
 }
-function saveDnaProfile(params) {
-    const resultContainer = document.getElementById('signalAnalysisResultContainer');
-    const coinCard = resultContainer.querySelector(`.backtest-card[data-coin="${params.coins[0]}"]`);
-    if (coinCard) {
-        coinCard.innerHTML += '<div class="loading" style="margin-top:10px;"></div>';
+async function saveDnaProfile(profileData, button) {
+    if (button) showLoading(button);
+    
+    // Yeni ve basit Cloud Function'ı çağırıyoruz.
+    const saveProfileFunc = state.firebase.functions.httpsCallable('saveDnaProfile');
+    
+    try {
+        const result = await saveProfileFunc({ profile: profileData });
+        if (result.data.success) {
+            showNotification(`DNA profili (${profileData.name}) başarıyla kaydedildi!`, true);
+            // Kayıttan sonra listeyi yenile
+            fetchDnaProfiles('dnaProfilesContainerDiscovery');
+        } else {
+            throw new Error(result.data.error || 'Profil kaydedilemedi.');
+        }
+    } catch (error) {
+        console.error("saveDnaProfile hatası:", error);
+        showNotification(`Profil kaydedilirken hata oluştu: ${error.message}`, false);
+    } finally {
+        if (button) hideLoading(button);
     }
-    
-    const findSignalDNAFunc = state.firebase.functions.httpsCallable('findSignalDNA');
-    const finalParams = { ...params, isPreview: false };
-    
-    findSignalDNAFunc(finalParams)
-        .then(result => {
-            console.log("saveDnaProfile sonucu:", result);
-            const data = result.data[params.coins[0]];
-            
-            if (data && data.status === 'success') {
-                showNotification(`DNA profili (${data.profileId}) başarıyla kaydedildi!`, true);
-                if (coinCard) {
-                    const loadingEl = coinCard.querySelector('.loading');
-                    if(loadingEl) loadingEl.remove();
-                    const actionsEl = coinCard.querySelector('.preview-actions');
-                    if(actionsEl) {
-                        actionsEl.innerHTML = `<p style="color:var(--value-positive);"><i class="fas fa-check-circle"></i> Profil Kaydedildi</p>`;
-                    }
-                }
-            } else {
-                throw new Error(data?.message || 'Profil kaydedilemedi.');
-            }
-        })
-        .catch(error => {
-            console.error("saveDnaProfile hatası:", error);
-            const errorMessage = error.message || "Bilinmeyen hata oluştu.";
-            showNotification(`Profil kaydedilirken hata oluştu: ${errorMessage}`, false);
-            
-            if(coinCard) {
-                const loadingEl = coinCard.querySelector('.loading');
-                if(loadingEl) loadingEl.remove();
-            }
-        });
 }
 
 // *** DEĞİŞİKLİK: Fonksiyon artık bir containerId parametresi alıyor ***
