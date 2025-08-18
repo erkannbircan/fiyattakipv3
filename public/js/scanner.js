@@ -35,7 +35,7 @@ async function startScanner() {
         const getProfilesFunc = state.firebase.functions.httpsCallable('manageDnaProfiles');
         const profilesResult = await getProfilesFunc({ action: 'get' });
         
-        const activeProfiles = profilesResult.data.profiles.filter(p => p.isActive);
+        const activeProfiles = profilesResult.data.profiles.filter(p => p.isActive !== false);
 
         if (activeProfiles.length === 0) {
             resultsTableBody.innerHTML = `<tr><td colspan="4" style="text-align: center;">Taranacak aktif DNA profili bulunamadı.</td></tr>`;
