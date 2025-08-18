@@ -340,7 +340,8 @@ function setupStrategyDiscoveryListeners(parentElement) {
         }
     });
 }
-function setupPivotPageActionListeners(parentElement) {
+
+unction setupPivotPageActionListeners(parentElement) {
      parentElement.addEventListener('click', async (e) => {
         const target = e.target;
         const pivotFilterBtn = target.closest('#cryptoPivotFilters button');
@@ -355,12 +356,15 @@ function setupPivotPageActionListeners(parentElement) {
      });
 }
 
+// DEĞİŞİKLİK: setupScannerEventListeners fonksiyonu güncellendi
 function setupScannerEventListeners(parentElement) {
     const scannerContent = document.getElementById('live-scanner-content');
     if (scannerContent) {
-        scannerContent.addEventListener('click', (e) => {
-            if (e.target.closest('#startScannerBtn')) {
-                startScanner();
+        // Otomatik tarama açma/kapama anahtarını dinle
+        scannerContent.addEventListener('change', (e) => {
+            if (e.target.closest('#toggleAutoScanner')) {
+                // scanner.js dosyasındaki ana kontrol fonksiyonunu çağır
+                toggleAutoScanner(e.target.checked);
             }
         });
     }
