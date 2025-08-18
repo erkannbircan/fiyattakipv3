@@ -132,6 +132,21 @@
                     </div>
                  </div>
                 <div class="collapsible open" style="margin-top: 25px;">
+                    <div class="collapsible-header open">
+                        <span><i class="fas fa-archive"></i> Kayıtlı DNA Profilleri</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="collapsible-content open">
+                        <div class="table-controls" style="justify-content: flex-end;">
+                            <button id="refreshDnaProfilesBtnAi" class="action-btn-sm" title="Listeyi Yenile">
+                                <i class="fas fa-sync-alt"></i> Yenile
+                            </button>
+                        </div>
+                        <div id="dnaProfilesContainerAi">
+                            <p style="text-align: center; color: var(--text-secondary);">Profiller yükleniyor...</p>
+                        </div>
+                    </div>
+                </div>
                 <div class="global-analysis-header">
                     <h3><i class="fas fa-magic-sparkles" style="color:var(--accent-blue)"></i> Global AI Analizi</h3>
                     <div class="global-analysis-controls">
@@ -215,21 +230,21 @@
                     </div>
                 </div>
                 <div class="collapsible open" style="margin-top: 30px; border-top: 2px solid var(--border-color); padding-top: 20px;">
-    <div class="collapsible-header open">
-        <span><i class="fas fa-archive"></i> Kayıtlı DNA Profilleri</span>
-        <i class="fas fa-chevron-down"></i>
-    </div>
-    <div class="collapsible-content open">
-        <div class="table-controls" style="justify-content: flex-end;">
-            <button id="refreshDnaProfilesBtn" class="action-btn-sm" title="Listeyi Yenile">
-                <i class="fas fa-sync-alt"></i> Yenile
-            </button>
-        </div>
-        <div id="dnaProfilesContainer">
-            <p style="text-align: center; color: var(--text-secondary);">Profiller yükleniyor...</p>
-        </div>
-    </div>
-</div>
+                    <div class="collapsible-header open">
+                        <span><i class="fas fa-archive"></i> Kayıtlı DNA Profilleri</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="collapsible-content open">
+                        <div class="table-controls" style="justify-content: flex-end;">
+                            <button id="refreshDnaProfilesBtnDiscovery" class="action-btn-sm" title="Listeyi Yenile">
+                                <i class="fas fa-sync-alt"></i> Yenile
+                            </button>
+                        </div>
+                        <div id="dnaProfilesContainerDiscovery">
+                            <p style="text-align: center; color: var(--text-secondary);">Profiller yükleniyor...</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div id="live-scanner-content" class="tab-content">
