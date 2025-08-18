@@ -271,7 +271,6 @@ function fetchDnaProfiles(containerId) {
             }
         });
 }
-
 function deleteDnaProfile(profileId) {
     if (!confirm(`"${profileId}" profilini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
         return;
@@ -283,9 +282,8 @@ function deleteDnaProfile(profileId) {
         .then(result => {
             console.log("deleteDnaProfile sonucu:", result);
             showNotification("Profil başarıyla silindi.", true);
-            // *** DEĞİŞİKLİK: Her iki listeyi de yenilemek en güvenlisi ***
-            fetchDnaProfiles('dnaProfilesContainerAi');
-            fetchDnaProfiles('dnaProfilesContainerDiscovery');
+            // *** DEĞİŞİKLİK: Sadece "Strateji Keşfi" sayfasındaki listeyi yenile ***
+            fetchDnaProfiles('dnaProfilesContainerDiscovery'); 
         })
         .catch(error => {
             console.error("Profil silinirken hata oluştu:", error);
