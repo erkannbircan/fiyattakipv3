@@ -468,6 +468,7 @@ function openAlarmPanel(alarm = null, suggestedParams = null) {
     createCoinManager('alarm-coin-manager-container', state.tempAlarmCoins, 'alarm');
     showPanel('alarmSettingsPanel');
 }
+// ui.js dosyasındaki renderSignalAnalysisPreview fonksiyonunu bulun ve bu blokla değiştirin.
 function renderSignalAnalysisPreview(data) {
     const resultContainer = document.getElementById('signalAnalysisResultContainer');
     
@@ -487,26 +488,13 @@ function renderSignalAnalysisPreview(data) {
             const messageColor = res.status === 'error' ? 'var(--accent-red)' : 'var(--text-secondary)';
             contentHtml = `<p style="color:${messageColor}; padding: 10px 0;">${res.message}</p>`;
         
-       } else if (res.status === 'preview' && res.params && res.dnaSummary && res.avgReturns && res.dnaProfile) { // dnaProfile'ın varlığını kontrol et
-            
-            // *** YENİ: Tam ve zengin DNA profili string formatına çevriliyor. ***
+        } else if (res.status === 'preview' && res.params && res.dnaSummary && res.avgReturns && res.dnaProfile) {
             const profileDataString = JSON.stringify(res.dnaProfile);
-
-            contentHtml = `
-                <div class="preview-actions" style="margin-top: 20px; display:flex; gap:10px; flex-wrap:wrap;">
-                    
-                    <button class="btn btn-primary save-dna-btn" data-profile='${profileDataString}'>
-                        <i class="fas fa-save"></i> DNA Profili Oluştur
-                    </button>
-
-                </div>
-                ${detailsHtml}
-            `;
             
+            // *** HATA DÜZELTMESİ: 'detailsHtml' tanımı yukarı taşındı. ***
             let detailsHtml = '';
             if (res.eventDetails && res.eventDetails.length > 0) {
                 const eventListItems = res.eventDetails.map(event => {
-                    // Tarihi İstanbul saatine çeviriyoruz
                     const eventDate = new Date(event.timestamp).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' });
                     return `<tr>
                                 <td>${eventDate}</td>
@@ -556,13 +544,13 @@ function renderSignalAnalysisPreview(data) {
 
                 <h5 class="setting-subtitle">Fırsat Anının DNA Özeti (Ortalama Değerler)</h5>
                 <div class="backtest-results-grid" style="grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));">
-                    ${res.dnaSummary.featureOrder.map((feature, index) => `
+                    ${(res.dnaSummary.featureOrder || []).map((feature, index) => `
                         <p><span class="label">${feature}:</span> <span class="value">${parseFloat(res.dnaSummary.mean[index]).toFixed(3)}</span></p>
                     `).join('')}
                 </div>
 
                 <div class="preview-actions" style="margin-top: 20px; display:flex; gap:10px; flex-wrap:wrap;">
-                    <button class="btn btn-primary save-dna-btn" data-params='${paramsString}'>
+                    <button class="btn btn-primary save-dna-btn" data-profile='${profileDataString}'>
                         <i class="fas fa-save"></i> DNA Profili Oluştur
                     </button>
                 </div>
