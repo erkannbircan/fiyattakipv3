@@ -257,17 +257,14 @@
                         Oluşturduğunuz kârlı DNA profillerine anlık olarak en çok benzeyen coin'leri burada takip edin. Skor ne kadar yüksekse, mevcut durum o profile o kadar çok benziyor demektir.
                     </p>
                 </div>
-                <div class="scanner-controls" style="display: flex; gap: 20px; align-items: center; justify-content: center; margin-bottom: 20px;">
-                    <div class="setting-item" style="margin-bottom: 0;">
-                        <label for="scannerTimeframe">Zaman Dilimi</label>
-                        <select id="scannerTimeframe">
-                            <option value="15m">15 Dakika</option>
-                            <option value="1h" selected>1 Saat</option>
-                            <option value="4h">4 Saat</option>
-                        </select>
-                    </div>
-                    <button id="startScannerBtn" class="primary-button" style="width: auto;"><i class="fas fa-play"></i> Taramayı Başlat</button>
-                </div>
+                <div class="scanner-status">
+    <p>Tarama Durumu: <span id="scannerStatusText" class="status-stopped">DURDURULDU</span></p>
+    <p>Son Tarama: <span id="lastScanTime">-</span></p>
+    <label class="switch" title="Otomatik Taramayı Başlat/Durdur">
+        <input type="checkbox" id="toggleAutoScanner">
+        <span class="slider"></span>
+    </label>
+</div>
                 <div class="table-wrapper">
                     <table>
                         <thead>
@@ -361,6 +358,10 @@
                     </ol>
                 </div>
             </div>
+            <div class="setting-item">
+    <label title="Canlı tarayıcının ne sıklıkla çalışacağını belirtir. Minimum 5 dakikadır.">Canlı Tarama Sıklığı (dk)</label>
+    <input type="number" id="liveScannerInterval" min="5" step="1">
+</div>
             <div class="settings-section">
                 <h4 data-lang="column_settings">Kolon Ayarları</h4>
                 <div class="setting-item"><label>Kolon 1 Adı</label><input type="text" id="col1_name_input"></div>
