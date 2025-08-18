@@ -478,7 +478,6 @@ function openAlarmPanel(alarm = null, suggestedParams = null) {
 function renderSignalAnalysisPreview(data) {
     const resultContainer = document.getElementById('signalAnalysisResultContainer');
     
-    // Gelen verinin varlığını ve boş olup olmadığını en başta kontrol et.
     if (!data || Object.keys(data).length === 0) {
         resultContainer.innerHTML = `<p style="text-align: center; color: var(--text-secondary); padding: 20px;">Analiz için sonuç bulunamadı veya belirtilen koşullarda fırsat yok.</p>`;
         return;
@@ -486,22 +485,18 @@ function renderSignalAnalysisPreview(data) {
 
     const getPerformanceClass = (value) => parseFloat(value) > 0 ? 'positive' : 'negative';
 
-    // Object.keys ile gelen objeyi bir diziye çevirip .map ile her bir coin için HTML üretiyoruz.
     const html = Object.keys(data).map(coin => {
         const res = data[coin];
         const coinSymbol = coin.replace("USDT", "");
-        let contentHtml = ''; // Her kart için içeriği sıfırdan oluştur.
+        let contentHtml = '';
 
-        // Gelen cevabın durumuna göre farklı HTML blokları oluştur.
         if (res.status === 'error' || res.status === 'info') {
             const messageColor = res.status === 'error' ? 'var(--accent-red)' : 'var(--text-secondary)';
             contentHtml = `<p style="color:${messageColor}; padding: 10px 0;">${res.message}</p>`;
         
-        // Sadece durum 'preview' ise ve beklediğimiz zengin veri mevcutsa detaylı kartı göster.
         } else if (res.status === 'preview' && res.params && res.dnaSummary && res.avgReturns) {
             const paramsString = JSON.stringify(res.params);
             
-            // DNA özetini (ortalama değerleri) "Alarm Kur" butonu için hazırlıyoruz.
             const dnaForAlarm = {
                 coin: res.params.coins[0],
                 timeframe: res.params.timeframe,
@@ -516,6 +511,30 @@ function renderSignalAnalysisPreview(data) {
                 }
             });
             const dnaForAlarmString = JSON.stringify(dnaForAlarm);
+
+            // *** YENİ: Test için tarih listesini oluşturacak HTML bölümü ***
+            let detailsHtml = '';
+            if (res.eventTimestamps && res.eventTimestamps.length > 0) {
+                const eventListItems = res.eventTimestamps.map(ts => {
+                    // Tarihi daha okunabilir bir formata çeviriyoruz
+                    return `<li>${new Date(ts).toLocaleString('tr-TR')}</li>`;
+                }).join('');
+
+                detailsHtml = `
+                    <div class="collapsible" style="margin-top: 20px;">
+                        <div class="collapsible-header">
+                            <span>🔍 Bulunan ${res.eventTimestamps.length} Fırsatın Tarihleri (Test için)</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="collapsible-content">
+                            <p style="font-size: 0.85rem; color: var(--text-secondary);">Bu listedeki tarihleri TradingView gibi bir platformda kontrol ederek stratejinin doğruluğunu test edebilirsiniz.</p>
+                            <ul style="max-height: 200px; overflow-y: auto; padding-left: 20px; font-size: 0.9rem;">
+                                ${eventListItems}
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            }
 
             contentHtml = `
                 <p class="section-description" style="margin-bottom: 15px;">${res.message}</p>
@@ -545,21 +564,18 @@ function renderSignalAnalysisPreview(data) {
                         <i class="fas fa-bell"></i> Bu Stratejiden Alarm Kur
                     </button>
                 </div>
+                
+                ${detailsHtml}
             `;
         } else {
-             // Eğer durum 'preview' olmasına rağmen beklenen veri gelmediyse veya tanımsızsa, bunu belirt.
              contentHtml = `<p style="color:var(--accent-red); padding: 10px 0;">Sunucudan gelen önizleme verisi anlaşılamadı veya eksik. (${res.message || ''})</p>`;
         }
 
-        // Her coin için ana kart yapısını döndür.
         return `<div class="backtest-card" data-coin="${coin}" style="margin-bottom:15px; border-left: 3px solid var(--accent-blue);">
                     <h4>${coinSymbol} Analiz Sonuçları</h4>
                     ${contentHtml}
                 </div>`;
-    }).join(''); // Tüm kartları birleştirerek tek bir HTML metni oluştur.
-
-    resultContainer.innerHTML = html;
-}
+    }).join('');
 async function renderAlarmReports() {
     if (!state.userDocRef) return;
     const tableBody = document.getElementById('alarmReportsTable');
