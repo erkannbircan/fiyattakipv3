@@ -282,8 +282,6 @@ function setupStrategyDiscoveryListeners(parentElement) {
         const target = e.target;
         
         if (target.closest('#runSignalAnalysisBtn')) {
-            // *** DEĞİŞİKLİK: runSignalAnalysisPreview artık events.js'de değil, api.js'de ***
-            // Bu nedenle bu bloğu güncelliyoruz.
             const btn = e.target.closest('#runSignalAnalysisBtn');
             showLoading(btn);
 
@@ -295,16 +293,15 @@ function setupStrategyDiscoveryListeners(parentElement) {
             const params = {
                 coins: state.discoveryCoins,
                 timeframe: document.getElementById('signalAnalysisTimeframe').value,
-                // *** YENİ: Yeni dropdown'ın değeri okunuyor ***
-                targetPeriod: document.getElementById('signalAnalysisTargetPeriod').value,
                 changePercent: parseFloat(document.getElementById('signalAnalysisChange').value),
                 direction: document.getElementById('signalAnalysisDirection').value,
                 days: parseInt(document.getElementById('signalAnalysisPeriod').value),
+                // *** YENİ: Geriye bakılacak mum sayısı okunup parametrelere ekleniyor. ***
+                lookbackCandles: parseInt(document.getElementById('signalLookbackCandles').value) || 3,
                 params: dnaParams,
                 isPreview: true
             };
 
-            // api.js'deki asıl fonksiyonu çağırıyoruz.
             runSignalAnalysisPreview(params)
                 .finally(() => {
                     hideLoading(btn);
