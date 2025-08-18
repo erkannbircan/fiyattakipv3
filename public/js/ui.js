@@ -490,38 +490,39 @@ function renderSignalAnalysisPreview(data) {
         } else if (res.status === 'preview' && res.params && res.dnaSummary && res.avgReturns) {
             const paramsString = JSON.stringify(res.params);
             
-            const dnaForAlarm = {
-                coin: res.params.coins[0],
-                timeframe: res.params.timeframe,
-                direction: res.params.direction,
-                dna_analysis: { avgReturn1h: res.avgReturns['1h'] },
-                dna: {}
-            };
-            res.dnaSummary.featureOrder.forEach((feature, index) => {
-                const keyMap = { 'rsi': 'avgRsi', 'macd_hist': 'avgMacdHist', 'adx': 'avgAdx', 'volume_mult': 'avgVolumeMultiplier' };
-                if (keyMap[feature]) {
-                    dnaForAlarm.dna[keyMap[feature]] = res.dnaSummary.mean[index];
-                }
-            });
-            const dnaForAlarmString = JSON.stringify(dnaForAlarm);
-
             let detailsHtml = '';
-            if (res.eventTimestamps && res.eventTimestamps.length > 0) {
-                const eventListItems = res.eventTimestamps.map(ts => {
-                    return `<li>${new Date(ts).toLocaleString('tr-TR')}</li>`;
+            if (res.eventDetails && res.eventDetails.length > 0) {
+                const eventListItems = res.eventDetails.map(event => {
+                    // Tarihi İstanbul saatine çeviriyoruz
+                    const eventDate = new Date(event.timestamp).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' });
+                    return `<tr>
+                                <td>${eventDate}</td>
+                                <td>$${formatPrice(event.priceBefore)}</td>
+                                <td>$${formatPrice(event.priceAfter)}</td>
+                            </tr>`;
                 }).join('');
 
                 detailsHtml = `
                     <div class="collapsible" style="margin-top: 20px;">
                         <div class="collapsible-header">
-                            <span>🔍 Bulunan ${res.eventTimestamps.length} Fırsatın Tarihleri (Test için)</span>
+                            <span>🔍 Bulunan ${res.eventDetails.length} Fırsatın Detayları (Test için)</span>
                             <i class="fas fa-chevron-down"></i>
                         </div>
-                        <div class="collapsible-content">
-                            <p style="font-size: 0.85rem; color: var(--text-secondary);">Bu listedeki tarihleri TradingView gibi bir platformda kontrol ederek stratejinin doğruluğunu test edebilirsiniz.</p>
-                            <ul style="max-height: 200px; overflow-y: auto; padding-left: 20px; font-size: 0.9rem;">
-                                ${eventListItems}
-                            </ul>
+                        <div class="collapsible-content" style="padding: 15px 0 0 0;">
+                            <div class="table-wrapper">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Tarih (İstanbul Saati)</th>
+                                            <th>Sinyal Mumu Fiyatı</th>
+                                            <th>Sonraki 2 Mumun Hedef Fiyatı</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody style="max-height: 250px; overflow-y: auto; display: block;">
+                                        ${eventListItems}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -530,11 +531,11 @@ function renderSignalAnalysisPreview(data) {
             contentHtml = `
                 <p class="section-description" style="margin-bottom: 15px;">${res.message}</p>
                 
-                <h5 class="setting-subtitle" style="margin-top:0;">Ortalama Getiri Performansı</h5>
+                <h5 class="setting-subtitle" style="margin-top:0;">Potansiyel Getiri Performansı</h5>
                 <div class="backtest-results-grid" style="grid-template-columns: repeat(4, 1fr); gap: 10px;">
                     ${Object.entries(res.avgReturns).map(([period, value]) => `
                         <div class="backtest-card" style="padding:10px;">
-                            <p class="label">${period.replace('m', ' Dakika').replace('h', ' Saat').replace('d', ' Gün')}</p>
+                            <p class="label">${period.replace('m', 'Dk').replace('h', ' Saat').replace('d', ' Gün')}</p>
                             <p class="value ${getPerformanceClass(value)}">${value}%</p>
                         </div>
                     `).join('')}
@@ -550,9 +551,6 @@ function renderSignalAnalysisPreview(data) {
                 <div class="preview-actions" style="margin-top: 20px; display:flex; gap:10px; flex-wrap:wrap;">
                     <button class="btn btn-primary save-dna-btn" data-params='${paramsString}'>
                         <i class="fas fa-save"></i> DNA Profili Oluştur
-                    </button>
-                    <button class="btn btn-secondary use-dna-in-alarm-btn" data-dna='${dnaForAlarmString}'>
-                        <i class="fas fa-bell"></i> Bu Stratejiden Alarm Kur
                     </button>
                 </div>
                 ${detailsHtml}
