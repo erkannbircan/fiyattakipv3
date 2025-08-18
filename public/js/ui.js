@@ -487,8 +487,21 @@ function renderSignalAnalysisPreview(data) {
             const messageColor = res.status === 'error' ? 'var(--accent-red)' : 'var(--text-secondary)';
             contentHtml = `<p style="color:${messageColor}; padding: 10px 0;">${res.message}</p>`;
         
-        } else if (res.status === 'preview' && res.params && res.dnaSummary && res.avgReturns) {
-            const paramsString = JSON.stringify(res.params);
+       } else if (res.status === 'preview' && res.params && res.dnaSummary && res.avgReturns && res.dnaProfile) { // dnaProfile'ın varlığını kontrol et
+            
+            // *** YENİ: Tam ve zengin DNA profili string formatına çevriliyor. ***
+            const profileDataString = JSON.stringify(res.dnaProfile);
+
+            contentHtml = `
+                <div class="preview-actions" style="margin-top: 20px; display:flex; gap:10px; flex-wrap:wrap;">
+                    
+                    <button class="btn btn-primary save-dna-btn" data-profile='${profileDataString}'>
+                        <i class="fas fa-save"></i> DNA Profili Oluştur
+                    </button>
+
+                </div>
+                ${detailsHtml}
+            `;
             
             let detailsHtml = '';
             if (res.eventDetails && res.eventDetails.length > 0) {
