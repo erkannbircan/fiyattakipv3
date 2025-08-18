@@ -1,14 +1,35 @@
 // scanner.js dosyasının tam ve güncel hali
 
 /**
- * Tarama işlemini başlatan ana fonksiyon.
+ * Otomatik tarama zamanlayıcısını yönetir.
+ * @param {boolean} shouldBeActive - Tarayıcının aktif olup olmayacağını belirtir.
+ */
+function toggleAutoScanner(shouldBeActive) {
+    // Mevcut bir zamanlayıcı varsa temizle
+    if (state.liveScannerTimer) {
+        clearInterval(state.liveScannerTimer);
+        state.liveScannerTimer = null;
+    }
+
+    // Arayüzü güncelle
+    updateScannerStatusUI(shouldBeActive ? 'idle' : 'stopped');
+
+    if (shouldBeActive) {
+        // Tarayıcıyı hemen bir kere çalıştır
+        startScanner(); 
+        
+        // Ayarlanan aralıkla periyodik olarak çalışması için zamanlayıcı kur
+        const intervalMinutes = state.settings.liveScannerInterval || 5;
+        state.liveScannerTimer = setInterval(startScanner, intervalMinutes * 60 * 1000);
+    }
+}
+
+/**
+ * Tarama işlemini başlatan ana fonksiyon. Artık butonsuz çalışır.
  */
 async function startScanner() {
-    const btn = document.getElementById('startScannerBtn');
-    showLoading(btn);
-
     const resultsTableBody = document.getElementById('scannerResultsTable');
-    resultsTableBody.innerHTML = `<tr><td colspan="4" style="text-align: center;"><div class="loading" style="margin: auto;"></div> Profiller ve piyasa verileri yükleniyor...</td></tr>`;
+    updateScannerStatusUI('running');
 
     try {
         const getProfilesFunc = state.firebase.functions.httpsCallable('manageDnaProfiles');
@@ -18,7 +39,7 @@ async function startScanner() {
 
         if (activeProfiles.length === 0) {
             resultsTableBody.innerHTML = `<tr><td colspan="4" style="text-align: center;">Taranacak aktif DNA profili bulunamadı.</td></tr>`;
-            hideLoading(btn);
+            updateScannerStatusUI('idle');
             return;
         }
 
@@ -27,10 +48,10 @@ async function startScanner() {
         await runScan(activeProfiles, uniqueCoins);
 
     } catch (error) {
-        console.error("Tarama başlatılırken hata oluştu:", error);
+        console.error("Tarama sırasında hata oluştu:", error);
         resultsTableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--accent-red);">Hata: ${error.message}</td></tr>`;
     } finally {
-        hideLoading(btn);
+        updateScannerStatusUI('idle');
     }
 }
 
@@ -41,13 +62,11 @@ async function startScanner() {
  */
 async function runScan(profiles, coins) {
     console.log(`Tarama başlıyor: ${coins.length} coin, ${profiles.length} profile karşı taranacak.`);
-    const resultsTableBody = document.getElementById('scannerResultsTable');
-    resultsTableBody.innerHTML = `<tr><td colspan="4" style="text-align: center;"><div class="loading" style="margin: auto;"></div> ${coins.length} coin için anlık veriler analiz ediliyor...</td></tr>`;
-
+    
     const dataRequirements = {};
     profiles.forEach(p => {
         if (!dataRequirements[p.coin]) dataRequirements[p.coin] = {};
-        const lookback = p.lookbackCandles || 3; // Profilden oku veya varsayılan
+        const lookback = p.lookbackCandles || 3;
         const requiredCandles = 50 + lookback; 
         if (!dataRequirements[p.coin][p.timeframe] || requiredCandles > dataRequirements[p.coin][p.timeframe]) {
             dataRequirements[p.coin][p.timeframe] = requiredCandles;
@@ -87,13 +106,12 @@ async function runScan(profiles, coins) {
         if (featureOrder.some(f => f.startsWith('atr') || f.startsWith('bb') || f.startsWith('rv'))) params.volatility = true;
         if (featureOrder.some(f => f.startsWith('candle'))) params.candle = true;
         if (featureOrder.some(f => f.startsWith('rsi_vel') || f.startsWith('macd_hist_vel'))) params.velocity = true;
-
-        // *** HATA DÜZELTMESİ: Eski getFeatureVector yerine yeni ve doğru fonksiyon çağrılıyor. ***
+        
         const currentFeatures = getMultiCandleFeatureVector(klines, klines.length - 2, lookbackCandles, params);
         
         if (currentFeatures && currentFeatures.vector) {
             const distance = matchDnaProfile(currentFeatures.vector, profile);
-            if (distance !== null) { // Eşik değeri kaldırdık, tüm sonuçları gösterelim
+            if (distance !== null) {
                 matches.push({
                     coin: coin,
                     profileName: profile.name,
