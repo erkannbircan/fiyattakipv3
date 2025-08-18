@@ -97,80 +97,45 @@ function runBacktest(alarmId) {
             container.innerHTML = `<p style="color:var(--accent-red)">Hata: ${errorMessage}</p>`;
         });
 }
-
-function runSignalAnalysisPreview() {
-    const btn = document.getElementById('runSignalAnalysisBtn');
-    showLoading(btn);
-    
-    const dnaParams = {};
-    document.querySelectorAll('#signalDnaParamsGrid input:checked').forEach(cb => {
-        dnaParams[cb.dataset.param] = true;
-    });
-    
-    const params = {
-        coins: state.discoveryCoins,
-        timeframe: document.getElementById('signalAnalysisTimeframe').value,
-        changePercent: parseFloat(document.getElementById('signalAnalysisChange').value),
-        direction: document.getElementById('signalAnalysisDirection').value,
-        days: parseInt(document.getElementById('signalAnalysisPeriod').value),
-        params: dnaParams,
-        isPreview: true
-    };
+function runSignalAnalysisPreview(params) {
+    if (!params) {
+        console.error("runSignalAnalysisPreview çağrıldı ancak parametreler eksik.");
+        return Promise.reject("Parametreler eksik.");
+    }
     
     if (params.coins.length === 0) {
         showNotification("Lütfen en az bir coin seçin.", false);
-        hideLoading(btn);
-        return;
+        return Promise.resolve();
     }
     
     const resultContainer = document.getElementById('signalAnalysisResultContainer');
     resultContainer.innerHTML = '<div class="loading" style="margin: 20px auto; display:block;"></div>';
     
-    // DÜZELTME: httpsCallable kullanımı düzeltildi
     const findSignalDNAFunc = state.firebase.functions.httpsCallable('findSignalDNA');
     
-    findSignalDNAFunc(params)
+    return findSignalDNAFunc(params)
         .then(result => {
             console.log("findSignalDNA sonucu:", result);
-            // result.data içinde sonuç gelir
             renderSignalAnalysisPreview(result.data);
         })
         .catch(error => {
             console.error("findSignalDNA Hatası:", error);
             
             let errorMessage = "Bilinmeyen hata oluştu.";
-            
             if (error.code) {
                 switch (error.code) {
-                    case 'unauthenticated':
-                        errorMessage = "Oturum süresi dolmuş. Lütfen tekrar giriş yapın.";
-                        break;
-                    case 'invalid-argument':
-                        errorMessage = "Geçersiz parametre gönderildi.";
-                        break;
-                    case 'internal':
-                        errorMessage = error.message || "İç sunucu hatası oluştu.";
-                        break;
-                    default:
-                        errorMessage = error.message || errorMessage;
+                    case 'unauthenticated': errorMessage = "Oturum süresi dolmuş. Lütfen tekrar giriş yapın."; break;
+                    case 'invalid-argument': errorMessage = "Geçersiz parametre gönderildi."; break;
+                    case 'internal': errorMessage = error.message || "İç sunucu hatası oluştu."; break;
+                    default: errorMessage = error.message || errorMessage;
                 }
             } else if (error.message) {
                 errorMessage = error.message;
             }
             
-            resultContainer.innerHTML = `
-                <p style="color:var(--accent-red); padding: 10px;">
-                    <strong>Analiz sırasında bir hata oluştu.</strong><br>
-                    Detay: ${errorMessage}<br>
-                    <small>Hata Kodu: ${error.code || 'Bilinmiyor'}</small>
-                </p>`;
-        })
-        .finally(() => {
-            hideLoading(btn);
+            resultContainer.innerHTML = `<p style="color:var(--accent-red); padding: 10px;"><strong>Analiz sırasında bir hata oluştu.</strong><br>Detay: ${errorMessage}<br><small>Hata Kodu: ${error.code || 'Bilinmiyor'}</small></p>`;
         });
 }
-// ... dosyanın diğer kısımları aynı kalacak ...
-
 function saveDnaProfile(params) {
     const resultContainer = document.getElementById('signalAnalysisResultContainer');
     const coinCard = resultContainer.querySelector(`.backtest-card[data-coin="${params.coins[0]}"]`);
