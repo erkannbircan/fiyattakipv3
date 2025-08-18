@@ -3,18 +3,10 @@ function setupGlobalEventListeners() {
         if (e.target.closest('.close-btn') || e.target === document.getElementById('modalOverlay')) {
             
             const chartPanel = document.getElementById('chartPanel');
-            // 1. Grafik paneli açık mı diye kontrol et.
             if (chartPanel && chartPanel.classList.contains('show')) {
-                // 2. Widget referansını, panel yok edilmeden ÖNCE yakala.
                 const widgetToSave = state.tradingViewWidget;
-                
-                console.log("Grafik paneli kapatılıyor, kaydetme işlemi tetikleniyor...");
-                // 3. Yakaladığın referansı kaydetme fonksiyonuna pasla ve bitmesini BEKLE.
                 await saveChartState(widgetToSave);
-                console.log("Kaydetme işlemi bitti. Şimdi panel kapatılabilir.");
             }
-            
-            // 4. Tüm işler bittikten sonra panelleri kapat.
             closeAllPanels();
         }
     });
@@ -94,7 +86,6 @@ function setupTabEventListeners(parentElement) {
         
         if (activeTabContent) {
             activeTabContent.classList.add('active');
-            // HATA DÜZELTİLDİ: switch bloğunun tamamı addEventListener içinde olmalı
             switch (tabLink.dataset.tab) {
                 case 'crypto':
                     createCoinManager('crypto-coin-manager-container', state.userPortfolios[state.activePortfolio] || [], 'crypto');
@@ -102,13 +93,15 @@ function setupTabEventListeners(parentElement) {
                 case 'crypto-ai':
                     createCoinManager('ai-coin-manager-container', state.cryptoAiPairs, 'ai');
                     await fetchAiDataAndRender();
+                    // AI sayfasından profil listeleme kaldırıldı.
                     break;
                 case 'crypto-pivot':
                     renderSupportResistance();
                     break;
                 case 'strategy-discovery':
                     createCoinManager('discovery-coin-manager-container', state.discoveryCoins, 'discovery');
-                    await fetchDnaProfiles(); // Sekme açıldığında profilleri yükle
+                    // *** HATA DÜZELTME: Fonksiyona doğru ID parametresi eklendi ***
+                    await fetchDnaProfiles('dnaProfilesContainerDiscovery');
                     break;
                 case 'live-scanner':
                     document.getElementById('scannerResultsTable').innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">Tarama başlatılmadı.</td></tr>`;
@@ -276,7 +269,8 @@ function setupStrategyDiscoveryListeners(parentElement) {
             const coin = target.closest('.backtest-card').dataset.coin;
             params.coins = [coin];
             await saveDnaProfile(params);
-            await fetchDnaProfiles();
+            // *** HATA DÜZELTME: Fonksiyona doğru ID parametresi eklendi ***
+            await fetchDnaProfiles('dnaProfilesContainerDiscovery');
             return;
         }
 
@@ -287,8 +281,9 @@ function setupStrategyDiscoveryListeners(parentElement) {
             return;
         }
 
-        if(target.closest('#refreshDnaProfilesBtn')) {
-            await fetchDnaProfiles();
+        // *** HATA DÜZELTME: ID'si değişen butona göre doğru çağrı yapıldı ***
+        if(target.closest('#refreshDnaProfilesBtnDiscovery')) {
+            await fetchDnaProfiles('dnaProfilesContainerDiscovery');
             return;
         }
 
@@ -305,23 +300,14 @@ function setupAiPageActionListeners(parentElement) {
     parentElement.addEventListener('click', async (e) => {
         const target = e.target;
 
-        // --- YENİ EKLENEN KOD BLOĞU: FİLTRE BUTONLARI ---
-        // Strateji veya Zaman Aralığı filtresine mi tıklandı?
         const filterButton = target.closest('#strategyPresetFilters button, #cryptoIntervalFilters button');
         if (filterButton && !filterButton.classList.contains('active')) {
-            // Önce aynı gruptaki diğer aktif butonu pasif yap
             const parent = filterButton.parentElement;
             parent.querySelector('.active')?.classList.remove('active');
-            // Tıklanan butonu aktif yap
             filterButton.classList.add('active');
-            
-            // Not: Seçimler, sadece "Güncelle" butonuna basıldığında okunur.
-            // Bu yüzden burada state'i güncellemeye gerek yok, sadece görsel değişiklik yeterli.
-            return; // Diğer click olaylarını tetiklememek için işlemi burada bitir.
+            return;
         }
-        // --- YENİ KOD BLOĞU BİTTİ ---
 
-        // Mevcut kodunuz: Analiz Ayarlarını Güncelle butonu
         if (target.closest('#updateCryptoAnalysisBtn')) {
             await updateAnalysisSettings();
             return;
@@ -347,11 +333,8 @@ function setupPivotPageActionListeners(parentElement) {
 function setupScannerEventListeners(parentElement) {
     const scannerContent = document.getElementById('live-scanner-content');
     if (scannerContent) {
-        // 'click' olayını dinle
         scannerContent.addEventListener('click', (e) => {
-            // "Taramayı Başlat" butonuna veya içindeki bir elemente tıklandıysa
             if (e.target.closest('#startScannerBtn')) {
-                // scanner.js dosyasındaki ana fonksiyonu çağır.
                 startScanner();
             }
         });
@@ -379,43 +362,24 @@ async function sendTestTelegramMessage() {
 function setupSaveSettingsButtonListener() {
     const saveBtn = document.getElementById('saveSettingsBtn');
     if (saveBtn) {
-        // Buton zaten bir dinleyiciye sahipse, tekrar eklemeyi önle
         if (saveBtn.dataset.listenerAttached) {
             return;
         }
-        
         saveBtn.addEventListener('click', () => {
-            // Önceki hata ayıklama kodunu temizleyip,
-            // doğrudan saveSettings fonksiyonunu çağırıyoruz.
             saveSettings(); 
         });
-
-        // Dinleyicinin eklendiğini işaretle
         saveBtn.dataset.listenerAttached = 'true';
-        console.log("Ayarları Kaydet butonu için olay dinleyici başarıyla eklendi.");
-    } else {
-        // Eğer buton bulunamazsa diye bir uyarı ekleyelim.
-        console.warn("setupSaveSettingsButtonListener: 'saveSettingsBtn' ID'li buton bulunamadı.");
     }
 }
 function setupUpdateAnalysisButtonListener() {
     const updateBtn = document.getElementById('updateCryptoAnalysisBtn');
     if (updateBtn) {
-        // Buton zaten bir dinleyiciye sahipse, tekrar eklemeyi önle
         if (updateBtn.dataset.listenerAttached) {
             return;
         }
-        
         updateBtn.addEventListener('click', () => {
-            // Butona tıklandığında doğrudan updateAnalysisSettings fonksiyonunu çağır.
             updateAnalysisSettings(); 
         });
-
-        // Dinleyicinin eklendiğini işaretle
         updateBtn.dataset.listenerAttached = 'true';
-        console.log("Analiz Ayarlarını Güncelle butonu için olay dinleyici başarıyla eklendi.");
-    } else {
-        console.warn("setupUpdateAnalysisButtonListener: 'updateCryptoAnalysisBtn' ID'li buton bulunamadı.");
     }
 }
-
