@@ -764,26 +764,44 @@ function renderDnaProfiles(profiles, containerId) {
     html += '</tbody></table></div>';
     container.innerHTML = html;
 }
-/**
- * Tarama sonuçlarını ekrandaki tabloya yazar.
- * @param {object[]} matches - Bulunan eşleşmelerin listesi.
- */
-function renderScannerResults(matches) {
-    const tableBody = document.getElementById('scannerResultsTable');
-    if (!matches || matches.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center;">Anlık piyasa verilerinde kayıtlı DNA profillerine uyan bir eşleşme bulunamadı.</td></tr>`;
+// ui.js dosyasındaki renderScannerResults fonksiyonunu bununla değiştirin
+function renderScannerResults(groupedMatches) {
+    const container = document.getElementById('scannerResultsTable'); // Bu ID'yi konteyner olarak yeniden kullanalım
+    
+    if (!groupedMatches || Object.keys(groupedMatches).length === 0) {
+        container.innerHTML = `<div class="scanner-no-results">Anlık piyasa verilerinde kayıtlı DNA profillerine uyan bir eşleşme bulunamadı.</div>`;
         return;
     }
 
-    // Sonuçları benzerlik skoruna göre küçükten büyüğe sırala (en iyi eşleşme en üstte)
-    matches.sort((a, b) => a.distance - b.distance);
+    let html = '';
+    for (const coin in groupedMatches) {
+        const matches = groupedMatches[coin];
+        const coinSymbol = coin.replace('USDT', '');
+        
+        const matchesHtml = matches.map(match => `
+            <div class="scanner-profile-match">
+                <div class="profile-info">
+                    <span class="profile-name">${match.profileName}</span>
+                    <span class="profile-timeframe">${match.timeframe}</span>
+                </div>
+                <div class="profile-score-container">
+                    <div class="score-bar" style="width: ${match.score}%;"></div>
+                    <span class="score-text">${match.score}</span>
+                </div>
+            </div>
+        `).join('');
 
-    tableBody.innerHTML = matches.map(match => `
-        <tr>
-            <td>${match.coin.replace('USDT', '')}</td>
-            <td>${match.profileName}</td>
-            <td>${match.distance}</td>
-            <td>${match.time}</td>
-        </tr>
-    `).join('');
+        html += `
+            <div class="scanner-coin-card">
+                <div class="scanner-card-header">
+                    <h4>${coinSymbol}</h4>
+                </div>
+                <div class="scanner-card-body">
+                    ${matchesHtml}
+                </div>
+            </div>
+        `;
+    }
+
+    container.innerHTML = `<div class="scanner-results-grid">${html}</div>`;
 }
