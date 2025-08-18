@@ -310,14 +310,15 @@ function setupStrategyDiscoveryListeners(parentElement) {
         }
         
         const saveBtn = target.closest('.save-dna-btn');
-        if (saveBtn) {
-            const params = JSON.parse(saveBtn.dataset.params);
-            const coin = target.closest('.backtest-card').dataset.coin;
-            params.coins = [coin];
-            await saveDnaProfile(params);
-            await fetchDnaProfiles('dnaProfilesContainerDiscovery');
+         if (saveBtn) {
+            // Butona gömülü olan tam profil verisini alıyoruz.
+            const profileData = JSON.parse(saveBtn.dataset.profile);
+            
+            // Yeniden hesaplama yapmak yerine, doğrudan bu hazır profili kaydediyoruz.
+            await saveDnaProfile(profileData, saveBtn);
             return;
         }
+
 
         const alarmBtn = target.closest('.use-dna-in-alarm-btn');
         if (alarmBtn) { 
