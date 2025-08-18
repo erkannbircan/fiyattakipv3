@@ -56,6 +56,8 @@ function initializeAuthListener() {
             state.userDocRef = null;
             if (state.autoRefreshTimer) clearInterval(state.autoRefreshTimer);
             if (state.reportsRefreshTimer) clearInterval(state.reportsRefreshTimer);
+            // YENİ: Oturum kapanınca tarayıcıyı da durdur.
+            if (state.liveScannerTimer) clearInterval(state.liveScannerTimer);
         }
     });
 }
@@ -67,10 +69,10 @@ function loadSettingsAndRole(userData) {
     state.settings.colors = { ...defaultSettings.colors, ...(userData.settings?.colors || {}) };
     state.settings.cryptoAnalysisIndicators = { ...defaultSettings.cryptoAnalysisIndicators, ...(userData.settings?.cryptoAnalysisIndicators || {}) };
     state.trackedReports = userData.settings?.trackedReportIds || [];
+    // YENİ: Canlı tarayıcı ayarlarını yükle
+    state.settings.liveScannerInterval = userData.settings?.liveScannerInterval || 5; // Varsayılan 5 dakika
 
-    // Önceki denemelerden kalan bozuk chartStates'e dokunmamak için yeni bir yol kullanıyoruz.
     state.settings.chartStates_v2 = userData.settings?.chartStates_v2 || {};
-
     state.currentUserRole = userData.role;
     const limits = { admin: { coin: Infinity }, qualified: { coin: 50 }, new_user: { coin: 15 } };
     state.coinLimit = limits[state.currentUserRole]?.coin ?? 15;
@@ -96,17 +98,21 @@ async function initializeTrackerPage(userData) {
     renderAlarmReports();
 
     setupTrackerPageEventListeners();
-      setupUpdateAnalysisButtonListener();
+    setupUpdateAnalysisButtonListener();
+
+    // YENİ: Sayfa yüklendiğinde tarayıcıyı başlat (eğer açıksa)
+    const toggle = document.getElementById('toggleAutoScanner');
+    if (toggle && toggle.checked) {
+        toggleAutoScanner(true);
+    }
 }
 
 async function fetchAllDataAndRender() {
     const refreshBtn = document.getElementById('refreshBtn');
     if (refreshBtn) showLoading(refreshBtn);
-
     const currentCoinList = state.userPortfolios[state.activePortfolio] || [];
     const promises = currentCoinList.map(pair => fetchCryptoData(pair, false));
     state.allCryptoData = await Promise.all(promises);
-
     sortAndRenderTable();
     renderSupportResistance();
     if (refreshBtn) hideLoading(refreshBtn);
@@ -118,10 +124,8 @@ async function fetchAiDataAndRender() {
     const container = document.getElementById('crypto-indicator-cards-container');
     if (!container) return;
     container.innerHTML = '<div class="loading" style="margin: 20px auto; display:block;"></div>';
-
     const promises = (state.cryptoAiPairs || []).map(pair => fetchCryptoData(pair, true));
     const aiData = await Promise.all(promises);
-
     renderIndicatorCards('crypto', aiData);
 }
 
@@ -152,14 +156,19 @@ function saveSettings() {
     let interval = parseInt(document.getElementById('refreshInterval').value);
     const minInterval = { admin: 10, qualified: 120, new_user: 300 }[state.currentUserRole] || 300;
     if (interval < minInterval) interval = minInterval;
+    
+    // YENİ: Canlı tarayıcı ayarını oku ve doğrula
+    let scannerInterval = parseInt(document.getElementById('liveScannerInterval').value);
+    if (isNaN(scannerInterval) || scannerInterval < 5) {
+        scannerInterval = 5; // Minimum 5 dakika
+    }
 
-    // Sadece güncellenecek ayarları bir obje olarak alıyoruz.
-    // chartStates veya diğer hassas verilere dokunmuyoruz.
     const settingsToUpdate = {
         lang: document.getElementById('langSelect').value,
         autoRefresh: document.getElementById('autoRefreshToggle').checked,
         refreshInterval: interval,
         telegramPhone: document.getElementById('telegramPhoneInput').value,
+        liveScannerInterval: scannerInterval, // YENİ
         columns: {
             1: { name: document.getElementById('col1_name_input').value, days: parseInt(document.getElementById('col1_days_input').value), threshold: parseFloat(document.getElementById('col1_threshold_input').value) },
             2: { name: document.getElementById('col2_name_input').value, days: parseInt(document.getElementById('col2_days_input').value), threshold: parseFloat(document.getElementById('col2_threshold_input').value) },
@@ -168,16 +177,19 @@ function saveSettings() {
         colors: { high: document.getElementById('high_color_input').value, low: document.getElementById('low_color_input').value }
     };
 
-    // state.settings objesini yeni ayarlarla güncelliyoruz.
     Object.assign(state.settings, settingsToUpdate);
 
     if (state.userDocRef) {
-        // Veritabanında SADECE 'settings' alanını güncelliyoruz.
         state.userDocRef.update({ settings: state.settings })
             .then(() => {
                 applySettingsToUI();
                 closeAllPanels();
                 showNotification("Ayarlar başarıyla kaydedildi.", true);
+                // YENİ: Ayarlar kaydedildikten sonra tarayıcıyı yeni aralıkla yeniden başlat
+                const toggle = document.getElementById('toggleAutoScanner');
+                if (toggle && toggle.checked) {
+                    toggleAutoScanner(true);
+                }
             })
             .catch((error) => {
                 console.error("Ayarları kaydederken hata oluştu:", error);
