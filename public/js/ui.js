@@ -764,3 +764,26 @@ function renderDnaProfiles(profiles, containerId) {
     html += '</tbody></table></div>';
     container.innerHTML = html;
 }
+/**
+ * Tarama sonuçlarını ekrandaki tabloya yazar.
+ * @param {object[]} matches - Bulunan eşleşmelerin listesi.
+ */
+function renderScannerResults(matches) {
+    const tableBody = document.getElementById('scannerResultsTable');
+    if (!matches || matches.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center;">Anlık piyasa verilerinde kayıtlı DNA profillerine uyan bir eşleşme bulunamadı.</td></tr>`;
+        return;
+    }
+
+    // Sonuçları benzerlik skoruna göre küçükten büyüğe sırala (en iyi eşleşme en üstte)
+    matches.sort((a, b) => a.distance - b.distance);
+
+    tableBody.innerHTML = matches.map(match => `
+        <tr>
+            <td>${match.coin.replace('USDT', '')}</td>
+            <td>${match.profileName}</td>
+            <td>${match.distance}</td>
+            <td>${match.time}</td>
+        </tr>
+    `).join('');
+}
