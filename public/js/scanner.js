@@ -1,4 +1,4 @@
-// Yeni Dosya: scanner.js
+// scanner.js dosyasının tam ve güncel hali
 
 /**
  * Tarama işlemini başlatan ana fonksiyon.
@@ -7,37 +7,32 @@ async function startScanner() {
     const btn = document.getElementById('startScannerBtn');
     showLoading(btn);
 
-    const resultsTable = document.getElementById('scannerResultsTable');
-    resultsTable.innerHTML = `<tr><td colspan="4" style="text-align: center;">Profiller ve piyasa verileri yükleniyor...</td></tr>`;
+    const resultsTableBody = document.getElementById('scannerResultsTable');
+    resultsTableBody.innerHTML = `<tr><td colspan="4" style="text-align: center;"><div class="loading" style="margin: auto;"></div> Profiller ve piyasa verileri yükleniyor...</td></tr>`;
 
     try {
-        // 1. Aktif olan tüm DNA profillerini getir.
         const getProfilesFunc = state.firebase.functions.httpsCallable('manageDnaProfiles');
         const profilesResult = await getProfilesFunc({ action: 'get' });
         
         const activeProfiles = profilesResult.data.profiles.filter(p => p.isActive);
 
         if (activeProfiles.length === 0) {
-            resultsTable.innerHTML = `<tr><td colspan="4" style="text-align: center;">Taranacak aktif DNA profili bulunamadı.</td></tr>`;
+            resultsTableBody.innerHTML = `<tr><td colspan="4" style="text-align: center;">Taranacak aktif DNA profili bulunamadı.</td></tr>`;
             hideLoading(btn);
             return;
         }
 
-        // 2. Tarama için gerekli tüm coinleri ve parametreleri topla.
-        const coinsToScan = [...new Set(activeProfiles.map(p => p.coin))];
-        const uniqueParams = [...new Set(activeProfiles.map(p => JSON.stringify(p.featureOrder)))].map(s => JSON.parse(s));
-
-        // 3. Tarama işlemini çalıştır.
-        await runScan(activeProfiles, coinsToScan, uniqueParams);
+        const uniqueCoins = [...new Set(activeProfiles.map(p => p.coin))];
+        
+        await runScan(activeProfiles, uniqueCoins);
 
     } catch (error) {
         console.error("Tarama başlatılırken hata oluştu:", error);
-        resultsTable.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--accent-red);">Hata: ${error.message}</td></tr>`;
+        resultsTableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--accent-red);">Hata: ${error.message}</td></tr>`;
     } finally {
         hideLoading(btn);
     }
 }
-
 
 /**
  * Piyasayı tarar ve eşleşmeleri bulur.
@@ -46,72 +41,68 @@ async function startScanner() {
  */
 async function runScan(profiles, coins) {
     console.log(`Tarama başlıyor: ${coins.length} coin, ${profiles.length} profile karşı taranacak.`);
-    const resultsTable = document.getElementById('scannerResultsTable');
-    resultsTable.innerHTML = `<tr><td colspan="4" style="text-align: center;">${coins.length} coin için anlık veriler analiz ediliyor...</td></tr>`;
+    const resultsTableBody = document.getElementById('scannerResultsTable');
+    resultsTableBody.innerHTML = `<tr><td colspan="4" style="text-align: center;"><div class="loading" style="margin: auto;"></div> ${coins.length} coin için anlık veriler analiz ediliyor...</td></tr>`;
 
-    // Tüm coinler için en son mum verilerini paralel olarak çek.
-    // Her coin için en az 200 mum çekerek indikatörlerin hesaplanmasını sağlıyoruz.
-    const promises = coins.map(coin => getKlines(coin, '15m', 200));
-    const klinesData = await Promise.all(promises);
+    const dataRequirements = {};
+    profiles.forEach(p => {
+        if (!dataRequirements[p.coin]) dataRequirements[p.coin] = {};
+        const lookback = p.lookbackCandles || 3; // Profilden oku veya varsayılan
+        const requiredCandles = 50 + lookback; 
+        if (!dataRequirements[p.coin][p.timeframe] || requiredCandles > dataRequirements[p.coin][p.timeframe]) {
+            dataRequirements[p.coin][p.timeframe] = requiredCandles;
+        }
+    });
+
+    const klinePromises = [];
+    for (const coin in dataRequirements) {
+        for (const timeframe in dataRequirements[coin]) {
+            klinePromises.push(
+                getKlines(coin, timeframe, dataRequirements[coin][timeframe]).then(data => ({ coin, timeframe, data }))
+            );
+        }
+    }
+    
+    const klinesResults = await Promise.all(klinePromises);
+    const klinesData = {};
+    klinesResults.forEach(res => {
+        if (!klinesData[res.coin]) klinesData[res.coin] = {};
+        klinesData[res.coin][res.timeframe] = res.data;
+    });
 
     const matches = [];
+    const now = new Date();
 
-    // Her bir coinin güncel verisini, ilgili profillerle karşılaştır.
-    for (let i = 0; i < coins.length; i++) {
-        const coin = coins[i];
-        const klines = klinesData[i];
-
-        if (!klines || klines.length < 50) continue;
-
-        const relevantProfiles = profiles.filter(p => p.coin === coin);
+    for (const profile of profiles) {
+        const { coin, timeframe, featureOrder, lookbackCandles } = profile;
+        const klines = klinesData[coin]?.[timeframe];
         
-        for (const profile of relevantProfiles) {
-            // Profilin istediği parametreleri (featureOrder) kullanarak özellik vektörünü oluştur.
-            const featureParams = {};
-            profile.featureOrder.forEach(f => featureParams[f] = true);
-            
-            // Son mumdan bir önceki mumu baz alarak anlık DNA'yı çıkarıyoruz.
-            const currentFeatures = getFeatureVector(klines, klines.length - 2, featureParams);
+        if (!klines || klines.length < dataRequirements[coin][timeframe]) continue;
 
-            if (currentFeatures && currentFeatures.vector) {
-                // EŞLEŞTİRME MOTORU'nu burada kullanıyoruz.
-                const distance = matchDnaProfile(currentFeatures.vector, profile);
+        const params = {};
+        if (featureOrder.some(f => f.startsWith('rsi'))) params.rsi = true;
+        if (featureOrder.some(f => f.startsWith('macd'))) params.macd = true;
+        if (featureOrder.some(f => f.startsWith('adx'))) params.adx = true;
+        if (featureOrder.some(f => f.startsWith('volume'))) params.volume = true;
+        if (featureOrder.some(f => f.startsWith('atr') || f.startsWith('bb') || f.startsWith('rv'))) params.volatility = true;
+        if (featureOrder.some(f => f.startsWith('candle'))) params.candle = true;
+        if (featureOrder.some(f => f.startsWith('rsi_vel') || f.startsWith('macd_hist_vel'))) params.velocity = true;
 
-                // Uzaklık belirli bir eşik değerinin altındaysa bu bir eşleşmedir.
-                // Bu eşik değeri (örn: 1.5) ayarlanabilir bir parametre olabilir.
-                if (distance !== null && distance < 1.5) {
-                    matches.push({
-                        coin: coin,
-                        profileName: profile.name,
-                        distance: distance.toFixed(4),
-                        time: new Date().toLocaleTimeString()
-                    });
-                }
+        // *** HATA DÜZELTMESİ: Eski getFeatureVector yerine yeni ve doğru fonksiyon çağrılıyor. ***
+        const currentFeatures = getMultiCandleFeatureVector(klines, klines.length - 2, lookbackCandles, params);
+        
+        if (currentFeatures && currentFeatures.vector) {
+            const distance = matchDnaProfile(currentFeatures.vector, profile);
+            if (distance !== null) { // Eşik değeri kaldırdık, tüm sonuçları gösterelim
+                matches.push({
+                    coin: coin,
+                    profileName: profile.name,
+                    distance: distance.toFixed(4),
+                    time: now.toLocaleTimeString('tr-TR', { timeZone: 'Europe/Istanbul' })
+                });
             }
         }
     }
     
     renderScannerResults(matches);
-}
-
-
-/**
- * Tarama sonuçlarını ekrandaki tabloya yazar.
- * @param {object[]} matches - Bulunan eşleşmelerin listesi.
- */
-function renderScannerResults(matches) {
-    const tableBody = document.getElementById('scannerResultsTable');
-    if (matches.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center;">Eşleşme bulunamadı.</td></tr>`;
-        return;
-    }
-
-    tableBody.innerHTML = matches.map(match => `
-        <tr>
-            <td>${match.coin.replace('USDT', '')}</td>
-            <td>${match.profileName}</td>
-            <td>${match.distance}</td>
-            <td>${match.time}</td>
-        </tr>
-    `).join('');
 }
