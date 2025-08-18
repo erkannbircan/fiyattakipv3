@@ -492,3 +492,106 @@ input:checked + .slider:before { transform: translateX(24px); }
 .scanner-status span { color: var(--text-primary); font-weight: 600; }
 .scanner-status span.status-running { color: var(--accent-green); }
 .scanner-status span.status-stopped { color: var(--accent-red); }
+/* --- CANLI TARAMA SONUÇ KARTLARI --- */
+.scanner-results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.scanner-coin-card {
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.scanner-card-header {
+    padding: 12px 15px;
+    background-color: rgba(0,0,0,0.15);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.scanner-card-header h4 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: var(--accent-yellow);
+}
+
+.scanner-card-body {
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.scanner-profile-match {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--bg-secondary);
+    padding: 10px;
+    border-radius: 6px;
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.profile-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.profile-timeframe {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background-color: var(--bg-primary);
+    padding: 2px 6px;
+    border-radius: 4px;
+    align-self: flex-start;
+}
+
+.profile-score-container {
+    width: 80px;
+    height: 24px;
+    background-color: var(--bg-primary);
+    border-radius: 4px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.score-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: linear-gradient(to right, var(--accent-red), var(--accent-yellow), var(--accent-green));
+    opacity: 0.5;
+    transition: width 0.5s ease;
+}
+
+.score-text {
+    position: relative;
+    z-index: 1;
+    font-weight: bold;
+    color: white;
+    font-size: 0.9rem;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+}
+
+.scanner-no-results {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-secondary);
+    background-color: var(--bg-tertiary);
+    border-radius: 8px;
+}
