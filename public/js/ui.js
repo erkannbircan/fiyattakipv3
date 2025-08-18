@@ -24,7 +24,6 @@ function showPanel(panelId) {
 }
 
 function closeAllPanels() {
-    // Bu fonksiyon artık sadece ve sadece panelleri kapatır.
     document.querySelectorAll('.panel.show').forEach(p => p.classList.remove('show'));
     document.getElementById('modalOverlay').classList.remove('show');
     document.body.classList.remove('modal-open');
@@ -54,6 +53,7 @@ function hideLoading(button) {
 }
 
 // --- HATA BURADAYDI: FAZLADAN '}' KARAKTERİ SİLİNDİ ---
+// Önceki kodda burada fazladan bir '}' vardı ve SyntaxError'a neden oluyordu.
 
 const formatPrice = (price) => {
     const num = parseFloat(price);
@@ -74,19 +74,14 @@ const formatVolume = (volume) => {
 };
 
 function applySettingsToUI() {
-    // --- YENİ EKLENEN GÜVENLİK KONTROLÜ ---
-    // Fonksiyonun başında, state.settings objesinin var olup olmadığını kontrol et.
-    // Eğer yoksa veya boşsa, bir hata mesajı yazdır ve fonksiyondan çık.
     if (!state.settings) {
         console.error("applySettingsToUI çağrıldı ancak state.settings tanımsız. Ayarlar yüklenemedi.");
         return;
     }
-    // --- GÜVENLİK KONTROLÜ BİTTİ ---
 
     document.getElementById('langSelect').value = state.settings.lang;
     document.getElementById('autoRefreshToggle').checked = state.settings.autoRefresh;
     document.getElementById('refreshInterval').value = state.settings.refreshInterval;
-    // ... (fonksiyonun geri kalanı aynı)
     document.getElementById('refreshInterval').min = { admin: 10, qualified: 120, new_user: 300 }[state.currentUserRole] || 300;
     document.getElementById('telegramPhoneInput').value = state.settings.telegramPhone || '';
 
@@ -116,7 +111,6 @@ function applySettingsToUI() {
     
     translatePage(state.settings.lang);
     
-    // Bu fonksiyonların varlığını kontrol etmek iyi bir pratiktir
     if (typeof toggleAutoRefresh === 'function') {
         toggleAutoRefresh();
     }
@@ -328,7 +322,6 @@ function showChart(pair) {
 }
 
 function saveChartState() {
-    // Bu fonksiyon artık grafik panelini kapatırken çağrılacak.
     if (state.tradingViewWidget && typeof state.tradingViewWidget.getStudiesList === 'function') {
         const currentPair = document.getElementById('chartPanelTitle').textContent + 'USDT';
 
@@ -512,11 +505,9 @@ function renderSignalAnalysisPreview(data) {
             });
             const dnaForAlarmString = JSON.stringify(dnaForAlarm);
 
-            // *** YENİ: Test için tarih listesini oluşturacak HTML bölümü ***
             let detailsHtml = '';
             if (res.eventTimestamps && res.eventTimestamps.length > 0) {
                 const eventListItems = res.eventTimestamps.map(ts => {
-                    // Tarihi daha okunabilir bir formata çeviriyoruz
                     return `<li>${new Date(ts).toLocaleString('tr-TR')}</li>`;
                 }).join('');
 
@@ -564,7 +555,6 @@ function renderSignalAnalysisPreview(data) {
                         <i class="fas fa-bell"></i> Bu Stratejiden Alarm Kur
                     </button>
                 </div>
-                
                 ${detailsHtml}
             `;
         } else {
@@ -576,6 +566,9 @@ function renderSignalAnalysisPreview(data) {
                     ${contentHtml}
                 </div>`;
     }).join('');
+
+    resultContainer.innerHTML = html;
+}
 async function renderAlarmReports() {
     if (!state.userDocRef) return;
     const tableBody = document.getElementById('alarmReportsTable');
@@ -632,8 +625,6 @@ async function renderAlarmReports() {
     }
 }
 
-// ... dosyanın diğer kısımları aynı kalacak ...
-
 function renderIndicatorCards(type, data) {
     const container = document.getElementById('crypto-indicator-cards-container');
     if (!container) return;
@@ -673,7 +664,6 @@ function renderIndicatorFilters() {}
 
 function renderDictionary() {}
 
-// *** DEĞİŞİKLİK: Fonksiyon artık bir containerId parametresi alıyor ***
 function renderDnaProfiles(profiles, containerId) {
     const container = document.getElementById(containerId);
     if (!container) {
