@@ -477,3 +477,18 @@ input:checked + .slider:before { transform: translateX(24px); }
         grid-template-columns: 1fr;
     }
 }
+/* SCANNER STATUS */
+.scanner-status {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background-color: var(--bg-tertiary);
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    border: 1px solid var(--border-color);
+}
+.scanner-status p { margin: 0; color: var(--text-secondary); font-size: 0.9rem; }
+.scanner-status span { color: var(--text-primary); font-weight: 600; }
+.scanner-status span.status-running { color: var(--accent-green); }
+.scanner-status span.status-stopped { color: var(--accent-red); }
