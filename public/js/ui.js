@@ -524,6 +524,7 @@ function renderSignalAnalysisPreview(data) {
 
             contentHtml = `
                 <div class="analysis-card-grid">
+                    <!-- SOL SÜTUN: PERFORMANS -->
                     <div class="analysis-card-col">
                         <h5 class="setting-subtitle">Potansiyel Getiri Performansı</h5>
                         <div class="backtest-results-grid perf-grid">
@@ -537,6 +538,7 @@ function renderSignalAnalysisPreview(data) {
                         ${detailsHtml}
                     </div>
 
+                    <!-- SAĞ SÜTUN: DNA -->
                     <div class="analysis-card-col">
                         <h5 class="setting-subtitle">Fırsat Anının DNA Özeti</h5>
                         <div class="dna-summary-grid">
