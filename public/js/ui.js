@@ -616,6 +616,8 @@ async function renderAlarmReports() {
     }
 }
 
+// ... dosyanın diğer kısımları aynı kalacak ...
+
 function renderIndicatorCards(type, data) {
     const container = document.getElementById('crypto-indicator-cards-container');
     if (!container) return;
@@ -655,9 +657,13 @@ function renderIndicatorFilters() {}
 
 function renderDictionary() {}
 
-function renderDnaProfiles(profiles) {
-    const container = document.getElementById('dnaProfilesContainer');
-    if (!container) return;
+// *** DEĞİŞİKLİK: Fonksiyon artık bir containerId parametresi alıyor ***
+function renderDnaProfiles(profiles, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) {
+        console.error(`renderDnaProfiles: '${containerId}' ID'li element bulunamadı.`);
+        return;
+    }
 
     if (!profiles || profiles.length === 0) {
         container.innerHTML = `<p style="text-align: center; color: var(--text-secondary); padding: 20px;">Henüz kaydedilmiş bir DNA profili bulunmuyor.</p>`;
@@ -669,8 +675,6 @@ function renderDnaProfiles(profiles) {
         '</tr></thead><tbody>';
 
     profiles.forEach(profile => {
-        // GÜVENLİ YÖNTEM: Profil adını doğrudan 'name' alanından alıyoruz.
-        // Eğer 'name' alanı yoksa, ID'yi göstererek hata oluşmasını engelliyoruz.
         const profileName = profile.name || profile.id;
         const featureText = profile.featureOrder ? profile.featureOrder.join(', ') : 'N/A';
         const eventCount = profile.eventCount || 'N/A';
