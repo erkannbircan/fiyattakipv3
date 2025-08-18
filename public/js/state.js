@@ -5,6 +5,8 @@ let state = {
     pageInitialized: false,
     autoRefreshTimer: null,
     reportsRefreshTimer: null,
+    // YENİ: Canlı tarayıcı zamanlayıcısı
+    liveScannerTimer: null,
     allCryptoData: [],
     userAlarms: [],
     trackedReports: [],
