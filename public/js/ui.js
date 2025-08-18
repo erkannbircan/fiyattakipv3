@@ -468,10 +468,8 @@ function openAlarmPanel(alarm = null, suggestedParams = null) {
     createCoinManager('alarm-coin-manager-container', state.tempAlarmCoins, 'alarm');
     showPanel('alarmSettingsPanel');
 }
-// ui.js dosyasındaki renderSignalAnalysisPreview fonksiyonunu bulun ve bu blokla değiştirin.
 function renderSignalAnalysisPreview(data) {
     const resultContainer = document.getElementById('signalAnalysisResultContainer');
-    
     if (!data || Object.keys(data).length === 0) {
         resultContainer.innerHTML = `<p style="text-align: center; color: var(--text-secondary); padding: 20px;">Analiz için sonuç bulunamadı veya belirtilen koşullarda fırsat yok.</p>`;
         return;
@@ -486,12 +484,10 @@ function renderSignalAnalysisPreview(data) {
 
         if (res.status === 'error' || res.status === 'info') {
             const messageColor = res.status === 'error' ? 'var(--accent-red)' : 'var(--text-secondary)';
-            contentHtml = `<p style="color:${messageColor}; padding: 10px 0;">${res.message}</p>`;
-        
+            contentHtml = `<div class="analysis-card-simple-message" style="color:${messageColor};">${res.message}</div>`;
         } else if (res.status === 'preview' && res.params && res.dnaSummary && res.avgReturns && res.dnaProfile) {
             const profileDataString = JSON.stringify(res.dnaProfile);
             
-            // *** HATA DÜZELTMESİ: 'detailsHtml' tanımı yukarı taşındı. ***
             let detailsHtml = '';
             if (res.eventDetails && res.eventDetails.length > 0) {
                 const eventListItems = res.eventDetails.map(event => {
@@ -502,66 +498,75 @@ function renderSignalAnalysisPreview(data) {
                                 <td>$${formatPrice(event.priceAfter)}</td>
                             </tr>`;
                 }).join('');
-
                 detailsHtml = `
-                    <div class="collapsible" style="margin-top: 20px;">
-                        <div class="collapsible-header">
-                            <span>🔍 Bulunan ${res.eventDetails.length} Fırsatın Detayları (Test için)</span>
-                            <i class="fas fa-chevron-down"></i>
-                        </div>
-                        <div class="collapsible-content" style="padding: 15px 0 0 0;">
-                            <div class="table-wrapper">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Tarih (İstanbul Saati)</th>
-                                            <th>Sinyal Mumu Fiyatı</th>
-                                            <th>Sonraki 2 Mumun Hedef Fiyatı</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody style="max-height: 250px; overflow-y: auto; display: block;">
-                                        ${eventListItems}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                    <h5 class="setting-subtitle">Bulunan ${res.eventDetails.length} Fırsatın Detayları</h5>
+                    <div class="table-wrapper compact">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tarih (İstanbul Saati)</th>
+                                    <th>Sinyal Fiyatı</th>
+                                    <th>Hedef Fiyatı</th>
+                                </tr>
+                            </thead>
+                            <tbody>${eventListItems}</tbody>
+                        </table>
+                    </div>`;
             }
 
+            const dnaGroups = {};
+            (res.dnaSummary.featureOrder || []).forEach((feature, index) => {
+                const key = feature.split('_')[0];
+                const type = feature.split('_')[1];
+                if (!dnaGroups[key]) dnaGroups[key] = {};
+                dnaGroups[key][type] = parseFloat(res.dnaSummary.mean[index]).toFixed(3);
+            });
+
             contentHtml = `
-                <p class="section-description" style="margin-bottom: 15px;">${res.message}</p>
-                
-                <h5 class="setting-subtitle" style="margin-top:0;">Potansiyel Getiri Performansı</h5>
-                <div class="backtest-results-grid" style="grid-template-columns: repeat(4, 1fr); gap: 10px;">
-                    ${Object.entries(res.avgReturns).map(([period, value]) => `
-                        <div class="backtest-card" style="padding:10px;">
-                            <p class="label">${period.replace('m', 'Dk').replace('h', ' Saat').replace('d', ' Gün')}</p>
-                            <p class="value ${getPerformanceClass(value)}">${value}%</p>
+                <div class="analysis-card-grid">
+                    <div class="analysis-card-col">
+                        <h5 class="setting-subtitle">Potansiyel Getiri Performansı</h5>
+                        <div class="backtest-results-grid perf-grid">
+                            ${Object.entries(res.avgReturns).map(([period, value]) => `
+                                <div class="backtest-card">
+                                    <p class="label">${period.replace('m', 'Dk').replace('h', ' Saat').replace('d', ' Gün')}</p>
+                                    <p class="value ${getPerformanceClass(value)}">${value}%</p>
+                                </div>
+                            `).join('')}
                         </div>
-                    `).join('')}
-                </div>
+                        ${detailsHtml}
+                    </div>
 
-                <h5 class="setting-subtitle">Fırsat Anının DNA Özeti (Ortalama Değerler)</h5>
-                <div class="backtest-results-grid" style="grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));">
-                    ${(res.dnaSummary.featureOrder || []).map((feature, index) => `
-                        <p><span class="label">${feature}:</span> <span class="value">${parseFloat(res.dnaSummary.mean[index]).toFixed(3)}</span></p>
-                    `).join('')}
+                    <div class="analysis-card-col">
+                        <h5 class="setting-subtitle">Fırsat Anının DNA Özeti</h5>
+                        <div class="dna-summary-grid">
+                            <div class="dna-summary-header">
+                                <span>Parametre</span><span>Ortalama</span><span>Eğim</span><span>Son Değer</span>
+                            </div>
+                            ${Object.keys(dnaGroups).map(key => `
+                                <div class="dna-indicator-group">
+                                    <span class="label">${key.toUpperCase()}</span>
+                                    <span class="value">${dnaGroups[key]['avg'] || 'N/A'}</span>
+                                    <span class="value ${getPerformanceClass(dnaGroups[key]['slope'])}">${dnaGroups[key]['slope'] || 'N/A'}</span>
+                                    <span class="value">${dnaGroups[key]['final'] || 'N/A'}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="preview-actions">
+                            <button class="btn btn-primary save-dna-btn" data-profile='${profileDataString}'>
+                                <i class="fas fa-save"></i> DNA Profili Oluştur
+                            </button>
+                        </div>
+                    </div>
                 </div>
-
-                <div class="preview-actions" style="margin-top: 20px; display:flex; gap:10px; flex-wrap:wrap;">
-                    <button class="btn btn-primary save-dna-btn" data-profile='${profileDataString}'>
-                        <i class="fas fa-save"></i> DNA Profili Oluştur
-                    </button>
-                </div>
-                ${detailsHtml}
             `;
-        } else {
-             contentHtml = `<p style="color:var(--accent-red); padding: 10px 0;">Sunucudan gelen önizleme verisi anlaşılamadı veya eksik. (${res.message || ''})</p>`;
         }
-
-        return `<div class="backtest-card" data-coin="${coin}" style="margin-bottom:15px; border-left: 3px solid var(--accent-blue);">
-                    <h4>${coinSymbol} Analiz Sonuçları</h4>
+        
+        return `<div class="analysis-result-card">
+                    <div class="analysis-card-header">
+                        <h4>${coinSymbol} Analiz Sonuçları</h4>
+                        <small>${res.message || ''}</small>
+                    </div>
                     ${contentHtml}
                 </div>`;
     }).join('');
