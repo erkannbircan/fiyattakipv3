@@ -254,47 +254,6 @@ function setupCoinManagerEventListeners(parentElement) {
     });
 }
 
-function setupStrategyDiscoveryListeners(parentElement) {
-    parentElement.addEventListener('click', async (e) => {
-        const target = e.target;
-        
-        if (target.closest('#runSignalAnalysisBtn')) {
-            await runSignalAnalysisPreview();
-            return;
-        }
-        
-        const saveBtn = target.closest('.save-dna-btn');
-        if (saveBtn) {
-            const params = JSON.parse(saveBtn.dataset.params);
-            const coin = target.closest('.backtest-card').dataset.coin;
-            params.coins = [coin];
-            await saveDnaProfile(params);
-            // *** HATA DÜZELTME: Fonksiyona doğru ID parametresi eklendi ***
-            await fetchDnaProfiles('dnaProfilesContainerDiscovery');
-            return;
-        }
-
-        const alarmBtn = target.closest('.use-dna-in-alarm-btn');
-        if (alarmBtn) { 
-            const dnaData = JSON.parse(alarmBtn.dataset.dna);
-            openAlarmPanel(null, dnaData);
-            return;
-        }
-
-        // *** HATA DÜZELTME: ID'si değişen butona göre doğru çağrı yapıldı ***
-        if(target.closest('#refreshDnaProfilesBtnDiscovery')) {
-            await fetchDnaProfiles('dnaProfilesContainerDiscovery');
-            return;
-        }
-
-        const deleteBtn = target.closest('.delete-dna-btn');
-        if(deleteBtn) {
-            const profileId = deleteBtn.dataset.profileId;
-            await deleteDnaProfile(profileId);
-            return;
-        }
-    });
-}
 
 function setupAiPageActionListeners(parentElement) {
     parentElement.addEventListener('click', async (e) => {
@@ -314,7 +273,75 @@ function setupAiPageActionListeners(parentElement) {
         }
     });
 }
+function setupCoinManagerEventListeners(parentElement) {
+    // ... (bu fonksiyon aynı) ...
+}
 
+function setupStrategyDiscoveryListeners(parentElement) {
+    parentElement.addEventListener('click', async (e) => {
+        const target = e.target;
+        
+        if (target.closest('#runSignalAnalysisBtn')) {
+            // *** DEĞİŞİKLİK: runSignalAnalysisPreview artık events.js'de değil, api.js'de ***
+            // Bu nedenle bu bloğu güncelliyoruz.
+            const btn = e.target.closest('#runSignalAnalysisBtn');
+            showLoading(btn);
+
+            const dnaParams = {};
+            document.querySelectorAll('#signalDnaParamsGrid input:checked').forEach(cb => {
+                dnaParams[cb.dataset.param] = true;
+            });
+            
+            const params = {
+                coins: state.discoveryCoins,
+                timeframe: document.getElementById('signalAnalysisTimeframe').value,
+                // *** YENİ: Yeni dropdown'ın değeri okunuyor ***
+                targetPeriod: document.getElementById('signalAnalysisTargetPeriod').value,
+                changePercent: parseFloat(document.getElementById('signalAnalysisChange').value),
+                direction: document.getElementById('signalAnalysisDirection').value,
+                days: parseInt(document.getElementById('signalAnalysisPeriod').value),
+                params: dnaParams,
+                isPreview: true
+            };
+
+            // api.js'deki asıl fonksiyonu çağırıyoruz.
+            runSignalAnalysisPreview(params)
+                .finally(() => {
+                    hideLoading(btn);
+                });
+            return;
+        }
+        
+        const saveBtn = target.closest('.save-dna-btn');
+        if (saveBtn) {
+            const params = JSON.parse(saveBtn.dataset.params);
+            const coin = target.closest('.backtest-card').dataset.coin;
+            params.coins = [coin];
+            await saveDnaProfile(params);
+            await fetchDnaProfiles('dnaProfilesContainerDiscovery');
+            return;
+        }
+
+        const alarmBtn = target.closest('.use-dna-in-alarm-btn');
+        if (alarmBtn) { 
+            const dnaData = JSON.parse(alarmBtn.dataset.dna);
+            openAlarmPanel(null, dnaData);
+            return;
+        }
+
+        if(target.closest('#refreshDnaProfilesBtnDiscovery')) {
+            await fetchDnaProfiles('dnaProfilesContainerDiscovery');
+            return;
+        }
+
+        const deleteBtn = target.closest('.delete-dna-btn');
+        if(deleteBtn) {
+            const profileId = deleteBtn.dataset.profileId;
+            await deleteDnaProfile(profileId);
+            return;
+        }
+    });
+}
 function setupPivotPageActionListeners(parentElement) {
      parentElement.addEventListener('click', async (e) => {
         const target = e.target;
