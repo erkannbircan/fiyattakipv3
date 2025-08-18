@@ -468,6 +468,7 @@ function openAlarmPanel(alarm = null, suggestedParams = null) {
     createCoinManager('alarm-coin-manager-container', state.tempAlarmCoins, 'alarm');
     showPanel('alarmSettingsPanel');
 }
+// ui.js dosyasındaki renderSignalAnalysisPreview fonksiyonunu bulun ve bu blokla değiştirin.
 function renderSignalAnalysisPreview(data) {
     const resultContainer = document.getElementById('signalAnalysisResultContainer');
     if (!data || Object.keys(data).length === 0) {
@@ -475,7 +476,11 @@ function renderSignalAnalysisPreview(data) {
         return;
     }
 
-    const getPerformanceClass = (value) => parseFloat(value) > 0 ? 'positive' : 'negative';
+    const getPerformanceClass = (value) => {
+        const num = parseFloat(value);
+        if (isNaN(num)) return '';
+        return num > 0 ? 'positive' : 'negative';
+    };
 
     const html = Object.keys(data).map(coin => {
         const res = data[coin];
@@ -514,40 +519,67 @@ function renderSignalAnalysisPreview(data) {
                     </div>`;
             }
 
+            // *** HATA DÜZELTMESİ: DNA gruplama mantığı düzeltildi. ***
             const dnaGroups = {};
-            (res.dnaSummary.featureOrder || []).forEach((feature, index) => {
-                const key = feature.split('_')[0];
-                const type = feature.split('_')[1];
-                if (!dnaGroups[key]) dnaGroups[key] = {};
-                dnaGroups[key][type] = parseFloat(res.dnaSummary.mean[index]).toFixed(3);
+            const paramKeys = ['rsi', 'macd_hist', 'adx', 'volume_mult', 'atr_pct', 'bb_width', 'rv_pct'];
+            
+            paramKeys.forEach(key => {
+                // Sadece seçilen parametreleri göstermek için featureOrder'ı kontrol et
+                if (res.dnaSummary.featureOrder.includes(`${key}_avg`)) {
+                    dnaGroups[key] = {};
+                }
             });
 
+            (res.dnaSummary.featureOrder || []).forEach((feature, index) => {
+                const parts = feature.split('_');
+                const metric = parts.pop(); // avg, slope, final, vb.
+                const key = parts.join('_'); // rsi, macd_hist, vb.
+                
+                if (dnaGroups[key]) {
+                    dnaGroups[key][metric] = parseFloat(res.dnaSummary.mean[index]).toFixed(3);
+                }
+            });
+
+            // Mum şekli gibi tekil değerleri de ekle
+            (res.dnaSummary.featureOrder || []).forEach((feature, index) => {
+                 if (!feature.includes('_')) { // avg, slope, final içermeyenler
+                    const key = 'candle';
+                    if (!dnaGroups[key]) dnaGroups[key] = {};
+                    dnaGroups[key][feature] = parseFloat(res.dnaSummary.mean[index]).toFixed(3);
+                 }
+            });
+
+
             contentHtml = `
+                <div class="kpi-container">
+                    <div class="kpi-item">
+                        <span class="kpi-value">${res.eventCount}</span>
+                        <span class="kpi-label">Adet Kârlı Fırsat</span>
+                    </div>
+                    <div class="kpi-item">
+                        <span class="kpi-value ${getPerformanceClass(res.avgReturns['1h'])}">${res.avgReturns['1h']}%</span>
+                        <span class="kpi-label">1 Saatlik Ort. Getiri</span>
+                    </div>
+                     <div class="kpi-item">
+                        <span class="kpi-value ${getPerformanceClass(res.avgReturns['4h'])}">${res.avgReturns['4h']}%</span>
+                        <span class="kpi-label">4 Saatlik Ort. Getiri</span>
+                    </div>
+                </div>
+
                 <div class="analysis-card-grid">
-                    <!-- SOL SÜTUN: PERFORMANS -->
                     <div class="analysis-card-col">
-                        <h5 class="setting-subtitle">Potansiyel Getiri Performansı</h5>
-                        <div class="backtest-results-grid perf-grid">
-                            ${Object.entries(res.avgReturns).map(([period, value]) => `
-                                <div class="backtest-card">
-                                    <p class="label">${period.replace('m', 'Dk').replace('h', ' Saat').replace('d', ' Gün')}</p>
-                                    <p class="value ${getPerformanceClass(value)}">${value}%</p>
-                                </div>
-                            `).join('')}
-                        </div>
                         ${detailsHtml}
                     </div>
 
-                    <!-- SAĞ SÜTUN: DNA -->
                     <div class="analysis-card-col">
                         <h5 class="setting-subtitle">Fırsat Anının DNA Özeti</h5>
                         <div class="dna-summary-grid">
                             <div class="dna-summary-header">
                                 <span>Parametre</span><span>Ortalama</span><span>Eğim</span><span>Son Değer</span>
                             </div>
-                            ${Object.keys(dnaGroups).map(key => `
+                            ${Object.keys(dnaGroups).filter(key => key !== 'candle').map(key => `
                                 <div class="dna-indicator-group">
-                                    <span class="label">${key.toUpperCase()}</span>
+                                    <span class="label">${key.replace('_', ' ').toUpperCase()}</span>
                                     <span class="value">${dnaGroups[key]['avg'] || 'N/A'}</span>
                                     <span class="value ${getPerformanceClass(dnaGroups[key]['slope'])}">${dnaGroups[key]['slope'] || 'N/A'}</span>
                                     <span class="value">${dnaGroups[key]['final'] || 'N/A'}</span>
@@ -567,7 +599,6 @@ function renderSignalAnalysisPreview(data) {
         return `<div class="analysis-result-card">
                     <div class="analysis-card-header">
                         <h4>${coinSymbol} Analiz Sonuçları</h4>
-                        <small>${res.message || ''}</small>
                     </div>
                     ${contentHtml}
                 </div>`;
