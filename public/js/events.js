@@ -284,6 +284,14 @@ function setupStrategyDiscoveryListeners(parentElement) {
             await deleteDnaProfile(profileId);
             return;
         }
+        const backtestBtn = target.closest('.run-dna-backtest-btn');
+if (backtestBtn) {
+    const profileId = backtestBtn.dataset.profileId;
+    // Şimdilik varsayılan olarak 30 günlük periyot seçelim.
+    // Gelecekte buraya bir periyot seçim menüsü ekleyebilirsiniz.
+    const periodDays = 30; 
+    await runDnaBacktest(profileId, periodDays);
+    return;
     });
 }
 
