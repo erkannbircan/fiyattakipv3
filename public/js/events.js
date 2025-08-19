@@ -247,6 +247,8 @@ function setupAiPageActionListeners(parentElement) {
 
 // events.js dosyasındaki setupStrategyDiscoveryListeners fonksiyonunu bununla DEĞİŞTİRİN
 
+// events.js dosyasındaki setupStrategyDiscoveryListeners fonksiyonunun TAMAMINI bu kodla değiştirin.
+
 function setupStrategyDiscoveryListeners(parentElement) {
     parentElement.addEventListener('click', async (e) => {
         const target = e.target;
@@ -255,13 +257,10 @@ function setupStrategyDiscoveryListeners(parentElement) {
         if (target.closest('#runSignalAnalysisBtn')) {
             const btn = e.target.closest('#runSignalAnalysisBtn');
             showLoading(btn);
-
-            // DÜZELTME: Bu blok, seçili olan tüm DNA parametrelerini doğru şekilde toplar.
             const dnaParams = {};
             document.querySelectorAll('#signalDnaParamsGrid input:checked').forEach(cb => {
                 dnaParams[cb.dataset.param] = true;
             });
-
             const params = {
                 coins: state.discoveryCoins,
                 timeframe: document.getElementById('signalAnalysisTimeframe').value,
@@ -269,7 +268,7 @@ function setupStrategyDiscoveryListeners(parentElement) {
                 direction: document.getElementById('signalAnalysisDirection').value,
                 days: parseInt(document.getElementById('signalAnalysisPeriod').value),
                 lookbackCandles: parseInt(document.getElementById('signalLookbackCandles').value) || 3,
-                params: dnaParams, // Toplanan parametreler buraya eklenir
+                params: dnaParams,
                 isPreview: true
             };
             runSignalAnalysisPreview(params).finally(() => { hideLoading(btn); });
@@ -302,7 +301,9 @@ function setupStrategyDiscoveryListeners(parentElement) {
         const backtestBtn = target.closest('.run-dna-backtest-btn');
         if (backtestBtn) {
             const profileId = backtestBtn.dataset.profileId;
-            state.currentBacktestProfileId = profileId;
+            state.currentBacktestProfileId = profileId; // Save the profile ID for re-runs
+
+            // DÜZELTME BURADA: Eksik olan parametreler okunup fonksiyona gönderiliyor.
             const periodDays = 30;
             const scoreThreshold = parseInt(document.getElementById('backtestThreshold').value) || 80;
             const debugMode = document.getElementById('backtestDebugMode').checked;
