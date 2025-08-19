@@ -595,3 +595,33 @@ input:checked + .slider:before { transform: translateX(24px); }
     background-color: var(--bg-tertiary);
     border-radius: 8px;
 }
+/* style.css dosyasının sonuna ekleyin */
+.backtest-controls {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    background-color: var(--bg-tertiary);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+.backtest-controls .input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.backtest-controls label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+.backtest-controls input[type="number"] {
+    width: 80px;
+}
+
+#dnaBacktestResultTable .debug-row {
+    opacity: 0.5;
+    font-size: 0.8rem;
+}
+#dnaBacktestResultTable .debug-row:hover {
+    opacity: 1;
+}
