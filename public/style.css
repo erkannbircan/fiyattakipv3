@@ -625,3 +625,73 @@ input:checked + .slider:before { transform: translateX(24px); }
 #dnaBacktestResultTable .debug-row:hover {
     opacity: 1;
 }
+/* style.css dosyasının sonuna ekleyin */
+
+/* Strateji Keşfi için Ana Grid Yapısı */
+.discovery-main-grid {
+    display: grid;
+    grid-template-columns: 400px 1fr; /* Sol panel sabit genişlik, sağ taraf esnek */
+    gap: 25px;
+    align-items: flex-start;
+}
+
+.discovery-settings-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: sticky; /* Sayfa kaydırıldığında ayarların görünür kalmasını sağlar */
+    top: 20px;
+}
+
+.discovery-results-panel .placeholder-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    border: 2px dashed var(--border-color);
+    border-radius: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.discovery-results-panel .placeholder-text i {
+    font-size: 3rem;
+    margin-bottom: 15px;
+}
+
+/* Ayar formları için kompakt grid */
+.discovery-grid.compact {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 15px;
+}
+.discovery-grid.compact div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.discovery-grid.compact label {
+    font-size: 0.8rem;
+}
+
+/* Parametre filtreleri için kompakt grid */
+.filters-grid.compact {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.filters-grid.compact .filter-item {
+    padding: 8px;
+    font-size: 0.85rem;
+}
+
+/* Mobil Cihazlar için Tasarım Düzeltmesi */
+@media (max-width: 900px) {
+    .discovery-main-grid {
+        grid-template-columns: 1fr; /* Mobilde tek sütun */
+    }
+    .discovery-settings-panel {
+        position: static; /* Mobilde sabitlemeyi kaldır */
+    }
+}
