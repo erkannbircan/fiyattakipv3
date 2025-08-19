@@ -662,21 +662,26 @@ function renderDnaProfiles(profiles, containerId) {
     container.innerHTML = html;
 }
 
-// ui.js dosyasındaki renderScannerResults fonksiyonunu bununla değiştirin
+// ui.js dosyasındaki renderScannerResults fonksiyonunu bununla DEĞİŞTİRİN
 function renderScannerResults(groupedMatches) {
-    const container = document.getElementById('scannerResultsTable'); // Bu ID'yi konteyner olarak yeniden kullanalım
+    const container = document.getElementById('scannerResultsTable');
     
+    // Gelen veri boşsa veya içinde eşleşme yoksa bilgilendirme mesajı göster
     if (!groupedMatches || Object.keys(groupedMatches).length === 0) {
-        container.innerHTML = `<div class="scanner-no-results">Anlık piyasa verilerinde kayıtlı DNA profillerine uyan bir eşleşme bulunamadı.</div>`;
+        container.innerHTML = `<div class="scanner-no-results">Aktif profillerinize uyan bir eşleşme anlık olarak bulunamadı. Piyasa koşulları değiştikçe tarama devam ediyor...</div>`;
         return;
     }
 
     let html = '';
     for (const coin in groupedMatches) {
-        const matches = groupedMatches[coin];
+        const data = groupedMatches[coin];
         const coinSymbol = coin.replace('USDT', '');
         
-        const matchesHtml = matches.map(match => `
+        // Skoru 50'den yüksek olan en az bir eşleşme varsa göster
+        const relevantMatches = data.matches.filter(m => m.score >= 50);
+        if (relevantMatches.length === 0) continue;
+
+        const matchesHtml = relevantMatches.map(match => `
             <div class="scanner-profile-match">
                 <div class="profile-info">
                     <span class="profile-name">${match.profileName}</span>
@@ -693,6 +698,7 @@ function renderScannerResults(groupedMatches) {
             <div class="scanner-coin-card">
                 <div class="scanner-card-header">
                     <h4>${coinSymbol}</h4>
+                    <span style="font-size: 1rem; font-weight: 600;">$${formatPrice(data.price)}</span>
                 </div>
                 <div class="scanner-card-body">
                     ${matchesHtml}
@@ -701,8 +707,14 @@ function renderScannerResults(groupedMatches) {
         `;
     }
 
+    if (html === '') {
+         container.innerHTML = `<div class="scanner-no-results">Skoru 50'den yüksek bir eşleşme bulunamadı. Tarama devam ediyor...</div>`;
+         return;
+    }
+
     container.innerHTML = `<div class="scanner-results-grid">${html}</div>`;
 }
+
 // YENİ: Bu yeni fonksiyonu ui.js dosyasının sonuna ekleyin
 function renderDnaBacktestResults(data, profileId) {
     const section = document.getElementById('dnaBacktestSection');
