@@ -294,12 +294,12 @@ function setupStrategyDiscoveryListeners(parentElement) {
         }
 
         // Handles running a backtest for the first time from the profile list
-        const backtestBtn = target.closest('.run-dna-backtest-btn');
+       const backtestBtn = target.closest('.run-dna-backtest-btn');
 if (backtestBtn) {
     const profileId = backtestBtn.dataset.profileId;
     state.currentBacktestProfileId = profileId; // Mevcut profili state'e kaydet
-    
-    // DÜZELTME: Eksik olan parametreler buradan okunup gönderilecek
+
+    // DÜZELTME: Eksik olan parametreleri buradan okuyup gönderiyoruz.
     const periodDays = 30;
     const scoreThreshold = parseInt(document.getElementById('backtestThreshold').value) || 80;
     const debugMode = document.getElementById('backtestDebugMode').checked;
