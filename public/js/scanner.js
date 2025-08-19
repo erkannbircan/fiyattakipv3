@@ -17,23 +17,24 @@ function toggleAutoScanner(shouldBeActive) {
     }
 }
 
-/**
- * Sunucudaki tarama fonksiyonunu çağıran ve sonuçları işleyen ana fonksiyon.
- */
+// scanner.js
 async function startScanner() {
     updateScannerStatusUI('running');
-    const resultsTableBody = document.getElementById('scannerResultsTable');
+    // DEĞİŞİKLİK: ID artık tablo değil, ana konteyner.
+    const resultsContainer = document.getElementById('scannerResultsTable');
 
     try {
         const runLiveScannerFunc = state.firebase.functions.httpsCallable('runLiveScanner');
         const result = await runLiveScannerFunc();
         
-        const matches = result.data.matches;
+        // HATA DÜZELTMESİ: Backend 'groupedMatches' dönerken, burada 'matches' bekleniyordu.
+        const matches = result.data.groupedMatches; 
         renderScannerResults(matches);
 
     } catch (error) {
         console.error("Tarama sırasında hata oluştu:", error);
-        resultsTableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--accent-red);">Hata: ${error.message}</td></tr>`;
+        // DEĞİŞİKLİK: Hata mesajını tablo satırı yerine konteyner içine yaz.
+        resultsContainer.innerHTML = `<div class="scanner-no-results" style="color: var(--accent-red);">Hata: ${error.message}</div>`;
     } finally {
         updateScannerStatusUI('idle');
     }
