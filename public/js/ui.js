@@ -663,10 +663,11 @@ function renderDnaProfiles(profiles, containerId) {
 }
 
 // ui.js dosyasındaki renderScannerResults fonksiyonunu bununla DEĞİŞTİRİN
+
 function renderScannerResults(groupedMatches) {
     const container = document.getElementById('scannerResultsTable');
+    if (!container) return;
     
-    // Gelen veri boşsa veya içinde eşleşme yoksa bilgilendirme mesajı göster
     if (!groupedMatches || Object.keys(groupedMatches).length === 0) {
         container.innerHTML = `<div class="scanner-no-results">Aktif profillerinize uyan bir eşleşme anlık olarak bulunamadı. Piyasa koşulları değiştikçe tarama devam ediyor...</div>`;
         return;
@@ -677,9 +678,9 @@ function renderScannerResults(groupedMatches) {
         const data = groupedMatches[coin];
         const coinSymbol = coin.replace('USDT', '');
         
-        // Skoru 50'den yüksek olan en az bir eşleşme varsa göster
+        // Bize sadece skoru 50'den yüksek olanlar lazım
         const relevantMatches = data.matches.filter(m => m.score >= 50);
-        if (relevantMatches.length === 0) continue;
+        if (relevantMatches.length === 0) continue; // Eğer 50'den yüksek skorlu eşleşme yoksa bu coini atla
 
         const matchesHtml = relevantMatches.map(match => `
             <div class="scanner-profile-match">
@@ -707,6 +708,7 @@ function renderScannerResults(groupedMatches) {
         `;
     }
 
+    // Eğer tüm coinleri atladıysak (hiçbirinde 50 üzeri skor yoksa)
     if (html === '') {
          container.innerHTML = `<div class="scanner-no-results">Skoru 50'den yüksek bir eşleşme bulunamadı. Tarama devam ediyor...</div>`;
          return;
