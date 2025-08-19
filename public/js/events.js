@@ -69,7 +69,6 @@ function setupTrackerPageEventListeners() {
     setupStrategyDiscoveryListeners(trackerPageEl);
     setupAiPageActionListeners(trackerPageEl);
     setupPivotPageActionListeners(trackerPageEl);
-    setupAlarmEventListeners(trackerPageEl);
     setupScannerEventListeners(trackerPageEl);
 }
 
@@ -188,25 +187,6 @@ function setupActionEventListeners(parentElement) {
             return;
         }
         if (target.closest('#logoutBtn')) { e.preventDefault(); state.firebase.auth.signOut(); return; }
-    });
-}
-
-function setupAlarmEventListeners(parentElement) {
-    parentElement.addEventListener('click', async (e) => {
-        const target = e.target;
-        const alarmCard = target.closest('.alarm-card');
-        if (alarmCard) {
-            const alarmId = alarmCard.dataset.alarmId;
-            const alarm = state.userAlarms.find(a => a.id === alarmId);
-            if (!alarm) return;
-            if (target.closest('.edit-alarm-btn')) openAlarmPanel(alarm);
-            if (target.closest('.delete-alarm-btn')) { if (confirm("Bu alarmı silmek istediğinizden emin misiniz?")) { state.userAlarms = state.userAlarms.filter(a => a.id !== alarmId); await state.userDocRef.update({ alarms: state.userAlarms }); renderAlarms(); showNotification("Alarm silindi.", true); } }
-            if (target.closest('.backtest-alarm-btn')) runBacktest(alarmId);
-            if (target.closest('.check-alarm-status-btn')) showAlarmStatus(alarmId);
-            if (target.matches('.alarm-status-toggle')) { alarm.isActive = target.checked; await state.userDocRef.update({ alarms: state.userAlarms }); showNotification(`Alarm ${alarm.isActive ? 'aktif' : 'pasif'} edildi.`, true); }
-            return;
-        }
-        if (target.closest('#createNewAlarmBtn')) { if (!state.settings.telegramPhone) { showNotification("Lütfen Ayarlar'dan Telegram Chat ID'nizi kaydedin.", false); return; } openAlarmPanel(null); return; }
     });
 }
 
