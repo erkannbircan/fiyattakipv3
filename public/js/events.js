@@ -248,6 +248,8 @@ function setupAiPageActionListeners(parentElement) {
 function setupStrategyDiscoveryListeners(parentElement) {
     parentElement.addEventListener('click', async (e) => {
         const target = e.target;
+
+        // Handles the initial signal analysis run
         if (target.closest('#runSignalAnalysisBtn')) {
             const btn = e.target.closest('#runSignalAnalysisBtn');
             showLoading(btn);
@@ -268,38 +270,50 @@ function setupStrategyDiscoveryListeners(parentElement) {
             runSignalAnalysisPreview(params).finally(() => { hideLoading(btn); });
             return;
         }
+
+        // Handles saving a new DNA profile
         const saveBtn = target.closest('.save-dna-btn');
         if (saveBtn) {
             const profileData = JSON.parse(saveBtn.dataset.profile);
             await saveDnaProfile(profileData, saveBtn);
             return;
         }
+
+        // Handles refreshing the list of DNA profiles
         if (target.closest('#refreshDnaProfilesBtnDiscovery')) {
             await fetchDnaProfiles('dnaProfilesContainerDiscovery');
             return;
         }
+
+        // Handles deleting a DNA profile
         const deleteBtn = target.closest('.delete-dna-btn');
         if (deleteBtn) {
             const profileId = deleteBtn.dataset.profileId;
             await deleteDnaProfile(profileId);
             return;
         }
+
+        // Handles running a backtest for the first time from the profile list
         const backtestBtn = target.closest('.run-dna-backtest-btn');
         if (backtestBtn) {
             const profileId = backtestBtn.dataset.profileId;
-            // Şimdilik varsayılan olarak 30 günlük periyot seçelim.
-            // Gelecekte buraya bir periyot seçim menüsü ekleyebilirsiniz.
+            state.currentBacktestProfileId = profileId; // Save the profile ID for re-runs
             const periodDays = 30;
-            await runDnaBacktest(profileId, periodDays);
+            const scoreThreshold = parseInt(document.getElementById('backtestThreshold').value) || 80;
+            const debugMode = document.getElementById('backtestDebugMode').checked;
+            await runDnaBacktest(profileId, periodDays, scoreThreshold, debugMode);
             return;
-            if(target.closest('#rerunBacktestBtn')) {
-    if(state.currentBacktestProfileId) {
-        const periodDays = 30;
-        const scoreThreshold = parseInt(document.getElementById('backtestThreshold').value) || 80;
-        const debugMode = document.getElementById('backtestDebugMode').checked;
-        await runDnaBacktest(state.currentBacktestProfileId, periodDays, scoreThreshold, debugMode);
-    }
-    return;
+        }
+        
+        // **FIXED**: Handles the "Re-run Test" button click separately
+        if (target.closest('#rerunBacktestBtn')) {
+            if (state.currentBacktestProfileId) {
+                const periodDays = 30;
+                const scoreThreshold = parseInt(document.getElementById('backtestThreshold').value) || 80;
+                const debugMode = document.getElementById('backtestDebugMode').checked;
+                await runDnaBacktest(state.currentBacktestProfileId, periodDays, scoreThreshold, debugMode);
+            }
+            return;
         }
     });
 }
