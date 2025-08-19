@@ -86,7 +86,6 @@ async function initializeTrackerPage(userData) {
     state.activePortfolio = userData.activePortfolio || Object.keys(state.userPortfolios)[0];
     state.cryptoAiPairs = userData.coins_ai || ["BTCUSDT", "ETHUSDT", "SOLUSDT"];
     state.discoveryCoins = userData.coins_discovery || ["BTCUSDT", "ETHUSDT"];
-    state.userAlarms = userData.alarms || [];
 
     renderIndicatorFilters();
     renderDictionary();
@@ -414,78 +413,6 @@ async function saveChartState(widget) {
         state.settings.chartIndicators[currentPair] = studiesList;
     } catch (error) {
         console.error("Firebase kaydı sırasında HATA oluştu!", error);
-    }
-}
-
-async function saveAlarm() {
-    const btn = document.getElementById('saveAlarmBtn');
-    showLoading(btn);
-
-    const alarmId = document.getElementById('alarmIdInput').value;
-    const alarmName = document.getElementById('alarmNameInput').value;
-    if (!alarmName) {
-        showNotification("Alarm adı boş bırakılamaz.", false);
-        hideLoading(btn);
-        return;
-    }
-
-    const safeParseInt = (id, defaultValue = 0) => parseInt(document.getElementById(id).value) || defaultValue;
-    const safeParseFloat = (id, defaultValue = 0) => parseFloat(document.getElementById(id).value) || defaultValue;
-
-    const newAlarm = {
-        id: alarmId || `alarm_${new Date().getTime()}`,
-        name: alarmName,
-        coins: state.tempAlarmCoins,
-        isActive: alarmId ? (state.userAlarms.find(a => a.id === alarmId)?.isActive ?? true) : true,
-        timeframe: document.getElementById('alarmTimeframe').value,
-        trendFilterEnabled: document.getElementById('alarmTrendFilterEnabled').checked,
-        adxThreshold: safeParseInt('alarmADXThreshold', 25),
-        conditions: {
-            volume: { enabled: document.getElementById('alarmVolumeCondition').checked, period: safeParseInt('alarmVolumePeriod', 20), multiplier: safeParseFloat('alarmVolumeMultiplier', 2), amount: safeParseFloat('alarmVolumeAmount', 0) },
-            macd: { enabled: document.getElementById('alarmMacdCondition').checked, signalType: document.getElementById('alarmMacdSignalType').value },
-            macdHistogram: { enabled: document.getElementById('alarmMacdHistogramCondition').checked, operator: document.getElementById('alarmMacdHistogramOperator').value, value: safeParseFloat('alarmMacdHistogramValue', 0) },
-            rsi: { enabled: document.getElementById('alarmRsiCondition').checked, operator: document.getElementById('alarmRsiOperator').value, value: safeParseFloat('alarmRsiValue', 30) }
-        }
-    };
-
-    const dnaRecDiv = document.querySelector('#alarmSettingsPanel .dna-recommendation');
-    if (dnaRecDiv && dnaRecDiv.dataset.dnaAnalysis) {
-        newAlarm.dna_analysis = JSON.parse(dnaRecDiv.dataset.dnaAnalysis);
-    }
-
-    if (alarmId) {
-        state.userAlarms = state.userAlarms.map(a => a.id === alarmId ? newAlarm : a);
-    } else {
-        state.userAlarms.push(newAlarm);
-    }
-
-    try {
-        await state.userDocRef.update({ alarms: state.userAlarms });
-        showNotification("Alarm başarıyla kaydedildi.", true);
-        renderAlarms();
-        closeAllPanels();
-    } catch (error) {
-        showNotification("Alarm kaydedilemedi.", false);
-    } finally {
-        hideLoading(btn);
-    }
-}
-
-async function addReportToTrack(reportId) {
-    if (!reportId || state.trackedReports.includes(reportId)) return;
-    try {
-        const reportDoc = await state.userDocRef.collection('alarm_reports').doc(reportId).get();
-        if (!reportDoc.exists) {
-            showNotification("Bu ID'ye sahip bir rapor bulunamadı.", false);
-            return;
-        }
-        state.trackedReports.push(reportId);
-        state.settings.trackedReportIds = state.trackedReports;
-        await state.userDocRef.update({ 'settings.trackedReportIds': state.trackedReports });
-        showNotification("Rapor takibe eklendi.", true);
-        await renderAlarmReports();
-    } catch (error) {
-        showNotification("Rapor eklenirken hata oluştu.", false)
     }
 }
 
