@@ -725,7 +725,7 @@ function renderDnaBacktestResults(data, profileId) {
     document.getElementById('backtestProfileName').textContent = `Profil: ${profileId}`;
     section.style.display = 'block';
 
-    const { trades, summary } = data;
+    const { trades, summary, debugMode } = data;
 
     // Özet kartlarını oluştur
     summaryContainer.innerHTML = `
@@ -746,7 +746,18 @@ function renderDnaBacktestResults(data, profileId) {
         tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Seçilen periyotta bu DNA profiline uyan sinyal bulunamadı.</td></tr>`;
         return;
     }
-
+const headerHtml = debugMode ? `
+        <th>Sinyal Tarihi</th>
+        <th>Giriş Fiyatı</th>
+        <th style="color: var(--accent-yellow);">Skor (Debug)</th>
+        <th>15dk (%)</th><th>1saat (%)</th><th>4saat (%)</th><th>1gün (%)</th>
+    ` : `
+        <th>Sinyal Tarihi</th>
+        <th>Giriş Fiyatı</th>
+        <th>Skor</th>
+        <th>15dk (%)</th><th>1saat (%)</th><th>4saat (%)</th><th>1gün (%)</th>
+    `;
+    document.querySelector('#dnaBacktestResultTable thead tr').innerHTML = headerHtml;
     tableBody.innerHTML = trades.map(trade => {
         const renderPerfCell = (perf) => {
             if (perf === null) return `<td>Veri Yok</td>`;
@@ -768,5 +779,21 @@ function renderDnaBacktestResults(data, profileId) {
     }).join('');
     
     // Sayfayı sonuçların olduğu bölüme kaydır
+    section.scrollIntoView({ behavior: 'smooth' });
+    const rowClass = (debugMode && !trade.isSignal) ? 'debug-row' : '';
+
+        return `
+            <tr class="${rowClass}">
+                <td>${new Date(trade.entryTime).toLocaleString('tr-TR')}</td>
+                <td>$${formatPrice(trade.entryPrice)}</td>
+                <td>${trade.score}</td>
+                ${renderPerfCell(trade.performance['15m'])}
+                ${renderPerfCell(trade.performance['1h'])}
+                ${renderPerfCell(trade.performance['4h'])}
+                ${renderPerfCell(trade.performance['1d'])}
+            </tr>
+        `;
+    }).join('');
+    
     section.scrollIntoView({ behavior: 'smooth' });
 }
