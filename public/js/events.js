@@ -292,8 +292,8 @@ if (backtestBtn) {
     const periodDays = 30; 
     await runDnaBacktest(profileId, periodDays);
     return;
-    })
-}
+    }
+})
 
 function setupPivotPageActionListeners(parentElement) {
     parentElement.addEventListener('click', async (e) => {
