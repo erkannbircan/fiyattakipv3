@@ -283,7 +283,7 @@ function setupStrategyDiscoveryListeners(parentElement) {
             const profileId = deleteBtn.dataset.profileId;
             await deleteDnaProfile(profileId);
             return;
-        }
+        };
         const backtestBtn = target.closest('.run-dna-backtest-btn');
 if (backtestBtn) {
     const profileId = backtestBtn.dataset.profileId;
@@ -292,7 +292,7 @@ if (backtestBtn) {
     const periodDays = 30; 
     await runDnaBacktest(profileId, periodDays);
     return;
-    });
+    })
 }
 
 function setupPivotPageActionListeners(parentElement) {
