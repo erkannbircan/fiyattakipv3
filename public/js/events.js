@@ -285,15 +285,16 @@ function setupStrategyDiscoveryListeners(parentElement) {
             return;
         }
         const backtestBtn = target.closest('.run-dna-backtest-btn');
-if (backtestBtn) {
-    const profileId = backtestBtn.dataset.profileId;
-    // Şimdilik varsayılan olarak 30 günlük periyot seçelim.
-    // Gelecekte buraya bir periyot seçim menüsü ekleyebilirsiniz.
-    const periodDays = 30; 
-    await runDnaBacktest(profileId, periodDays);
-    return;
-    }
-})
+        if (backtestBtn) {
+            const profileId = backtestBtn.dataset.profileId;
+            // Şimdilik varsayılan olarak 30 günlük periyot seçelim.
+            // Gelecekte buraya bir periyot seçim menüsü ekleyebilirsiniz.
+            const periodDays = 30;
+            await runDnaBacktest(profileId, periodDays);
+            return;
+        }
+    });
+} // <-- DÜZELTME: Eksik olan kapanış '}' karakteri buraya eklendi.
 
 function setupPivotPageActionListeners(parentElement) {
     parentElement.addEventListener('click', async (e) => {
