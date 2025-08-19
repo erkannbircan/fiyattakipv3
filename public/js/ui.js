@@ -374,127 +374,6 @@ function saveChartState() {
     }
 }
 
-function renderAlarms() {
-    const container = document.getElementById('alarmsListContainer');
-    if (!container) return;
-    container.innerHTML = state.userAlarms.length === 0 ? `<p style="text-align:center; color: var(--text-secondary);">Henüz oluşturulmuş alarm yok.</p>` : '';
-    state.userAlarms.forEach(alarm => {
-        const card = document.createElement('div');
-        card.className = 'alarm-card';
-        card.dataset.alarmId = alarm.id;
-        const coinsToDisplay = alarm.coins || [];
-        card.innerHTML = `
-            <div class="alarm-card-header">
-                <div class="alarm-card-title">${alarm.name}</div>
-                <div class="alarm-card-actions">
-                    <button class="action-btn check-alarm-status-btn" title="Durumu Kontrol Et"><i class="fas fa-chart-bar"></i></button>
-                    <label class="switch" title="${alarm.isActive ? 'Aktif' : 'Pasif'}"><input type="checkbox" class="alarm-status-toggle" ${alarm.isActive ? 'checked' : ''}><span class="slider"></span></label>
-                    <button class="action-btn edit-alarm-btn" title="Düzenle"><i class="fas fa-edit"></i></button>
-                    <button class="action-btn delete-alarm-btn" title="Sil"><i class="fas fa-trash"></i></button>
-                    <button class="action-btn backtest-alarm-btn" title="Backtest Sonuçları"><i class="fas fa-history"></i></button>
-                </div>
-            </div>
-            <div class="alarm-card-details">
-                <div class="coin-selection-display">
-                    ${(coinsToDisplay.length > 0 ? coinsToDisplay.slice(0, 5) : ['Tüm Liste']).map(c => `<span class="coin-tag-sm">${c.replace("USDT","")}</span>`).join('')}
-                    ${(coinsToDisplay.length > 5) ? `<span class="coin-tag-sm">+${coinsToDisplay.length - 5}</span>` : ''}
-                </div>
-            </div>`;
-        container.appendChild(card);
-    });
-}
-
-function openAlarmPanel(alarm = null, suggestedParams = null) {
-    document.getElementById('alarmPanelTitle').textContent = alarm ? 'Alarmı Düzenle' : 'Yeni Alarm Oluştur';
-    const alarmId = alarm ? alarm.id : '';
-    document.getElementById('alarmIdInput').value = alarmId;
-
-    const dnaRecDiv = document.querySelector('#alarmSettingsPanel .dna-recommendation');
-    if (dnaRecDiv) dnaRecDiv.remove();
-
-    document.querySelectorAll('#alarmSettingsPanel [data-condition]').forEach(el => {
-        el.checked = false;
-        const parentBox = el.closest('.alarm-condition-box');
-        if (parentBox) parentBox.dataset.disabled = "true";
-    });
-
-    document.getElementById('alarmNameInput').value = '';
-    document.getElementById('alarmTimeframe').value = '15m';
-    document.getElementById('alarmVolumeMultiplier').value = 2;
-    document.getElementById('alarmADXThreshold').value = 25;
-    document.getElementById('alarmMacdHistogramValue').value = 0;
-    document.getElementById('alarmRsiValue').value = 30;
-
-    if (suggestedParams) {
-        const { coin, timeframe, direction, dna, dna_analysis } = suggestedParams;
-        document.getElementById('alarmNameInput').value = `${coin.replace('USDT','')} DNA Alarmı`;
-        state.tempAlarmCoins = [coin];
-        document.getElementById('alarmTimeframe').value = timeframe;
-
-        const recommendationDiv = document.createElement('div');
-        recommendationDiv.className = 'dna-recommendation';
-        recommendationDiv.innerHTML = `💡 <strong>AI Önerisi:</strong> Bu alarm, "${coin.replace('USDT','')}" için bulunan başarılı DNA'ya göre ayarlanıyor.`;
-        const firstCollapsible = document.querySelector('#alarmSettingsPanel .collapsible-content');
-        if (firstCollapsible) firstCollapsible.prepend(recommendationDiv);
-
-        document.getElementById('alarmMacdSignalType').value = direction === 'up' ? 'buy' : 'sell';
-
-        if (dna.avgVolumeMultiplier) {
-            document.getElementById('alarmVolumeCondition').checked = true;
-            document.getElementById('alarmVolumeMultiplier').value = parseFloat(dna.avgVolumeMultiplier).toFixed(1);
-        }
-        if (dna.avgMacdHist) {
-            document.getElementById('alarmMacdHistogramCondition').checked = true;
-            document.getElementById('alarmMacdHistogramOperator').value = dna.avgMacdHist > 0 ? 'above' : 'below';
-            document.getElementById('alarmMacdHistogramValue').value = parseFloat(dna.avgMacdHist).toFixed(6);
-        }
-        if (dna.avgAdx) {
-            document.getElementById('alarmTrendFilterEnabled').checked = true;
-            document.getElementById('alarmADXThreshold').value = Math.max(20, Math.floor(dna.avgAdx));
-        }
-        if (dna.avgRsi) {
-            document.getElementById('alarmRsiCondition').checked = true;
-            document.getElementById('alarmRsiOperator').value = direction === 'up' ? 'below' : 'above';
-            document.getElementById('alarmRsiValue').value = Math.round(dna.avgRsi);
-        }
-        document.getElementById('alarmMacdCondition').checked = true;
-
-    } else {
-        document.getElementById('alarmNameInput').value = alarm?.name || '';
-        state.tempAlarmCoins = alarm?.coins?.length > 0 ? [...alarm.coins] : [...(state.userPortfolios[state.activePortfolio] || [])];
-        const conditions = alarm?.conditions || {};
-        document.getElementById('alarmTimeframe').value = alarm?.timeframe || '15m';
-
-        if (conditions.volume) {
-            document.getElementById('alarmVolumePeriod').value = conditions.volume.period ?? 20;
-            document.getElementById('alarmVolumeMultiplier').value = conditions.volume.multiplier ?? 2;
-        }
-        if (conditions.macdHistogram) {
-            document.getElementById('alarmMacdHistogramOperator').value = conditions.macdHistogram.operator ?? 'above';
-            document.getElementById('alarmMacdHistogramValue').value = conditions.macdHistogram.value ?? 0;
-        }
-        if (conditions.rsi) {
-            document.getElementById('alarmRsiOperator').value = conditions.rsi.operator ?? 'above';
-            document.getElementById('alarmRsiValue').value = conditions.rsi.value ?? 30;
-        }
-        document.getElementById('alarmADXThreshold').value = alarm?.adxThreshold ?? 25;
-    }
-
-    document.querySelectorAll('#alarmSettingsPanel [data-condition]').forEach(el => {
-        if (alarm && alarm.conditions) {
-            const conditionName = el.dataset.condition;
-            const isEnabled = conditionName === 'adx' ? alarm.trendFilterEnabled : alarm.conditions[conditionName]?.enabled;
-            el.checked = !!isEnabled;
-        }
-        const parentBox = el.closest('.alarm-condition-box');
-        if (parentBox) {
-            parentBox.dataset.disabled = String(!el.checked);
-        }
-    });
-
-    createCoinManager('alarm-coin-manager-container', state.tempAlarmCoins, 'alarm');
-    showPanel('alarmSettingsPanel');
-}
 // ui.js dosyasındaki renderSignalAnalysisPreview fonksiyonunu bulun ve bu blokla değiştirin.
 function renderSignalAnalysisPreview(data) {
     const resultContainer = document.getElementById('signalAnalysisResultContainer');
@@ -633,30 +512,43 @@ function renderSignalAnalysisPreview(data) {
 
     resultContainer.innerHTML = html;
 }
+// ui.js
+// openAlarmPanel ve renderAlarms fonksiyonlarını SİLİN.
+
+// renderAlarmReports fonksiyonunu bu yeni versiyonla DEĞİŞTİRİN.
 async function renderAlarmReports() {
     if (!state.userDocRef) return;
     const tableBody = document.getElementById('alarmReportsTable');
     if (!tableBody) return;
 
-    if (!state.trackedReports || state.trackedReports.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Takip edilen rapor bulunmuyor. Rapor ID'sini girerek ekleyebilirsiniz.</td></tr>`;
-        return;
-    }
-
+    // YENİ: Artık takip edilen ID'lere ihtiyacımız yok, direkt sinyalleri çekeceğiz.
+    // Firestore'da `signals` koleksiyonu için bir indeks oluşturmanız gerekebilir.
+    // Hata alırsanız, hata mesajındaki linke tıklayarak indeksi kolayca oluşturabilirsiniz.
     try {
-        const reportsSnapshot = await state.userDocRef.collection('alarm_reports')
-            .where('reportId', 'in', state.trackedReports)
-            .orderBy('timestamp', 'desc')
+        const signalsSnapshot = await state.firebase.db.collection('signals')
+            .where('userId', '==', state.firebase.auth.currentUser.uid)
+            .orderBy('createdAt', 'desc')
+            .limit(50) // Son 50 sinyali göster
             .get();
 
-        if (reportsSnapshot.empty) {
-            tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Takip edilen rapor bulunmuyor.</td></tr>`;
+        if (signalsSnapshot.empty) {
+            tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Henüz size özel bir sinyal üretilmedi.</td></tr>`;
             return;
         }
 
-        const reports = reportsSnapshot.docs.map(doc => doc.data());
+        const reports = signalsSnapshot.docs.map(doc => doc.data());
         const coinPairs = [...new Set(reports.map(r => r.coin))];
-        const pricesData = await Promise.all(coinPairs.map(pair => axios.get(`https://api.binance.com/api/v3/ticker/price?symbol=${pair}`).then(res => res.data).catch(() => ({ symbol: pair, price: null }))));
+        
+        if (coinPairs.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Sinyallerde geçerli bir coin bulunamadı.</td></tr>`;
+            return;
+        }
+
+        const pricesData = await Promise.all(coinPairs.map(pair => 
+            axios.get(`https://api.binance.com/api/v3/ticker/price?symbol=${pair}`)
+                 .then(res => res.data)
+                 .catch(() => ({ symbol: pair, price: null }))
+        ));
         const priceMap = new Map(pricesData.map(p => [p.symbol, parseFloat(p.price)]));
 
         tableBody.innerHTML = '';
@@ -664,28 +556,33 @@ async function renderAlarmReports() {
             const currentPrice = priceMap.get(report.coin);
             let performancePct = 'N/A';
             let perfClass = '';
-            if (currentPrice) {
-                const change = ((currentPrice - report.signalPrice) / report.signalPrice) * 100;
-                performancePct = (report.signalDirection === 'SATIŞ' ? -change : change);
-                perfClass = performancePct > 0 ? 'positive' : 'negative';
+            
+            if (currentPrice && report.priceAtSignal > 0) {
+                const change = ((currentPrice - report.priceAtSignal) / report.priceAtSignal) * 100;
+                performancePct = (report.direction === 'down' ? -change : change);
+                perfClass = performancePct > 0.1 ? 'positive' : (performancePct < -0.1 ? 'negative' : '');
             }
+
+            const directionIcon = report.direction === 'up' 
+                ? '<span class="positive">YÜKSELİŞ</span>' 
+                : '<span class="negative">DÜŞÜŞ</span>';
 
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${report.coin.replace('USDT', '')}</td>
-                <td>${report.signalDirection}</td>
-                <td>$${formatPrice(report.signalPrice)}</td>
+                <td>${directionIcon}</td>
+                <td>$${formatPrice(report.priceAtSignal)}</td>
                 <td>$${currentPrice ? formatPrice(currentPrice) : 'N/A'}</td>
                 <td class="performance-cell ${perfClass}">${typeof performancePct === 'number' ? performancePct.toFixed(2) + '%' : 'N/A'}</td>
-                <td>${report.timestamp.toDate().toLocaleString()}</td>
-                <td>${report.alarmName}</td>
-                <td><button class="action-btn remove-report-btn" data-report-id="${report.reportId}"><i class="fas fa-times"></i></button></td>
+                <td>${report.score}/100</td>
+                <td>${report.createdAt.toDate().toLocaleString('tr-TR')}</td>
+                <td>${report.profileId}</td>
             `;
             tableBody.appendChild(row);
         });
     } catch (error) {
-        console.error("Error fetching alarm reports:", error);
-        tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color: var(--accent-red);">Raporlar yüklenirken bir hata oluştu.</td></tr>`;
+        console.error("Sinyal raporları çekilirken hata:", error);
+        tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color: var(--accent-red);">Raporlar yüklenirken bir hata oluştu. Lütfen konsolu kontrol edin.</td></tr>`;
     }
 }
 
