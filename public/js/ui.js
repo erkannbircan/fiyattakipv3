@@ -715,7 +715,6 @@ function renderScannerResults(groupedMatches) {
     container.innerHTML = `<div class="scanner-results-grid">${html}</div>`;
 }
 
-// YENİ: Bu yeni fonksiyonu ui.js dosyasının sonuna ekleyin
 function renderDnaBacktestResults(data, profileId) {
     const section = document.getElementById('dnaBacktestSection');
     const summaryContainer = document.getElementById('backtestSummaryContainer');
@@ -746,7 +745,9 @@ function renderDnaBacktestResults(data, profileId) {
         tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Seçilen periyotta bu DNA profiline uyan sinyal bulunamadı.</td></tr>`;
         return;
     }
-const headerHtml = debugMode ? `
+    
+    // Debug modu için tablo başlığını ayarla
+    const headerHtml = debugMode ? `
         <th>Sinyal Tarihi</th>
         <th>Giriş Fiyatı</th>
         <th style="color: var(--accent-yellow);">Skor (Debug)</th>
@@ -758,6 +759,8 @@ const headerHtml = debugMode ? `
         <th>15dk (%)</th><th>1saat (%)</th><th>4saat (%)</th><th>1gün (%)</th>
     `;
     document.querySelector('#dnaBacktestResultTable thead tr').innerHTML = headerHtml;
+
+    // Tablo içeriğini oluştur
     tableBody.innerHTML = trades.map(trade => {
         const renderPerfCell = (perf) => {
             if (perf === null) return `<td>Veri Yok</td>`;
@@ -765,22 +768,9 @@ const headerHtml = debugMode ? `
             return `<td class="performance-cell ${perfClass}">${perf.pctChange.toFixed(2)}%</td>`;
         };
 
-        return `
-            <tr>
-                <td>${new Date(trade.entryTime).toLocaleString('tr-TR')}</td>
-                <td>$${formatPrice(trade.entryPrice)}</td>
-                <td>${trade.score}</td>
-                ${renderPerfCell(trade.performance['15m'])}
-                ${renderPerfCell(trade.performance['1h'])}
-                ${renderPerfCell(trade.performance['4h'])}
-                ${renderPerfCell(trade.performance['1d'])}
-            </tr>
-        `;
-    }).join('');
-    
-    // Sayfayı sonuçların olduğu bölüme kaydır
-    section.scrollIntoView({ behavior: 'smooth' });
-    const rowClass = (debugMode && !trade.isSignal) ? 'debug-row' : '';
+        // DÜZELTME: 'rowClass' tanımını ve kullanımını map fonksiyonunun içine taşıdık.
+        // Bu sayede her bir satır için doğru sınıf (class) belirlenir.
+        const rowClass = (debugMode && !trade.isSignal) ? 'debug-row' : '';
 
         return `
             <tr class="${rowClass}">
@@ -795,5 +785,6 @@ const headerHtml = debugMode ? `
         `;
     }).join('');
     
+    // Sayfayı sonuçların olduğu bölüme kaydır
     section.scrollIntoView({ behavior: 'smooth' });
 }
