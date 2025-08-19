@@ -59,7 +59,6 @@ function fetchCryptoData(pair, withIndicators = false) {
 }
 
 function runBacktest(alarmId) {
-    const alarm = state.userAlarms.find(a => a.id === alarmId);
     if (!alarm) return;
     
     showPanel('backtestPanel');
