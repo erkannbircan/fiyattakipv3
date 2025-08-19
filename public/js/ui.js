@@ -718,9 +718,6 @@ function renderScannerResults(groupedMatches) {
     container.innerHTML = `<div class="scanner-results-grid">${html}</div>`;
 }
 
-    container.innerHTML = `<div class="scanner-results-grid">${html}</div>`;
-}
-
 function renderDnaBacktestResults(data, profileId) {
     const section = document.getElementById('dnaBacktestSection');
     const summaryContainer = document.getElementById('backtestSummaryContainer');
