@@ -151,7 +151,7 @@
                 </div>
             </div>
 
-        <div id="strategy-discovery-content" class="tab-content">
+<div id="strategy-discovery-content" class="tab-content">
                 <div class="discovery-main-grid">
                     <div class="discovery-settings-panel">
                         <div class="collapsible open">
@@ -220,22 +220,23 @@
                             </div>
                         </div>
 
-                      <div class="collapsible open">
-    <div class="collapsible-header open">
-        <span><i class="fas fa-archive"></i> Kayıtlı DNA Profilleri</span>
-        <i class="fas fa-chevron-down"></i>
-    </div>
-    <div class="collapsible-content open">
-        <div class="table-controls" style="justify-content: flex-end;">
-            <button id="refreshDnaProfilesBtnDiscovery" class="action-btn-sm" title="Listeyi Yenile">
-                <i class="fas fa-sync-alt"></i> Yenile
-            </button>
-        </div>
-        <div id="dnaProfilesContainerDiscovery">
-            <p style="text-align: center; color: var(--text-secondary);">Profiller yükleniyor...</p>
-        </div>
-    </div>
-</div>
+                        <div class="collapsible open">
+                            <div class="collapsible-header open">
+                                <span><i class="fas fa-archive"></i> Kayıtlı DNA Profilleri</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="collapsible-content open">
+                                <div class="table-controls" style="justify-content: flex-end;">
+                                     <button id="refreshDnaProfilesBtnDiscovery" class="action-btn-sm" title="Listeyi Yenile">
+                                         <i class="fas fa-sync-alt"></i> Yenile
+                                     </button>
+                                </div>
+                                <div id="dnaProfilesContainerDiscovery">
+                                    <p style="text-align: center; color: var(--text-secondary);">Profiller yükleniyor...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="discovery-results-panel">
                         <div id="signalAnalysisResultContainer">
@@ -271,22 +272,30 @@
                     </div>
                 </div>
             </div>
+            </div>
             <div id="live-scanner-content" class="tab-content">
-    <div class="page-header">
-        <h3><i class="fas fa-broadcast-tower"></i> Canlı DNA Eşleşme Tarayıcısı</h3>
-        <p class="section-description">
-            Oluşturduğunuz kârlı DNA profillerine anlık olarak en çok benzeyen coin'leri burada takip edin. Skor ne kadar yüksekse, mevcut durum o profile o kadar çok benziyor demektir.
-        </p>
-    </div>
-
-    <div class="scanner-status">
-        <p>Tarama Durumu: <span id="scannerStatusText" class="status-stopped">DURDURULDU</span></p>
-        <p>Son Tarama: <span id="lastScanTime">-</span></p>
-        <label class="switch" title="Otomatik Taramayı Başlat/Durdur">
-            <input type="checkbox" id="toggleAutoScanner">
-            <span class="slider"></span>
-        </label>
-    </div>
+                <div class="page-header">
+                    <h3><i class="fas fa-broadcast-tower"></i> Canlı DNA Eşleşme Tarayıcısı</h3>
+                    <p class="section-description">
+                        Oluşturduğunuz kârlı DNA profillerine anlık olarak en çok benzeyen coin'leri burada takip edin. Skor ne kadar yüksekse, mevcut durum o profile o kadar çok benziyor demektir.
+                    </p>
+                </div>
+            
+                <div class="scanner-status">
+                    <p>Tarama Durumu: <span id="scannerStatusText" class="status-stopped">DURDURULDU</span></p>
+                    <p>Son Tarama: <span id="lastScanTime">-</span></p>
+                    <label class="switch" title="Otomatik Taramayı Başlat/Durdur">
+                        <input type="checkbox" id="toggleAutoScanner">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            
+                <div id="scannerResultsTable" class="scanner-results-grid">
+                    <div class="scanner-no-results">
+                        Tarama başlatılmadı. Otomatik taramayı aktifleştirin.
+                    </div>
+                </div>
+            </div>
 
     <div id="scannerResultsTable" class="scanner-results-grid">
         <div class="scanner-no-results">
