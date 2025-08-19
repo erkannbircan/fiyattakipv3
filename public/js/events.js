@@ -245,6 +245,8 @@ function setupAiPageActionListeners(parentElement) {
     });
 }
 
+// events.js dosyasındaki setupStrategyDiscoveryListeners fonksiyonunu bununla DEĞİŞTİRİN
+
 function setupStrategyDiscoveryListeners(parentElement) {
     parentElement.addEventListener('click', async (e) => {
         const target = e.target;
@@ -253,10 +255,13 @@ function setupStrategyDiscoveryListeners(parentElement) {
         if (target.closest('#runSignalAnalysisBtn')) {
             const btn = e.target.closest('#runSignalAnalysisBtn');
             showLoading(btn);
+
+            // DÜZELTME: Bu blok, seçili olan tüm DNA parametrelerini doğru şekilde toplar.
             const dnaParams = {};
             document.querySelectorAll('#signalDnaParamsGrid input:checked').forEach(cb => {
                 dnaParams[cb.dataset.param] = true;
             });
+
             const params = {
                 coins: state.discoveryCoins,
                 timeframe: document.getElementById('signalAnalysisTimeframe').value,
@@ -264,7 +269,7 @@ function setupStrategyDiscoveryListeners(parentElement) {
                 direction: document.getElementById('signalAnalysisDirection').value,
                 days: parseInt(document.getElementById('signalAnalysisPeriod').value),
                 lookbackCandles: parseInt(document.getElementById('signalLookbackCandles').value) || 3,
-                params: dnaParams,
+                params: dnaParams, // Toplanan parametreler buraya eklenir
                 isPreview: true
             };
             runSignalAnalysisPreview(params).finally(() => { hideLoading(btn); });
@@ -294,22 +299,18 @@ function setupStrategyDiscoveryListeners(parentElement) {
         }
 
         // Handles running a backtest for the first time from the profile list
-       const backtestBtn = target.closest('.run-dna-backtest-btn');
-if (backtestBtn) {
-    const profileId = backtestBtn.dataset.profileId;
-    state.currentBacktestProfileId = profileId; // Mevcut profili state'e kaydet
-
-    // DÜZELTME: Eksik olan parametreleri buradan okuyup gönderiyoruz.
-    const periodDays = 30;
-    const scoreThreshold = parseInt(document.getElementById('backtestThreshold').value) || 80;
-    const debugMode = document.getElementById('backtestDebugMode').checked;
-    
-    // Fonksiyonu doğru parametrelerle çağır
-    await runDnaBacktest(profileId, periodDays, scoreThreshold, debugMode);
-    return;
-}
+        const backtestBtn = target.closest('.run-dna-backtest-btn');
+        if (backtestBtn) {
+            const profileId = backtestBtn.dataset.profileId;
+            state.currentBacktestProfileId = profileId;
+            const periodDays = 30;
+            const scoreThreshold = parseInt(document.getElementById('backtestThreshold').value) || 80;
+            const debugMode = document.getElementById('backtestDebugMode').checked;
+            await runDnaBacktest(profileId, periodDays, scoreThreshold, debugMode);
+            return;
+        }
         
-        // **FIXED**: Handles the "Re-run Test" button click separately
+        // Handles the "Re-run Test" button click separately
         if (target.closest('#rerunBacktestBtn')) {
             if (state.currentBacktestProfileId) {
                 const periodDays = 30;
@@ -321,7 +322,6 @@ if (backtestBtn) {
         }
     });
 }
-
 
 function setupPivotPageActionListeners(parentElement) {
     parentElement.addEventListener('click', async (e) => {
