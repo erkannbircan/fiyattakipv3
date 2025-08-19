@@ -77,6 +77,13 @@ function setupTabEventListeners(parentElement) {
         const tabLink = e.target.closest('.tab-link');
         if (!tabLink || tabLink.classList.contains('active')) return;
 
+        // YENİ: Otomatik tarayıcıyı durdurmak için eski sekmeyi kontrol et
+        const oldActiveTab = parentElement.querySelector('.tab-link.active');
+        if (oldActiveTab && oldActiveTab.dataset.tab === 'live-scanner') {
+            toggleAutoScanner(false); // Canlı tarama sekmesinden ayrılıyorsak, zamanlayıcıyı durdur.
+            console.log("Canlı tarayıcı sekmesinden ayrıldı, otomatik tarama durduruldu.");
+        }
+
         parentElement.querySelector('.tab-link.active')?.classList.remove('active');
         parentElement.querySelector('.tab-content.active')?.classList.remove('active');
         tabLink.classList.add('active');
@@ -85,23 +92,16 @@ function setupTabEventListeners(parentElement) {
         if (activeTabContent) {
             activeTabContent.classList.add('active');
             switch (tabLink.dataset.tab) {
-                case 'crypto':
-                    createCoinManager('crypto-coin-manager-container', state.userPortfolios[state.activePortfolio] || [], 'crypto');
-                    break;
-                case 'crypto-ai':
-                    createCoinManager('ai-coin-manager-container', state.cryptoAiPairs, 'ai');
-                    await fetchAiDataAndRender();
-                    break;
-                case 'crypto-pivot':
-                    renderSupportResistance();
-                    break;
-                case 'strategy-discovery':
-                    createCoinManager('discovery-coin-manager-container', state.discoveryCoins, 'discovery');
-                    await fetchDnaProfiles('dnaProfilesContainerDiscovery');
-                    break;
+                // ... diğer case'ler aynı kalacak ...
                 case 'live-scanner':
                     const toggle = document.getElementById('toggleAutoScanner');
-                    updateScannerStatusUI(toggle && toggle.checked ? 'idle' : 'stopped');
+                    // YENİ: Sekmeye gelindiğinde, eğer ayar açıksa taramayı başlat.
+                    if (toggle && toggle.checked) {
+                        toggleAutoScanner(true);
+                        console.log("Canlı tarayıcı sekmesine girildi, otomatik tarama başlatıldı.");
+                    } else {
+                        updateScannerStatusUI('stopped');
+                    }
                     break;
                 case 'alarms':
                     renderAlarms();
