@@ -301,7 +301,8 @@ function setupStrategyDiscoveryListeners(parentElement) {
     }
     return;
         }
-    });
+    }
+} // <-- DÜZELTME: Eksik olan kapanış '}' karakteri buraya eklendi.
 } // <-- DÜZELTME: Eksik olan kapanış '}' karakteri buraya eklendi.
 
 function setupPivotPageActionListeners(parentElement) {
