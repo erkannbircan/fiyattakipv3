@@ -292,6 +292,14 @@ function setupStrategyDiscoveryListeners(parentElement) {
             const periodDays = 30;
             await runDnaBacktest(profileId, periodDays);
             return;
+            if(target.closest('#rerunBacktestBtn')) {
+    if(state.currentBacktestProfileId) {
+        const periodDays = 30;
+        const scoreThreshold = parseInt(document.getElementById('backtestThreshold').value) || 80;
+        const debugMode = document.getElementById('backtestDebugMode').checked;
+        await runDnaBacktest(state.currentBacktestProfileId, periodDays, scoreThreshold, debugMode);
+    }
+    return;
         }
     });
 } // <-- DÜZELTME: Eksik olan kapanış '}' karakteri buraya eklendi.
