@@ -664,6 +664,8 @@ function renderDnaProfiles(profiles, containerId) {
 
 // ui.js dosyasındaki renderScannerResults fonksiyonunu bununla DEĞİŞTİRİN
 
+// ui.js dosyasındaki renderScannerResults fonksiyonunu bununla DEĞİŞTİRİN
+
 function renderScannerResults(groupedMatches) {
     const container = document.getElementById('scannerResultsTable');
     if (!container) return;
@@ -678,11 +680,11 @@ function renderScannerResults(groupedMatches) {
         const data = groupedMatches[coin];
         const coinSymbol = coin.replace('USDT', '');
         
-        // Bize sadece skoru 50'den yüksek olanlar lazım
-        const relevantMatches = data.matches.filter(m => m.score >= 50);
-        if (relevantMatches.length === 0) continue; // Eğer 50'den yüksek skorlu eşleşme yoksa bu coini atla
+        // DÜZELTME: Skoru 50'den yüksek olanları filtreleyen satır kaldırıldı.
+        const allMatches = data.matches;
+        if (allMatches.length === 0) continue;
 
-        const matchesHtml = relevantMatches.map(match => `
+        const matchesHtml = allMatches.map(match => `
             <div class="scanner-profile-match">
                 <div class="profile-info">
                     <span class="profile-name">${match.profileName}</span>
@@ -708,11 +710,13 @@ function renderScannerResults(groupedMatches) {
         `;
     }
 
-    // Eğer tüm coinleri atladıysak (hiçbirinde 50 üzeri skor yoksa)
     if (html === '') {
-         container.innerHTML = `<div class="scanner-no-results">Skoru 50'den yüksek bir eşleşme bulunamadı. Tarama devam ediyor...</div>`;
+         container.innerHTML = `<div class="scanner-no-results">Taranacak aktif profil bulunamadı veya veri alınamadı.</div>`;
          return;
     }
+
+    container.innerHTML = `<div class="scanner-results-grid">${html}</div>`;
+}
 
     container.innerHTML = `<div class="scanner-results-grid">${html}</div>`;
 }
