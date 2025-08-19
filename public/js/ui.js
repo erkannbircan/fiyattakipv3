@@ -625,12 +625,12 @@ function renderIndicatorFilters() {}
 
 function renderDictionary() {}
 
+// ui.js
+
+// renderDnaProfiles fonksiyonunu bununla DEĞİŞTİRİN
 function renderDnaProfiles(profiles, containerId) {
     const container = document.getElementById(containerId);
-    if (!container) {
-        console.error(`renderDnaProfiles: '${containerId}' ID'li element bulunamadı.`);
-        return;
-    }
+    if (!container) return;
 
     if (!profiles || profiles.length === 0) {
         container.innerHTML = `<p style="text-align: center; color: var(--text-secondary); padding: 20px;">Henüz kaydedilmiş bir DNA profili bulunmuyor.</p>`;
@@ -638,20 +638,20 @@ function renderDnaProfiles(profiles, containerId) {
     }
 
     let html = '<div class="table-wrapper"><table><thead><tr>' +
-        '<th>Profil Adı</th><th>Parametreler</th><th>Olay Sayısı</th><th style="text-align: right;">İşlemler</th>' +
+        '<th>Profil Adı</th><th>Coin/Periyot</th><th>Olay Sayısı</th><th style="text-align: right;">İşlemler</th>' +
         '</tr></thead><tbody>';
 
     profiles.forEach(profile => {
-        const profileName = profile.name || profile.id;
-        const featureText = profile.featureOrder ? profile.featureOrder.join(', ') : 'N/A';
-        const eventCount = profile.eventCount || 'N/A';
-
+        const profileName = profile.name;
         html += `<tr>
                     <td><strong>${profileName}</strong></td>
-                    <td><small>${featureText}</small></td>
-                    <td style="text-align: center;">${eventCount}</td>
+                    <td>${profile.coin}/${profile.timeframe}</td>
+                    <td style="text-align: center;">${profile.count}</td>
                     <td style="text-align: right;">
-                        <button class="action-btn delete-dna-btn" data-profile-id="${profile.id}" title="Profili Sil">
+                        <button class="action-btn run-dna-backtest-btn" data-profile-id="${profile.name}" title="Bu Profili Test Et">
+                            <i class="fas fa-history"></i>
+                        </button>
+                        <button class="action-btn delete-dna-btn" data-profile-id="${profile.name}" title="Profili Sil">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
@@ -661,6 +661,7 @@ function renderDnaProfiles(profiles, containerId) {
     html += '</tbody></table></div>';
     container.innerHTML = html;
 }
+
 // ui.js dosyasındaki renderScannerResults fonksiyonunu bununla değiştirin
 function renderScannerResults(groupedMatches) {
     const container = document.getElementById('scannerResultsTable'); // Bu ID'yi konteyner olarak yeniden kullanalım
@@ -701,4 +702,59 @@ function renderScannerResults(groupedMatches) {
     }
 
     container.innerHTML = `<div class="scanner-results-grid">${html}</div>`;
+}
+// YENİ: Bu yeni fonksiyonu ui.js dosyasının sonuna ekleyin
+function renderDnaBacktestResults(data, profileId) {
+    const section = document.getElementById('dnaBacktestSection');
+    const summaryContainer = document.getElementById('backtestSummaryContainer');
+    const tableBody = document.querySelector('#dnaBacktestResultTable tbody');
+    if (!section || !tableBody || !summaryContainer) return;
+
+    document.getElementById('backtestProfileName').textContent = `Profil: ${profileId}`;
+    section.style.display = 'block';
+
+    const { trades, summary } = data;
+
+    // Özet kartlarını oluştur
+    summaryContainer.innerHTML = `
+        <div class="kpi-container">
+            ${Object.entries(summary).map(([period, stats]) => `
+                <div class="kpi-item">
+                    <span class="kpi-label">${period} Sonrası Performans</span>
+                    <span class="kpi-value ${stats.avgReturn > 0 ? 'positive' : 'negative'}">${stats.avgReturn.toFixed(2)}%</span>
+                    <span class="kpi-label">Ort. Getiri (${stats.tradeCount} işlem)</span>
+                    <span class="kpi-label" style="margin-top: 5px;">Kazanma Oranı: <strong>${stats.winRate.toFixed(1)}%</strong></span>
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    // Detaylı işlem tablosunu doldur
+    if (trades.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Seçilen periyotta bu DNA profiline uyan sinyal bulunamadı.</td></tr>`;
+        return;
+    }
+
+    tableBody.innerHTML = trades.map(trade => {
+        const renderPerfCell = (perf) => {
+            if (perf === null) return `<td>Veri Yok</td>`;
+            const perfClass = perf.pctChange > 0.1 ? 'positive' : (perf.pctChange < -0.1 ? 'negative' : '');
+            return `<td class="performance-cell ${perfClass}">${perf.pctChange.toFixed(2)}%</td>`;
+        };
+
+        return `
+            <tr>
+                <td>${new Date(trade.entryTime).toLocaleString('tr-TR')}</td>
+                <td>$${formatPrice(trade.entryPrice)}</td>
+                <td>${trade.score}</td>
+                ${renderPerfCell(trade.performance['15m'])}
+                ${renderPerfCell(trade.performance['1h'])}
+                ${renderPerfCell(trade.performance['4h'])}
+                ${renderPerfCell(trade.performance['1d'])}
+            </tr>
+        `;
+    }).join('');
+    
+    // Sayfayı sonuçların olduğu bölüme kaydır
+    section.scrollIntoView({ behavior: 'smooth' });
 }
