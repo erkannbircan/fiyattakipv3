@@ -248,7 +248,7 @@ async function runDnaBacktest(profileId, periodDays) {
 
     const backtestFunc = state.firebase.functions.httpsCallable('runDnaBacktest');
     try {
-        const result = await backtestFunc({ profileId, periodDays });
+      const result = await backtestFunc({ profileId, periodDays, scoreThreshold, debugMode });
         renderDnaBacktestResults(result.data, profileId);
     } catch (error) {
         console.error("DNA Backtest hatası:", error);
