@@ -238,3 +238,21 @@ function deleteDnaProfile(profileId) {
             showNotification("Profil silinemedi: " + errorMessage, false);
         });
 }
+// api.js dosyasının sonuna ekleyin
+async function runDnaBacktest(profileId, periodDays) {
+    const container = document.getElementById('dnaBacktestSection');
+    if (container) {
+         document.querySelector('#dnaBacktestResultTable tbody').innerHTML = `<tr><td colspan="7"><div class="loading" style="margin: 20px auto; display:block;"></div></td></tr>`;
+         container.style.display = 'block';
+    }
+
+    const backtestFunc = state.firebase.functions.httpsCallable('runDnaBacktest');
+    try {
+        const result = await backtestFunc({ profileId, periodDays });
+        renderDnaBacktestResults(result.data, profileId);
+    } catch (error) {
+        console.error("DNA Backtest hatası:", error);
+        showNotification(`Backtest hatası: ${error.message}`, false);
+        if (container) container.style.display = 'none';
+    }
+}
