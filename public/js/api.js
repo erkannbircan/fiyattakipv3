@@ -238,8 +238,8 @@ function deleteDnaProfile(profileId) {
             showNotification("Profil silinemedi: " + errorMessage, false);
         });
 }
-// api.js dosyasının sonuna ekleyin
-async function runDnaBacktest(profileId, periodDays) {
+
+async function runDnaBacktest(profileId, periodDays, scoreThreshold, debugMode) {
     const container = document.getElementById('dnaBacktestSection');
     if (container) {
          document.querySelector('#dnaBacktestResultTable tbody').innerHTML = `<tr><td colspan="7"><div class="loading" style="margin: 20px auto; display:block;"></div></td></tr>`;
@@ -248,7 +248,9 @@ async function runDnaBacktest(profileId, periodDays) {
 
     const backtestFunc = state.firebase.functions.httpsCallable('runDnaBacktest');
     try {
-      const result = await backtestFunc({ profileId, periodDays, scoreThreshold, debugMode });
+        // Artık scoreThreshold ve debugMode değişkenleri tanımlı olduğu için
+        // Cloud Function'a doğru şekilde gönderilecek.
+        const result = await backtestFunc({ profileId, periodDays, scoreThreshold, debugMode });
         renderDnaBacktestResults(result.data, profileId);
     } catch (error) {
         console.error("DNA Backtest hatası:", error);
