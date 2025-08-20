@@ -241,13 +241,23 @@ function setupStrategyDiscoveryListeners(parentElement) {
     parentElement.addEventListener('click', async (e) => {
         const target = e.target;
 
+        // events.js -> setupStrategyDiscoveryListeners fonksiyonu içinde
         if (target.closest('#runSignalAnalysisBtn')) {
             const btn = e.target.closest('#runSignalAnalysisBtn');
             showLoading(btn);
+
+            // --- HATALI MANTIK BURADAYDI ---
+            // DÜZELTİLMİŞ, DOĞRU MANTIK:
             const dnaParams = {};
-            document.querySelectorAll('#signalDnaParamsGrid input:checked').forEach(cb => {
-                dnaParams[cb.dataset.param] = true;
+            // Tüm checkbox'ları alıyoruz
+            document.querySelectorAll('#signalDnaParamsGrid input[type="checkbox"]').forEach(cb => {
+                // Sadece ve sadece İŞARETLİ olanları 'true' olarak ekliyoruz.
+                if (cb.checked) {
+                    dnaParams[cb.dataset.param] = true;
+                }
             });
+            // --- DÜZELTME SONU ---
+
             const params = {
                 coins: state.discoveryCoins,
                 timeframe: document.getElementById('signalAnalysisTimeframe').value,
@@ -259,9 +269,7 @@ function setupStrategyDiscoveryListeners(parentElement) {
                 isPreview: true
             };
             
-            // --- DEBUG İÇİN EKLENDİ ---
             console.log('Sunucuya gönderilen analiz parametreleri:', params);
-            // --- DEBUG SON ---
 
             runSignalAnalysisPreview(params).finally(() => { hideLoading(btn); });
             return;
