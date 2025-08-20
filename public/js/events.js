@@ -290,6 +290,8 @@ function setupStrategyDiscoveryListeners(parentElement) {
         document.getElementById('discoverySettingsPanel').style.display = 'block';
         document.getElementById('discoveryResultsPanel').style.display = 'none';
         return;
+        }
+            
             
         // Handles deleting a DNA profile
         const deleteBtn = target.closest('.delete-dna-btn');
@@ -297,11 +299,9 @@ function setupStrategyDiscoveryListeners(parentElement) {
             const profileId = deleteBtn.dataset.profileId;
             await deleteDnaProfile(profileId);
             return;
+        });
         }
-        
     
-    });
-}
 
 function setupPivotPageActionListeners(parentElement) {
     parentElement.addEventListener('click', async (e) => {
