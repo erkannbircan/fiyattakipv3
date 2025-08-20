@@ -516,4 +516,8 @@ function updateAdminUI() {
     if (reportsTab) {
         reportsTab.style.display = isAdmin ? 'block' : 'none';
     }
+    const backtestTab = document.getElementById('backtest-tab');
+    if (backtestTab) {
+        backtestTab.style.display = isAdmin ? 'block' : 'none';
+    }
 }
