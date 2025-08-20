@@ -289,31 +289,7 @@ function setupStrategyDiscoveryListeners(parentElement) {
             await deleteDnaProfile(profileId);
             return;
         }
-
-        // Handles running a backtest for the first time from the profile list
-        const backtestBtn = target.closest('.run-dna-backtest-btn');
-        if (backtestBtn) {
-            const profileId = backtestBtn.dataset.profileId;
-            state.currentBacktestProfileId = profileId; // Save the profile ID for re-runs
-
-            // DÜZELTME BURADA: Eksik olan parametreler okunup fonksiyona gönderiliyor.
-            const periodDays = 30;
-            const scoreThreshold = parseInt(document.getElementById('backtestThreshold').value) || 80;
-            const debugMode = document.getElementById('backtestDebugMode').checked;
-            await runDnaBacktest(profileId, periodDays, scoreThreshold, debugMode);
-            return;
-        }
-        
-        // Handles the "Re-run Test" button click separately
-        if (target.closest('#rerunBacktestBtn')) {
-            if (state.currentBacktestProfileId) {
-                const periodDays = 30;
-                const scoreThreshold = parseInt(document.getElementById('backtestThreshold').value) || 80;
-                const debugMode = document.getElementById('backtestDebugMode').checked;
-                await runDnaBacktest(state.currentBacktestProfileId, periodDays, scoreThreshold, debugMode);
-            }
-            return;
-        }
+    
     });
 }
 
