@@ -245,18 +245,12 @@ function setupStrategyDiscoveryListeners(parentElement) {
         if (target.closest('#runSignalAnalysisBtn')) {
     const btn = e.target.closest('#runSignalAnalysisBtn');
             showLoading(btn);
-
-            // --- HATALI MANTIK BURADAYDI ---
-            // DÜZELTİLMİŞ, DOĞRU MANTIK:
+            
             const dnaParams = {};
             // Tüm checkbox'ları alıyoruz
-            document.querySelectorAll('#signalDnaParamsGrid input[type="checkbox"]').forEach(cb => {
-                // Sadece ve sadece İŞARETLİ olanları 'true' olarak ekliyoruz.
-                if (cb.checked) {
-                    dnaParams[cb.dataset.param] = true;
-                }
+            document.querySelectorAll('#signalDnaParamsGrid input[type="checkbox"]:checked').forEach(cb => {
+    dnaParams[cb.dataset.param] = true;
             });
-            // --- DÜZELTME SONU ---
 
             const params = {
                 coins: state.discoveryCoins,
