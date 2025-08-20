@@ -695,3 +695,114 @@ input:checked + .slider:before { transform: translateX(24px); }
         position: static; /* Mobilde sabitlemeyi kaldır */
     }
 }
+/* style.css dosyasının sonuna ekleyin */
+
+/* --- DNA PROFİL KARTLARI --- */
+#dnaProfilesContainerDiscovery {
+    max-height: 450px; /* Alana maksimum yükseklik verelim */
+    overflow-y: auto; /* Taşan profiller için kaydırma çubuğu ekleyelim */
+    padding-right: 10px; /* Kaydırma çubuğu için boşluk */
+}
+
+.dna-profiles-grid {
+    display: grid;
+    grid-template-columns: 1fr; /* Tek sütunlu liste */
+    gap: 15px;
+}
+
+.dna-profile-card {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    transition: box-shadow 0.2s ease;
+}
+
+.dna-profile-card:hover {
+    box-shadow: 0 0 15px rgba(41, 98, 255, 0.2);
+}
+
+.dna-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.dna-card-title h5 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--accent-yellow);
+}
+
+.dna-card-title span {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.dna-card-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.dna-card-body {
+    padding: 15px;
+    font-size: 0.9rem;
+}
+
+.dna-card-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.summary-item {
+    color: var(--text-secondary);
+}
+.summary-item small {
+    color: var(--text-primary);
+}
+
+.dna-card-details-toggle {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.dna-card-details-toggle a {
+    color: var(--accent-blue);
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+.dna-card-details-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    border-top: 1px solid var(--border-color);
+    padding-top: 0;
+}
+
+.dna-card-details-content.open {
+    max-height: 500px; /* Açıldığında alabileceği maksimum yükseklik */
+    padding-top: 10px;
+}
+
+.dna-card-details-content h6 {
+    margin: 0 0 10px 0;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 5px 15px;
+    font-size: 0.8rem;
+}
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+}
+.detail-item .label { color: var(--text-secondary); }
+.detail-item .value { font-weight: 600; color: var(--text-primary); }
