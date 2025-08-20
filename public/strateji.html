@@ -64,9 +64,8 @@
             <div id="strategy-discovery-content" class="tab-content active">
                 <div class="discovery-content-wrapper">
                     
-                    <div class="discovery-settings-panel">
-                        <div class="collapsible open">
-                            <div class="collapsible-header open">
+                    <<div class="discovery-settings-panel" id="discoverySettingsPanel">
+        <div class="collapsible open">
                                 <span><i class="fas fa-flask"></i> Strateji Keşif Aracı</span>
                                 <i class="fas fa-chevron-down"></i>
                             </div>
@@ -138,14 +137,12 @@
                         </div>
                     </div>
                     
-                    <div class="discovery-results-panel">
-                        <div id="signalAnalysisResultContainer">
-                            <div class="placeholder-text">
-                                <i class="fas fa-chart-line"></i>
-                                <p>Analiz sonuçları burada görünecektir.</p>
-                            </div>
-                        </div>
-                    </div>
+                    div class="discovery-results-panel" id="discoveryResultsPanel" style="display:none;">
+        <div class="page-header" style="text-align: left; padding: 0;">
+            <h3><i class="fas fa-chart-pie"></i> Analiz Sonuçları</h3>
+            <button id="backToSettingsBtn" class="action-btn-sm"><i class="fas fa-chevron-left"></i> Ayarlara Geri Dön</button>
+        </div>
+        <div id="signalAnalysisResultContainer">
 
                 </div>
             </div>
