@@ -837,3 +837,9 @@ input:checked + .slider:before { transform: translateX(24px); }
     text-decoration: none;
     width: auto; /* Tam genişlik olmasın */
 }
+/* style.css sonuna eklenecekler */
+.discovery-content-wrapper {
+    display: flex;
+    flex-direction: column; /* Öğeleri dikeyde sırala */
+    gap: 30px; /* Paneller arasına boşluk koy */
+}
