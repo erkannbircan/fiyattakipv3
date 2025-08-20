@@ -806,3 +806,34 @@ input:checked + .slider:before { transform: translateX(24px); }
 }
 .detail-item .label { color: var(--text-secondary); }
 .detail-item .value { font-weight: 600; color: var(--text-primary); }
+/* style.css sonuna eklenecekler */
+
+/* Strateji sayfası için yeni tek sütunlu yapı */
+.discovery-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+/* Strateji sayfasındaki yönlendirme kutusu */
+.navigation-box {
+    margin-top: 25px;
+    padding: 20px;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.navigation-box p {
+    margin: 0 0 15px 0;
+    color: var(--text-secondary);
+}
+
+.navigation-box .primary-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    width: auto; /* Tam genişlik olmasın */
+}
