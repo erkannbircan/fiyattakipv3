@@ -656,9 +656,6 @@ function renderIndicatorFilters() {}
 
 function renderDictionary() {}
 
-// ui.js
-
-// renderDnaProfiles fonksiyonunu bununla DEĞİŞTİRİN
 function renderDnaProfiles(profiles, containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -692,10 +689,6 @@ function renderDnaProfiles(profiles, containerId) {
     html += '</tbody></table></div>';
     container.innerHTML = html;
 }
-
-// ui.js dosyasındaki renderScannerResults fonksiyonunu bununla DEĞİŞTİRİN
-
-// ui.js dosyasındaki renderScannerResults fonksiyonunu bununla DEĞİŞTİRİN
 
 function renderScannerResults(groupedMatches) {
     const container = document.getElementById('scannerResultsTable');
