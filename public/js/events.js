@@ -344,3 +344,53 @@ function setupUpdateAnalysisButtonListener() {
         updateBtn.dataset.listenerAttached = 'true';
     }
 }
+// events.js dosyasının sonuna bu yeni fonksiyonu ekleyin
+
+function setupBacktestPageEventListeners() {
+    let currentProfileId = null; // Test edilen profili hafızada tutmak için
+
+    // Olayları sadece body'ye bir kere bağlıyoruz, bu daha verimli.
+    document.body.addEventListener('click', async (e) => {
+        const backtestBtn = e.target.closest('.run-dna-backtest-btn');
+        const rerunBtn = e.target.closest('#rerunBacktestBtn');
+        const refreshBtn = e.target.closest('#refreshDnaProfilesBtn');
+        const toggleLink = e.target.closest('.toggle-details-link');
+        
+        if (backtestBtn) {
+            currentProfileId = backtestBtn.dataset.profileId;
+            runTest();
+        }
+
+        if (rerunBtn && currentProfileId) {
+            runTest();
+        }
+
+        if (refreshBtn) {
+            fetchDnaProfiles('dnaProfilesContainer');
+        }
+
+        if (toggleLink) {
+            e.preventDefault();
+            const detailsContent = toggleLink.parentElement.nextElementSibling;
+            if (detailsContent && detailsContent.classList.contains('dna-card-details-content')) {
+                detailsContent.classList.toggle('open');
+            }
+        }
+    });
+    
+    function runTest() {
+        if (!currentProfileId) return;
+
+        const backtestSection = document.getElementById('backtest-results-section');
+        if (!backtestSection) return;
+
+        backtestSection.style.display = 'block';
+        document.getElementById('backtestProfileName').textContent = `Profil: ${currentProfileId}`;
+        backtestSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        const scoreThreshold = parseInt(document.getElementById('backtestThreshold').value) || 80;
+        const debugMode = document.getElementById('backtestDebugMode').checked;
+        
+        runDnaBacktest(currentProfileId, 30, scoreThreshold, debugMode);
+    }
+}
