@@ -82,33 +82,43 @@ function loadSettingsAndRole(userData) {
 async function initializeTrackerPage(userData) {
     state.pageInitialized = true;
 
+    // Ortak ayarları ve verileri yükle
     state.userPortfolios = userData.portfolios || { "Varsayılan": ["BTCUSDT", "ETHUSDT", "SOLUSDT"] };
     state.activePortfolio = userData.activePortfolio || Object.keys(state.userPortfolios)[0];
     state.cryptoAiPairs = userData.coins_ai || ["BTCUSDT", "ETHUSDT", "SOLUSDT"];
     state.discoveryCoins = userData.coins_discovery || ["BTCUSDT", "ETHUSDT"];
 
-    // EKSİK SATIR BURAYA EKLENDİ
-    createCoinManager('discovery-coin-manager-container', state.discoveryCoins, 'discovery');
-
-    renderIndicatorFilters();
-    renderDictionary();
+    // Sayfaya özel fonksiyonları çağırmadan önce global UI ayarlarını yap
     applySettingsToUI();
     renderAllPortfolioTabs();
 
-    await fetchAllDataAndRender();
-    fetchAiDataAndRender();
-    renderAlarmReports();
+    // Hangi sayfada olduğumuzu URL'den anla
+    const currentPage = window.location.pathname.split('/').pop();
 
-    setupTrackerPageEventListeners();
-    setupUpdateAnalysisButtonListener();
+    if (currentPage === 'backtest.html') {
+        // --- Sadece backtest sayfasında çalışacak kodlar ---
+        fetchDnaProfiles('dnaProfilesContainer');
+        setupBacktestPageEventListeners(); // Yeni olay dinleyicimizi burada çağırıyoruz
+        
+    } else {
+        // --- Diğer tüm sayfalarda çalışacak ortak kodlar ---
+        createCoinManager('discovery-coin-manager-container', state.discoveryCoins, 'discovery');
+        renderIndicatorFilters();
+        renderDictionary();
+        
+        await fetchAllDataAndRender();
+        fetchAiDataAndRender();
+        renderAlarmReports();
 
-    // YENİ: Sayfa yüklendiğinde tarayıcıyı başlat (eğer açıksa)
+        setupTrackerPageEventListeners(); // Eski genel olay dinleyicimiz
+        setupUpdateAnalysisButtonListener();
+    }
+
     const toggle = document.getElementById('toggleAutoScanner');
     if (toggle && toggle.checked) {
         toggleAutoScanner(true);
     }
 }
-
 async function fetchAllDataAndRender() {
     const refreshBtn = document.getElementById('refreshBtn');
     if (refreshBtn) showLoading(refreshBtn);
