@@ -72,46 +72,34 @@ function setupTrackerPageEventListeners() {
     setupScannerEventListeners(trackerPageEl);
 }
 
+// Bu fonksiyon artık sayfalar arası geçişle ilgili değil,
+// sadece belirli sayfalara özel işlemleri (tarayıcıyı başlatma gibi) tetiklemek için var.
 function setupTabEventListeners(parentElement) {
-    parentElement.querySelector('.tabs')?.addEventListener('click', async (e) => {
-        const tabLink = e.target.closest('.tab-link');
-        if (!tabLink || tabLink.classList.contains('active')) return;
-
-        // YENİ: Otomatik tarayıcıyı durdurmak için eski sekmeyi kontrol et
-        const oldActiveTab = parentElement.querySelector('.tab-link.active');
-        if (oldActiveTab && oldActiveTab.dataset.tab === 'live-scanner') {
-            toggleAutoScanner(false); // Canlı tarama sekmesinden ayrılıyorsak, zamanlayıcıyı durdur.
-            console.log("Canlı tarayıcı sekmesinden ayrıldı, otomatik tarama durduruldu.");
-        }
-
-        parentElement.querySelector('.tab-link.active')?.classList.remove('active');
-        parentElement.querySelector('.tab-content.active')?.classList.remove('active');
-        tabLink.classList.add('active');
-        const activeTabContent = document.getElementById(`${tabLink.dataset.tab}-content`);
-
-        if (activeTabContent) {
-            activeTabContent.classList.add('active');
-            switch (tabLink.dataset.tab) {
-                // ... diğer case'ler aynı kalacak ...
-                case 'live-scanner':
-                    const toggle = document.getElementById('toggleAutoScanner');
-                    // YENİ: Sekmeye gelindiğinde, eğer ayar açıksa taramayı başlat.
-                    if (toggle && toggle.checked) {
-                        toggleAutoScanner(true);
-                        console.log("Canlı tarayıcı sekmesine girildi, otomatik tarama başlatıldı.");
-                    } else {
-                        updateScannerStatusUI('stopped');
-                    }
-                    break;
-                case 'alarms':
-                    renderAlarms();
-                    break;
-                case 'alarm-reports':
-                    renderAlarmReports();
-                    break;
-            }
+    // Navigasyon linklerinin "active" durumunu güncelleyelim.
+    const currentPage = window.location.pathname.split('/').pop().replace('.html', '');
+    const navLinks = document.querySelectorAll('#main-nav .tab-link');
+    
+    navLinks.forEach(link => {
+        // "index" anasayfa olduğu için özel bir kontrol yapıyoruz.
+        const linkPage = link.dataset.page;
+        if (linkPage === 'index' && (currentPage === '' || currentPage === 'index')) {
+            link.classList.add('active');
+        } else if (linkPage !== 'index' && currentPage === linkPage) {
+            link.classList.add('active');
         }
     });
+
+    // Sayfaya özel işlemleri burada kontrol edebiliriz.
+    // Örnek: Eğer "tarama.html" sayfasındaysak ve ayar açıksa tarayıcıyı başlat.
+    if (currentPage === 'tarama' || (currentPage === '' && window.location.pathname.endsWith('/tarama.html'))) {
+        const toggle = document.getElementById('toggleAutoScanner');
+        if (toggle && toggle.checked) {
+            toggleAutoScanner(true);
+            console.log("Canlı tarayıcı sayfasına girildi, otomatik tarama başlatıldı.");
+        } else {
+            updateScannerStatusUI('stopped');
+        }
+    }
 }
 
 function setupPanelEventListeners(parentElement) {
