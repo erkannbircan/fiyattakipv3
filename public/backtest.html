@@ -131,6 +131,14 @@
                 if (e.target.closest('#rerunBacktestBtn') && currentProfileId) {
                     runTest();
                 }
+                const toggleLink = e.target.closest('.toggle-details-link');
+                if (toggleLink) {
+                    e.preventDefault(); // Sayfanın üste kaymasını engelle
+                    const detailsContent = toggleLink.parentElement.nextElementSibling;
+                    if (detailsContent && detailsContent.classList.contains('dna-card-details-content')) {
+                        detailsContent.classList.toggle('open');
+                    }
+                }
             });
             
             function runTest() {
