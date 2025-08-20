@@ -79,32 +79,62 @@ function applySettingsToUI() {
         return;
     }
 
-    document.getElementById('langSelect').value = state.settings.lang;
-    document.getElementById('autoRefreshToggle').checked = state.settings.autoRefresh;
-    document.getElementById('refreshInterval').value = state.settings.refreshInterval;
-    document.getElementById('liveScannerInterval').value = state.settings.liveScannerInterval;
-    document.getElementById('refreshInterval').min = { admin: 10, qualified: 120, new_user: 300 }[state.currentUserRole] || 300;
-    
-    document.getElementById('telegramPhoneInput').value = state.settings.telegramPhone || '';
+    // Her elemanı kullanmadan önce var olup olmadığını kontrol ediyoruz.
+    const langSelect = document.getElementById('langSelect');
+    if (langSelect) langSelect.value = state.settings.lang;
+
+    const autoRefreshToggle = document.getElementById('autoRefreshToggle');
+    if (autoRefreshToggle) autoRefreshToggle.checked = state.settings.autoRefresh;
+
+    const refreshInterval = document.getElementById('refreshInterval');
+    if (refreshInterval) {
+        refreshInterval.value = state.settings.refreshInterval;
+        refreshInterval.min = { admin: 10, qualified: 120, new_user: 300 }[state.currentUserRole] || 300;
+    }
+
+    const liveScannerInterval = document.getElementById('liveScannerInterval');
+    if (liveScannerInterval) liveScannerInterval.value = state.settings.liveScannerInterval;
+
+    const telegramPhoneInput = document.getElementById('telegramPhoneInput');
+    if (telegramPhoneInput) telegramPhoneInput.value = state.settings.telegramPhone || '';
 
     for (let i = 1; i <= 3; i++) {
         if(state.settings.columns && state.settings.columns[i]) {
-            document.getElementById(`col${i}_name_input`).value = state.settings.columns[i].name;
-            document.getElementById(`col${i}_days_input`).value = state.settings.columns[i].days;
-            document.getElementById(`col${i}_threshold_input`).value = state.settings.columns[i].threshold;
-            document.getElementById(`col${i}_header_crypto`).innerHTML = `${state.settings.columns[i].name}<span class="sort-indicator"></span>`;
+            const colNameInput = document.getElementById(`col${i}_name_input`);
+            if(colNameInput) colNameInput.value = state.settings.columns[i].name;
+
+            const colDaysInput = document.getElementById(`col${i}_days_input`);
+            if(colDaysInput) colDaysInput.value = state.settings.columns[i].days;
+
+            const colThresholdInput = document.getElementById(`col${i}_threshold_input`);
+            if(colThresholdInput) colThresholdInput.value = state.settings.columns[i].threshold;
+            
+            const colHeaderCrypto = document.getElementById(`col${i}_header_crypto`);
+            if(colHeaderCrypto) colHeaderCrypto.innerHTML = `${state.settings.columns[i].name}<span class="sort-indicator"></span>`;
         }
     }
-    document.getElementById('high_color_input').value = state.settings.colors.high;
-    document.getElementById('low_color_input').value = state.settings.colors.low;
-    document.getElementById('high_color_preview').style.backgroundColor = state.settings.colors.high;
-    document.getElementById('low_color_preview').style.backgroundColor = state.settings.colors.low;
+    
+    const highColorInput = document.getElementById('high_color_input');
+    if(highColorInput) highColorInput.value = state.settings.colors.high;
+
+    const lowColorInput = document.getElementById('low_color_input');
+    if(lowColorInput) lowColorInput.value = state.settings.colors.low;
+
+    const highColorPreview = document.getElementById('high_color_preview');
+    if(highColorPreview) highColorPreview.style.backgroundColor = state.settings.colors.high;
+
+    const lowColorPreview = document.getElementById('low_color_preview');
+    if(lowColorPreview) lowColorPreview.style.backgroundColor = state.settings.colors.low;
 
     document.querySelectorAll(`#cryptoPivotFilters button.active, #cryptoIntervalFilters button.active`).forEach(b => b.classList.remove('active'));
-    document.querySelector(`#cryptoPivotFilters button[data-filter="${state.settings.cryptoPivotFilter}"]`)?.classList.add('active');
-    document.querySelector(`#cryptoIntervalFilters button[data-interval="${state.settings.cryptoAnalysisInterval}"]`)?.classList.add('active');
+    
+    const pivotFilterButton = document.querySelector(`#cryptoPivotFilters button[data-filter="${state.settings.cryptoPivotFilter}"]`);
+    if(pivotFilterButton) pivotFilterButton.classList.add('active');
 
-    if (typeof AVAILABLE_INDICATORS !== 'undefined') {
+    const intervalFilterButton = document.querySelector(`#cryptoIntervalFilters button[data-interval="${state.settings.cryptoAnalysisInterval}"]`);
+    if(intervalFilterButton) intervalFilterButton.classList.add('active');
+
+    if (typeof AVAILABLE_INDICATORS !== 'undefined' && state.settings.cryptoAnalysisIndicators) {
         Object.keys(AVAILABLE_INDICATORS).forEach(key => {
             const checkbox = document.querySelector(`#crypto-indicator-filters-grid input[data-indicator="${key}"]`);
             if (checkbox) checkbox.checked = !!state.settings.cryptoAnalysisIndicators[key];
@@ -120,6 +150,7 @@ function applySettingsToUI() {
         toggleReportsAutoRefresh(false);
     }
 }
+
 function updateScannerStatusUI(status) {
     const statusTextEl = document.getElementById('scannerStatusText');
     const lastScanTimeEl = document.getElementById('lastScanTime');
