@@ -240,7 +240,7 @@ function deleteDnaProfile(profileId) {
 }
 
 async function runDnaBacktest(profileId, periodDays, scoreThreshold, debugMode) {
-    const container = document.getElementById('backtest-results-section'); // Bu ID'yi backtest.html'deki ile eşleştirin
+    const container = document.getElementById('backtest-results-section');
     if (container) {
          document.querySelector('#dnaBacktestResultTable tbody').innerHTML = `<tr><td colspan="7"><div class="loading" style="margin: 20px auto; display:block;"></div></td></tr>`;
          container.style.display = 'block';
@@ -250,26 +250,23 @@ async function runDnaBacktest(profileId, periodDays, scoreThreshold, debugMode) 
     
     try {
         const result = await backtestFunc({ profileId, periodDays, scoreThreshold, debugMode });
-        // Başarılı olursa sonuçları ekrana çiz
         renderDnaBacktestResults(result.data, profileId);
 
     } catch (error) {
-        // --- DEĞİŞİKLİK BURADA ---
-        // Hata yakalandığında, HttpsError kontrolü yapmadan doğrudan mesajı gösteriyoruz.
-        console.error("DNA Backtest hatası:", error);
+        // Hata yakalandığında, 'HttpsError' kontrolü yapmadan doğrudan mesajı gösteriyoruz.
+        console.error("DNA Backtest Sunucu Hatası Yakalandı:", error);
         
-        // Firebase'den gelen hata mesajı genellikle 'error.message' içinde yer alır.
-        const errorMessage = error.details?.message || error.message || "Bilinmeyen bir hata oluştu.";
+        // Firebase'den gelen gerçek hata mesajı 'error.message' içinde yer alır.
+        const errorMessage = error.message || "Sunucuda bilinmeyen bir hata oluştu.";
         
         showNotification(`Backtest hatası: ${errorMessage}`, false);
         
-        // UI'da hata durumunu göster ve yükleniyor ekranını kaldır.
+        // Arayüzde hata mesajını göster
         if (container) {
             const tableBody = document.querySelector('#dnaBacktestResultTable tbody');
             if(tableBody){
-                tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: var(--accent-red);">${errorMessage}</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: var(--accent-red); padding: 20px;"><strong>Hata:</strong> ${errorMessage}</td></tr>`;
             }
         }
-        // --- DEĞİŞİKLİK SONU ---
     }
 }
