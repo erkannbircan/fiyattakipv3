@@ -241,7 +241,6 @@ function setupStrategyDiscoveryListeners(parentElement) {
     parentElement.addEventListener('click', async (e) => {
         const target = e.target;
 
-        // Handles the initial signal analysis run
         if (target.closest('#runSignalAnalysisBtn')) {
             const btn = e.target.closest('#runSignalAnalysisBtn');
             showLoading(btn);
@@ -259,9 +258,15 @@ function setupStrategyDiscoveryListeners(parentElement) {
                 params: dnaParams,
                 isPreview: true
             };
+            
+            // --- DEBUG İÇİN EKLENDİ ---
+            console.log('Sunucuya gönderilen analiz parametreleri:', params);
+            // --- DEBUG SON ---
+
             runSignalAnalysisPreview(params).finally(() => { hideLoading(btn); });
             return;
         }
+       
 
         // Handles saving a new DNA profile
         const saveBtn = target.closest('.save-dna-btn');
