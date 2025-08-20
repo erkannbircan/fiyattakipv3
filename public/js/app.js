@@ -492,8 +492,25 @@ async function updateAnalysisSettings() {
 
 function updateAdminUI() {
     const isAdmin = state.currentUserRole === 'admin';
-    document.getElementById('analyzeAllCryptoBtn').style.display = isAdmin ? 'flex' : 'none';
-    document.getElementById('live-scanner-tab').style.display = isAdmin ? 'block' : 'none';
-    document.getElementById('strategy-discovery-tab').style.display = isAdmin ? 'block' : 'none';
-    document.getElementById('alarm-reports-tab').style.display = isAdmin ? 'block' : 'none';
+    
+    // Her bir elemanı değiştirmeden önce var olup olmadığını kontrol edelim.
+    const analyzeBtn = document.getElementById('analyzeAllCryptoBtn');
+    if (analyzeBtn) {
+        analyzeBtn.style.display = isAdmin ? 'flex' : 'none';
+    }
+
+    const scannerTab = document.getElementById('live-scanner-tab');
+    if (scannerTab) {
+        scannerTab.style.display = isAdmin ? 'block' : 'none';
+    }
+
+    const discoveryTab = document.getElementById('strategy-discovery-tab');
+    if (discoveryTab) {
+        discoveryTab.style.display = isAdmin ? 'block' : 'none';
+    }
+
+    const reportsTab = document.getElementById('alarm-reports-tab');
+    if (reportsTab) {
+        reportsTab.style.display = isAdmin ? 'block' : 'none';
+    }
 }
