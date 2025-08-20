@@ -16,13 +16,15 @@
         <div class="loading" style="width: 40px; height: 40px; border-width: 4px;"></div>
     </div>
 
+    <div id="login-page" class="page" style="display: none;">
+        </div>
+
     <div id="tracker-page" class="page" style="display: none;">
         <div class="tracker-container">
             <header class="app-header">
                 <div class="header-left">
-                    <a href="./strateji.html" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 15px;">
-                        <i class="fas fa-chevron-left"></i>
-                        <h1>Strateji Keşfine Geri Dön</h1>
+                     <a href="./strateji.html" style="text-decoration: none; color: inherit;">
+                        <h1><i class="fas fa-vial-virus"></i> DNA Kütüphanesi ve Test Merkezi</h1>
                     </a>
                 </div>
                 <div class="header-right">
@@ -34,6 +36,16 @@
                     </div>
                 </div>
             </header>
+
+            <nav class="tabs" id="main-nav">
+                <a href="./index.html" class="tab-link" data-page="index">Kripto</a>
+                <a href="./kripto-ai.html" class="tab-link" data-page="kripto-ai">Kripto AI</a>
+                <a href="./pivot.html" class="tab-link" data-page="pivot">AI Pivot</a>
+                <a href="./strateji.html" class="tab-link" data-page="strateji" id="strategy-discovery-tab" style="display: none;">Strateji Keşfi</a>
+                <a href="./backtest.html" class="tab-link" data-page="backtest" id="backtest-tab" style="display: none;">DNA Kütüphanesi</a>
+                <a href="./tarama.html" class="tab-link" data-page="tarama" id="live-scanner-tab" style="display: none;">Canlı DNA Tarama</a>
+                <a href="./sinyal-performans.html" class="tab-link" data-page="sinyal-performans" id="alarm-reports-tab" style="display: none;">Sinyal Performansı</a>
+            </nav>
 
             <div class="saved-profiles-section" style="margin-top: 10px;">
                 <div class="collapsible open">
@@ -76,86 +88,18 @@
                     </table>
                 </div>
             </div>
-
         </div>
     </div>
     
     <div class="notification" id="notification"></div>
-
+    
     <script src="js/config.js"></script> 
     <script src="js/state.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/telegram.js"></script>
+    <script src="js/scanner.js"></script>
     <script src="js/events.js"></script>
-    
-    <script>
-        // --- BU SAYFAYA ÖZEL BAŞLANGIÇ KODU ---
-        document.addEventListener('DOMContentLoaded', () => {
-            // Firebase'i başlat
-            firebase.initializeApp(firebaseConfig);
-            state.firebase.auth = firebase.auth();
-            state.firebase.db = firebase.firestore();
-            state.firebase.functions = firebase.app().functions('europe-west1');
-            
-            let currentProfileId = null; // Test edilen profili hafızada tutmak için
-
-            // Kullanıcı durumunu dinle
-            state.firebase.auth.onAuthStateChanged(user => {
-                if (user) {
-                    // Sayfa görünürlüğünü ayarla
-                    document.getElementById('app-loader').style.display = 'none';
-                    document.getElementById('tracker-page').style.display = 'flex';
-                    document.getElementById('userEmail').textContent = user.email;
-
-                    // Kayıtlı DNA profillerini getir
-                    fetchDnaProfiles('dnaProfilesContainer');
-                    
-                    document.getElementById('logoutBtn').addEventListener('click', () => state.firebase.auth.signOut());
-                    document.getElementById('refreshDnaProfilesBtn').addEventListener('click', () => fetchDnaProfiles('dnaProfilesContainer'));
-
-                } else {
-                    // Kullanıcı giriş yapmamışsa ana sayfaya yönlendir
-                    window.location.href = './index.html';
-                }
-            });
-
-            // Backtest işlemlerini yönetecek olan olay dinleyicisi
-            document.body.addEventListener('click', async (e) => {
-                const backtestBtn = e.target.closest('.run-dna-backtest-btn');
-                
-                if (backtestBtn) {
-                    currentProfileId = backtestBtn.dataset.profileId;
-                    runTest();
-                }
-
-                if (e.target.closest('#rerunBacktestBtn') && currentProfileId) {
-                    runTest();
-                }
-                const toggleLink = e.target.closest('.toggle-details-link');
-                if (toggleLink) {
-                    e.preventDefault(); // Sayfanın üste kaymasını engelle
-                    const detailsContent = toggleLink.parentElement.nextElementSibling;
-                    if (detailsContent && detailsContent.classList.contains('dna-card-details-content')) {
-                        detailsContent.classList.toggle('open');
-                    }
-                }
-            });
-            
-            function runTest() {
-                if (!currentProfileId) return;
-
-                const backtestSection = document.getElementById('backtest-results-section');
-                backtestSection.style.display = 'block'; // Sonuç bölümünü görünür yap
-                document.getElementById('backtestProfileName').textContent = `Profil: ${currentProfileId}`;
-                backtestSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-                const scoreThreshold = parseInt(document.getElementById('backtestThreshold').value) || 80;
-                const debugMode = document.getElementById('backtestDebugMode').checked;
-                
-                // api.js'deki fonksiyonu çağır
-                runDnaBacktest(currentProfileId, 30, scoreThreshold, debugMode);
-            }
-        });
-    </script>
+    <script src="js/app.js"></script>
 </body>
 </html>
