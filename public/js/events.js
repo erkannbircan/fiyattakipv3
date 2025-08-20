@@ -233,23 +233,19 @@ function setupAiPageActionListeners(parentElement) {
     });
 }
 
-// events.js dosyasındaki setupStrategyDiscoveryListeners fonksiyonunu bununla DEĞİŞTİRİN
-
-// events.js dosyasındaki setupStrategyDiscoveryListeners fonksiyonunun TAMAMINI bu kodla değiştirin.
-
 function setupStrategyDiscoveryListeners(parentElement) {
     parentElement.addEventListener('click', async (e) => {
         const target = e.target;
 
-        // events.js -> setupStrategyDiscoveryListeners fonksiyonu içinde
+        // "Stratejiyi Analiz Et" butonu
         if (target.closest('#runSignalAnalysisBtn')) {
-    const btn = e.target.closest('#runSignalAnalysisBtn');
+            const btn = target.closest('#runSignalAnalysisBtn');
             showLoading(btn);
             
             const dnaParams = {};
-            // Tüm checkbox'ları alıyoruz
+            // Sadece işaretli olan checkbox'ları seç
             document.querySelectorAll('#signalDnaParamsGrid input[type="checkbox"]:checked').forEach(cb => {
-    dnaParams[cb.dataset.param] = true;
+                dnaParams[cb.dataset.param] = true;
             });
 
             const params = {
@@ -264,15 +260,23 @@ function setupStrategyDiscoveryListeners(parentElement) {
             };
             
             console.log('Sunucuya gönderilen analiz parametreleri:', params);
+            
+            // Panelleri göster/gizle
             document.getElementById('discoverySettingsPanel').style.display = 'none';
-    document.getElementById('discoveryResultsPanel').style.display = 'block';
+            document.getElementById('discoveryResultsPanel').style.display = 'block';
 
             runSignalAnalysisPreview(params).finally(() => { hideLoading(btn); });
             return;
         }
-       
+        
+        // "Ayarlara Geri Dön" butonu
+        if (target.closest('#backToSettingsBtn')) {
+            document.getElementById('discoverySettingsPanel').style.display = 'block';
+            document.getElementById('discoveryResultsPanel').style.display = 'none';
+            return;
+        }
 
-        // Handles saving a new DNA profile
+        // Yeni bir DNA profilini kaydetme
         const saveBtn = target.closest('.save-dna-btn');
         if (saveBtn) {
             const profileData = JSON.parse(saveBtn.dataset.profile);
@@ -280,28 +284,21 @@ function setupStrategyDiscoveryListeners(parentElement) {
             return;
         }
 
-        // Handles refreshing the list of DNA profiles
+        // DNA profil listesini yenileme
         if (target.closest('#refreshDnaProfilesBtnDiscovery')) {
             await fetchDnaProfiles('dnaProfilesContainerDiscovery');
             return;
         }
         
-        if (target.closest('#backToSettingsBtn')) {
-        document.getElementById('discoverySettingsPanel').style.display = 'block';
-        document.getElementById('discoveryResultsPanel').style.display = 'none';
-        return;
-        }
-            
-            
-        // Handles deleting a DNA profile
+        // Bir DNA profilini silme
         const deleteBtn = target.closest('.delete-dna-btn');
         if (deleteBtn) {
             const profileId = deleteBtn.dataset.profileId;
             await deleteDnaProfile(profileId);
             return;
-        });
         }
-    
+    }); // <-- addEventListener burada doğru şekilde kapanıyor
+} // <-- setupStrategyDiscoveryListeners fonksiyonu burada doğru şekilde kapanıyor
 
 function setupPivotPageActionListeners(parentElement) {
     parentElement.addEventListener('click', async (e) => {
