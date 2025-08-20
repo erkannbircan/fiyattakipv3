@@ -665,29 +665,63 @@ function renderDnaProfiles(profiles, containerId) {
         return;
     }
 
-    let html = '<div class="table-wrapper"><table><thead><tr>' +
-        '<th>Profil Adı</th><th>Coin/Periyot</th><th>Olay Sayısı</th><th style="text-align: right;">İşlemler</th>' +
-        '</tr></thead><tbody>';
+    // Kartları tutacak ana grid konteynerini oluştur
+    const gridContainer = document.createElement('div');
+    gridContainer.className = 'dna-profiles-grid';
 
     profiles.forEach(profile => {
-        const profileName = profile.name;
-        html += `<tr>
-                    <td><strong>${profileName}</strong></td>
-                    <td>${profile.coin}/${profile.timeframe}</td>
-                    <td style="text-align: center;">${profile.count}</td>
-                    <td style="text-align: right;">
-                        <button class="action-btn run-dna-backtest-btn" data-profile-id="${profile.name}" title="Bu Profili Test Et">
-                            <i class="fas fa-history"></i>
-                        </button>
-                        <button class="action-btn delete-dna-btn" data-profile-id="${profile.name}" title="Profili Sil">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                 </tr>`;
+        const card = document.createElement('div');
+        card.className = 'dna-profile-card';
+
+        const directionText = profile.direction === 'up' ? 'Artış Yönlü 📈' : 'Azalış Yönlü 📉';
+        const activeParams = profile.featureOrder
+            .map(f => f.split('_')[0].toUpperCase())
+            .filter((value, index, self) => self.indexOf(value) === index) // Benzersiz yap
+            .join(', ');
+
+        card.innerHTML = `
+            <div class="dna-card-header">
+                <div class="dna-card-title">
+                    <h5>${profile.name}</h5>
+                    <span>${profile.coin} / ${profile.timeframe}</span>
+                </div>
+                <div class="dna-card-actions">
+                    <button class="action-btn run-dna-backtest-btn" data-profile-id="${profile.name}" title="Bu Profili Test Et">
+                        <i class="fas fa-history"></i>
+                    </button>
+                    <button class="action-btn delete-dna-btn" data-profile-id="${profile.name}" title="Profili Sil">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="dna-card-body">
+                <div class="dna-card-summary">
+                    <div class="summary-item"><strong>Yön:</strong> ${directionText}</div>
+                    <div class="summary-item"><strong>Hedef Değişim:</strong> %${profile.changePercent}</div>
+                    <div class="summary-item"><strong>Olay Sayısı:</strong> ${profile.count}</div>
+                    <div class="summary-item"><strong>Parametreler:</strong> <small>${activeParams}</small></div>
+                </div>
+                <div class="dna-card-details-toggle">
+                    <a href="#" onclick="this.nextElementSibling.classList.toggle('open'); return false;">Detayları Göster/Gizle</a>
+                </div>
+                <div class="dna-card-details-content">
+                    <h6>DNA Özeti (Ortalama Değerler)</h6>
+                    <div class="details-grid">
+                        ${profile.featureOrder.map((feature, index) => `
+                            <div class="detail-item">
+                                <span class="label">${feature}</span>
+                                <span class="value">${parseFloat(profile.mean[index]).toFixed(4)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+        gridContainer.appendChild(card);
     });
 
-    html += '</tbody></table></div>';
-    container.innerHTML = html;
+    container.innerHTML = ''; // Konteyneri temizle
+    container.appendChild(gridContainer); // Yeni grid'i ekle
 }
 
 function renderScannerResults(groupedMatches) {
