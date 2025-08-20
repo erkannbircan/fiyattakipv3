@@ -243,7 +243,7 @@ function setupStrategyDiscoveryListeners(parentElement) {
 
         // events.js -> setupStrategyDiscoveryListeners fonksiyonu içinde
         if (target.closest('#runSignalAnalysisBtn')) {
-            const btn = e.target.closest('#runSignalAnalysisBtn');
+    const btn = e.target.closest('#runSignalAnalysisBtn');
             showLoading(btn);
 
             // --- HATALI MANTIK BURADAYDI ---
@@ -270,6 +270,8 @@ function setupStrategyDiscoveryListeners(parentElement) {
             };
             
             console.log('Sunucuya gönderilen analiz parametreleri:', params);
+            document.getElementById('discoverySettingsPanel').style.display = 'none';
+    document.getElementById('discoveryResultsPanel').style.display = 'block';
 
             runSignalAnalysisPreview(params).finally(() => { hideLoading(btn); });
             return;
@@ -289,7 +291,12 @@ function setupStrategyDiscoveryListeners(parentElement) {
             await fetchDnaProfiles('dnaProfilesContainerDiscovery');
             return;
         }
-
+        
+        if (target.closest('#backToSettingsBtn')) {
+        document.getElementById('discoverySettingsPanel').style.display = 'block';
+        document.getElementById('discoveryResultsPanel').style.display = 'none';
+        return;
+            
         // Handles deleting a DNA profile
         const deleteBtn = target.closest('.delete-dna-btn');
         if (deleteBtn) {
@@ -297,6 +304,7 @@ function setupStrategyDiscoveryListeners(parentElement) {
             await deleteDnaProfile(profileId);
             return;
         }
+        
     
     });
 }
