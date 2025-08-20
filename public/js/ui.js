@@ -777,17 +777,22 @@ function renderScannerResults(groupedMatches) {
 }
 
 function renderDnaBacktestResults(data, profileId) {
-    const section = document.getElementById('dnaBacktestSection');
+    const section = document.getElementById('backtest-results-section');
     const summaryContainer = document.getElementById('backtestSummaryContainer');
     const tableBody = document.querySelector('#dnaBacktestResultTable tbody');
-    if (!section || !tableBody || !summaryContainer) return;
+    
+    // Gerekli HTML elementleri bulunamazsa işlemi durdur.
+    if (!section || !tableBody || !summaryContainer) {
+        console.error("Backtest sonuçlarını gösterecek HTML elementleri bulunamadı.");
+        return;
+    }
 
     document.getElementById('backtestProfileName').textContent = `Profil: ${profileId}`;
     section.style.display = 'block';
 
     const { trades, summary, debugMode } = data;
 
-    // Özet kartlarını oluştur
+    // Özet kartlarını (KPI) oluştur
     summaryContainer.innerHTML = `
         <div class="kpi-container">
             ${Object.entries(summary).map(([period, stats]) => `
@@ -801,11 +806,25 @@ function renderDnaBacktestResults(data, profileId) {
         </div>
     `;
 
-    // Detaylı işlem tablosunu doldur
-    if (trades.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Seçilen periyotta bu DNA profiline uyan sinyal bulunamadı.</td></tr>`;
-        return;
+    // --- DEĞİŞİKLİK BURADA BAŞLIYOR ---
+
+    // 1. Gelen 'trades' dizisinin boş olup olmadığını kontrol et
+    if (!trades || trades.length === 0) {
+        // Eğer hiç sinyal bulunamadıysa, tabloya bir bilgilendirme mesajı yaz.
+        const message = debugMode 
+            ? `Seçilen periyotta bu DNA profiline uyan hiçbir mum bulunamadı.`
+            : `Seçilen periyotta, sinyal eşiği (${document.getElementById('backtestThreshold').value}) üzerinde bir sinyal bulunamadı. Eşiği düşürmeyi veya Debug Modu'nu aktif etmeyi deneyin.`;
+        
+        tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px; color: var(--text-secondary);">${message}</td></tr>`;
+        
+        // Tablo başlığını da temizleyelim
+        const header = document.querySelector('#dnaBacktestResultTable thead tr');
+        if(header) header.innerHTML = '';
+
+        return; // Fonksiyonu burada sonlandır.
     }
+    
+    // --- DEĞİŞİKLİK BİTTİ ---
     
     // Debug modu için tablo başlığını ayarla
     const headerHtml = debugMode ? `
@@ -828,9 +847,7 @@ function renderDnaBacktestResults(data, profileId) {
             const perfClass = perf.pctChange > 0.1 ? 'positive' : (perf.pctChange < -0.1 ? 'negative' : '');
             return `<td class="performance-cell ${perfClass}">${perf.pctChange.toFixed(2)}%</td>`;
         };
-
-        // DÜZELTME: 'rowClass' tanımını ve kullanımını map fonksiyonunun içine taşıdık.
-        // Bu sayede her bir satır için doğru sınıf (class) belirlenir.
+        
         const rowClass = (debugMode && !trade.isSignal) ? 'debug-row' : '';
 
         return `
@@ -846,6 +863,5 @@ function renderDnaBacktestResults(data, profileId) {
         `;
     }).join('');
     
-    // Sayfayı sonuçların olduğu bölüme kaydır
     section.scrollIntoView({ behavior: 'smooth' });
 }
