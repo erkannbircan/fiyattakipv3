@@ -702,9 +702,9 @@ function renderDnaProfiles(profiles, containerId) {
                     <div class="summary-item"><strong>Parametreler:</strong> <small>${activeParams}</small></div>
                 </div>
                 <div class="dna-card-details-toggle">
-                    <a href="#" onclick="this.nextElementSibling.classList.toggle('open'); return false;">Detayları Göster/Gizle</a>
-                </div>
-                <div class="dna-card-details-content">
+                    <a href="#" class="toggle-details-link">Detayları Göster/Gizle</a>
+            </div>
+            <div class="dna-card-details-content">
                     <h6>DNA Özeti (Ortalama Değerler)</h6>
                     <div class="details-grid">
                         ${profile.featureOrder.map((feature, index) => `
