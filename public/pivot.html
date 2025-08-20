@@ -1,1 +1,99 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fiyat Takipçisi (AI Analizli)</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-functions-compat.js"></script>
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app-loader" class="page" style="justify-content: center; align-items: center; display: flex;">
+        <div class="loading" style="width: 40px; height: 40px; border-width: 4px;"></div>
+    </div>
 
+    <div id="login-page" class="page" style="display: none;">
+        <div class="login-container">
+            <h1><i class="fas fa-chart-line"></i> Fiyat Takipçisi</h1>
+            <p data-lang="login_prompt">Devam etmek için giriş yapın veya yeni hesap oluşturun.</p>
+            <div class="input-group"><label for="email" data-lang="email">E-posta</label><input type="email" id="email" autocomplete="email"></div>
+            <div class="input-group"><label for="password" data-lang="password">Şifre</label><input type="password" id="password" autocomplete="current-password"></div>
+            <div id="error-message" class="error-message-text"></div>
+            <div class="button-group">
+                <button id="loginBtn" data-lang="login">Giriş Yap</button>
+                <button id="signupBtn" data-lang="signup" style="background-color: #373c4a;">Kayıt Ol</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tracker-page" class="page" style="display: none;">
+        <div class="tracker-container">
+            <header class="app-header">
+                <div class="header-left"><h1><i class="fas fa-chart-line"></i> <span data-lang="app_title">Fiyat Takipçisi</span></h1></div>
+                <div class="header-right">
+                    <div class="main-actions">
+                        <button id="refreshBtn" title="Yenile"><i class="fas fa-sync-alt"></i></button>
+                        <button id="settingsBtn" title="Ayarlar"><i class="fas fa-cog"></i></button>
+                    </div>
+                    <div class="user-menu">
+                        <button id="userMenuBtn"><i class="fas fa-user-circle"></i> <span id="userEmail"></span></button>
+                        <div class="dropdown-content">
+                            <a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> <span data-lang="logout">Çıkış Yap</span></a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <nav class="tabs" id="main-nav">
+                <a href="./index.html" class="tab-link" data-page="index">Kripto</a>
+                <a href="./kripto-ai.html" class="tab-link" data-page="kripto-ai">Kripto AI</a>
+                <a href="./pivot.html" class="tab-link" data-page="pivot">AI Pivot</a>
+                <a href="./strateji.html" class="tab-link" data-page="strateji" id="strategy-discovery-tab" style="display: none;">Strateji Keşfi</a>
+                <a href="./tarama.html" class="tab-link" data-page="tarama" id="live-scanner-tab" style="display: none;">Canlı DNA Tarama</a>
+                <a href="./sinyal-performans.html" class="tab-link" data-page="sinyal-performans" id="alarm-reports-tab" style="display: none;">Sinyal Performansı</a>
+            </nav>
+            
+            <div id="crypto-pivot-content" class="tab-content active">
+                <div class="portfolio-controls">
+                    <div class="portfolio-tabs" id="pivotPortfolioTabs"></div>
+                </div>
+                <div class="pivot-filters" id="cryptoPivotFilters">
+                    <button class="active" data-filter="all">Tümü</button>
+                    <button data-filter="above">Pivot Üstü</button>
+                    <button data-filter="below">Pivot Altı</button>
+                </div>
+                <div id="crypto-pivot-container" class="pivot-container"></div>
+                 <div id="pivot-dictionary-container"></div>
+            </div>
+            <div class="update-time"><i class="far fa-clock"></i>&nbsp;<span data-lang="last_update">Son güncelleme</span>: <span id="updateTime"></span></div>
+        </div>
+    </div>
+    
+    <div id="settingsPanel" class="panel"> </div>
+    <div id="detailPanel" class="panel"> </div>
+    <div id="chartPanel" class="panel"> </div>
+    <div id="analysisPanel" class="panel"> </div>
+    <div id="alarmSettingsPanel" class="panel"> </div>
+    <div id="alarmStatusPanel" class="panel"> </div>
+    <div id="backtestPanel" class="panel"> </div>
+    <div id="portfolioModal" class="panel"> </div>
+    <div id="modalOverlay" class="modal-overlay"></div>
+    <div class="notification" id="notification"></div>
+    
+    <script src="js/config.js"></script> 
+    <script src="js/state.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/telegram.js"></script>
+    <script src="js/scanner.js"></script>
+    <script src="js/events.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
