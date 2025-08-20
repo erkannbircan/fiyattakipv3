@@ -87,6 +87,9 @@ async function initializeTrackerPage(userData) {
     state.cryptoAiPairs = userData.coins_ai || ["BTCUSDT", "ETHUSDT", "SOLUSDT"];
     state.discoveryCoins = userData.coins_discovery || ["BTCUSDT", "ETHUSDT"];
 
+    // EKSİK SATIR BURAYA EKLENDİ
+    createCoinManager('discovery-coin-manager-container', state.discoveryCoins, 'discovery');
+
     renderIndicatorFilters();
     renderDictionary();
     applySettingsToUI();
