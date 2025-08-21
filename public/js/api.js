@@ -270,3 +270,31 @@ async function runDnaBacktest(profileId, periodDays, scoreThreshold, debugMode) 
         }
     }
 }
+// api.js dosyasının sonuna ekleyin
+async function analyzeWithGemini(dataToAnalyze) {
+    const analysisContent = document.getElementById('analysisContent');
+    if (!analysisContent) {
+        console.error("Analiz sonuçlarının gösterileceği 'analysisContent' elementi bulunamadı.");
+        return;
+    }
+
+    showPanel('analysisPanel');
+    analysisContent.innerHTML = '<div class="loading" style="margin: 20px auto; display:block;"></div>';
+
+    try {
+        // Veriyi Gemini'nin anlayacağı basit bir JSON metnine dönüştür
+        const promptData = JSON.stringify(dataToAnalyze);
+        
+        const geminiProxyFunc = state.firebase.functions.httpsCallable('geminiProxy');
+        const result = await geminiProxyFunc({ prompt: promptData });
+
+        if (result.data && result.data.analysis) {
+            analysisContent.innerHTML = result.data.analysis;
+        } else {
+            throw new Error("Yapay zekadan geçerli bir yanıt alınamadı.");
+        }
+    } catch (error) {
+        console.error("Gemini analizi sırasında hata:", error);
+        analysisContent.innerHTML = `<p style="color:var(--accent-red); text-align:center;">Analiz sırasında bir hata oluştu: ${error.message}</p>`;
+    }
+}
