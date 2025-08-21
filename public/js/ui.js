@@ -488,7 +488,6 @@ function renderSignalAnalysisPreview(data) {
 
 
             contentHtml = `
-                contentHtml = `
                 <div class="kpi-container">
                     <div class="kpi-item">
                         <span class="kpi-value">${res.eventCount}</span>
