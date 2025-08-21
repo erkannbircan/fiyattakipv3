@@ -488,6 +488,7 @@ function renderSignalAnalysisPreview(data) {
 
 
             contentHtml = `
+                contentHtml = `
                 <div class="kpi-container">
                     <div class="kpi-item">
                         <span class="kpi-value">${res.eventCount}</span>
@@ -500,6 +501,10 @@ function renderSignalAnalysisPreview(data) {
                      <div class="kpi-item">
                         <span class="kpi-value ${getPerformanceClass(res.avgReturns['4h'])}">${res.avgReturns['4h']}%</span>
                         <span class="kpi-label">4 Saatlik Ort. Getiri</span>
+                    </div>
+                    <div class="kpi-item">
+                        <span class="kpi-value ${getPerformanceClass(res.avgReturns['1d'])}">${res.avgReturns['1d']}%</span>
+                        <span class="kpi-label">1 Günlük Ort. Getiri</span>
                     </div>
                 </div>
 
