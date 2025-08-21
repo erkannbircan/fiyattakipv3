@@ -230,6 +230,19 @@ function setupAiPageActionListeners(parentElement) {
             await updateAnalysisSettings();
             return;
         }
+
+        // --- YENİ EKLENEN BLOK ---
+        if (target.closest('#analyzeAllCryptoBtn')) {
+            // Analiz edilecek veriyi state'den alıyoruz (sadece ilk 5 tanesi, çok uzun sürmemesi için)
+            const dataForAnalysis = state.allCryptoData.slice(0, 5);
+            if (dataForAnalysis.length > 0) {
+                await analyzeWithGemini(dataForAnalysis);
+            } else {
+                showNotification("Analiz edilecek veri bulunamadı.", false);
+            }
+            return;
+        }
+        // --- BİTİŞ ---
     });
 }
 
