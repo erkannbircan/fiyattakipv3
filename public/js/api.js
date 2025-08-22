@@ -59,7 +59,11 @@ function fetchCryptoData(pair, withIndicators = false) {
 }
 
 function runBacktest(alarmId) {
-    if (!alarm) return;
+   const alarm = state.userAlarms?.find(a => a.id === alarmId);
+    if (!alarm) {
+        console.error(`runBacktest: Alarm bulunamadı (${alarmId}).`);
+        return;
+    }
     
     showPanel('backtestPanel');
     const container = document.getElementById('backtest-results-container');
