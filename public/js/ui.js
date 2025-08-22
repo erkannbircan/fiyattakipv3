@@ -405,8 +405,7 @@ function saveChartState() {
     }
 }
 
-// ui.js
-
+// Lütfen ui.js dosyanızdaki renderSignalAnalysisPreview fonksiyonunu bu kodla değiştirin.
 function renderSignalAnalysisPreview(data) {
     const resultContainer = document.getElementById('signalAnalysisResultContainer');
     if (!resultContainer) return;
@@ -427,17 +426,29 @@ function renderSignalAnalysisPreview(data) {
 
         if (res.status === 'error' || res.status === 'info') {
             contentHtml = `<div class="analysis-card-simple-message">${res.message}</div>`;
-        } else if (res.status === 'preview' && res.dnaProfile && res.avgReturns && res.dnaSummary) {
+        } else if (res.status === 'preview') {
             const profileDataString = JSON.stringify(res.dnaProfile);
             
-            // DNA Özeti Tablosunu Oluşturma
+            // DÜZELTME: Olay detayları tablosunu oluşturuyoruz
+            let eventsTableHtml = `
+                <h5 class="setting-subtitle">Bulunan ${res.eventDetails.length} Fırsatın Detayları</h5>
+                <div class="table-wrapper compact"><table><thead>
+                    <tr><th>Tarih</th><th>Sinyal Fiyatı</th><th>Hedef Fiyatı</th></tr>
+                </thead><tbody>`;
+            res.eventDetails.slice(0, 5).forEach(event => { // Sadece ilk 5 detayı göster
+                eventsTableHtml += `
+                    <tr>
+                        <td>${new Date(event.timestamp).toLocaleString('tr-TR')}</td>
+                        <td>$${formatPrice(event.priceBefore)}</td>
+                        <td>$${formatPrice(event.priceAfter)}</td>
+                    </tr>`;
+            });
+            eventsTableHtml += '</tbody></table></div>';
+            
+            // DÜZELTME: DNA Özeti tablosunu oluşturuyoruz
             let dnaDetailsHtml = '<div class="dna-summary-grid"><div class="dna-summary-header"><span>Parametre</span><span>Ortalama Değer</span></div>';
             res.dnaSummary.featureOrder.forEach((feature, index) => {
-                dnaDetailsHtml += `
-                    <div class="dna-indicator-group">
-                        <span class="label">${feature}</span>
-                        <span class="value">${formatValue(res.dnaSummary.mean[index])}</span>
-                    </div>`;
+                dnaDetailsHtml += `<div class="dna-indicator-group"><span class="label">${feature}</span><span class="value">${formatValue(res.dnaSummary.mean[index])}</span></div>`;
             });
             dnaDetailsHtml += '</div>';
 
@@ -449,17 +460,14 @@ function renderSignalAnalysisPreview(data) {
                     <div class="kpi-item"><span class="kpi-value ${getPerformanceClass(res.avgReturns['1d'])}">${res.avgReturns['1d']}%</span><span class="kpi-label">1G Ort. Getiri</span></div>
                 </div>
                 <div class="analysis-card-grid">
-                    <div class="analysis-card-col">
-                        <h5 class="setting-subtitle">Fırsat Anının DNA Özeti</h5>
-                        ${dnaDetailsHtml}
-                    </div>
+                    <div class="analysis-card-col">${eventsTableHtml}</div>
+                    <div class="analysis-card-col">${dnaDetailsHtml}</div>
                 </div>
                 <div class="preview-actions">
                     <button class="btn btn-primary save-dna-btn" data-profile='${profileDataString}'>
                         <i class="fas fa-save"></i> ${res.dnaProfile.name} Profilini Kaydet
                     </button>
-                </div>
-            `;
+                </div>`;
         }
         
         finalHtml += `<div class="analysis-result-card">
@@ -467,7 +475,6 @@ function renderSignalAnalysisPreview(data) {
                         ${contentHtml}
                       </div>`;
     }
-
     resultContainer.innerHTML = finalHtml;
 }
 
