@@ -221,26 +221,30 @@ function fetchDnaProfiles(containerId) {
             }
         });
 }
-function deleteDnaProfile(profileId) {
+
+
+async function deleteDnaProfile(profileId, containerIdToRefresh) {
     if (!confirm(`"${profileId}" profilini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
         return;
     }
     
     const deleteProfileFunc = state.firebase.functions.httpsCallable('manageDnaProfiles');
     
-    deleteProfileFunc({ action: 'delete', profileId: profileId })
-        .then(result => {
-            console.log("deleteDnaProfile sonucu:", result);
+    try {
+        const result = await deleteProfileFunc({ action: 'delete', profileId: profileId });
+        if (result.data.success) {
             showNotification("Profil başarıyla silindi.", true);
-            // *** DEĞİŞİKLİK: Sadece "Strateji Keşfi" sayfasındaki listeyi yenile ***
-            fetchDnaProfiles('dnaProfilesContainerDiscovery'); 
-        })
-        .catch(error => {
-            console.error("Profil silinirken hata oluştu:", error);
-            
-            const errorMessage = error.message || "Bilinmeyen hata oluştu.";
-            showNotification("Profil silinemedi: " + errorMessage, false);
-        });
+            // Hangi listeden silindiyse (backtest veya strateji sayfası), onu yenile
+            if (containerIdToRefresh) {
+                fetchDnaProfiles(containerIdToRefresh);
+            }
+        } else {
+            throw new Error(result.data.error || "Bilinmeyen hata.");
+        }
+    } catch (error) {
+        console.error("Profil silinirken hata oluştu:", error);
+        showNotification("Profil silinemedi: " + error.message, false);
+    }
 }
 
 async function runDnaBacktest(profileId, periodDays, scoreThreshold, debugMode) {
