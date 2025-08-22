@@ -304,11 +304,13 @@ function setupStrategyDiscoveryListeners(parentElement) {
         }
         
         // Bir DNA profilini silme
-        const deleteBtn = target.closest('.delete-dna-btn');
+        const deleteBtn = e.target.closest('.delete-dna-btn');
         if (deleteBtn) {
             const profileId = deleteBtn.dataset.profileId;
-            await deleteDnaProfile(profileId);
-            return;
+            // dataset.containerId ile hangi listeden silindiğini anlıyoruz
+            const containerId = deleteBtn.closest('.collapsible-content').id;
+            await deleteDnaProfile(profileId, containerId);
+            return; // İşlem bittiği için fonksiyondan çık
         }
     }); // <-- addEventListener burada doğru şekilde kapanıyor
 } // <-- setupStrategyDiscoveryListeners fonksiyonu burada doğru şekilde kapanıyor
