@@ -409,53 +409,49 @@ function saveChartState() {
 
 function renderSignalAnalysisPreview(data) {
     const resultContainer = document.getElementById('signalAnalysisResultContainer');
-    if (!resultContainer) {
-        console.error("Hata: 'signalAnalysisResultContainer' elementi bulunamadı.");
-        return;
-    }
+    if (!resultContainer) return;
 
     if (!data || Object.keys(data).length === 0) {
-        resultContainer.innerHTML = `<p style="text-align: center; color: var(--text-secondary); padding: 20px;">Analiz için sonuç bulunamadı veya belirtilen koşullarda fırsat yok.</p>`;
+        resultContainer.innerHTML = `<p style="text-align: center; color: var(--text-secondary); padding: 20px;">Analiz için sonuç bulunamadı.</p>`;
         return;
     }
 
-    const getPerformanceClass = (value) => {
-        const num = parseFloat(value);
-        if (isNaN(num)) return '';
-        return num > 0 ? 'positive' : 'negative';
-    };
+    const getPerformanceClass = (value) => (parseFloat(value) > 0 ? 'positive' : 'negative');
+    const formatValue = (val) => (typeof val === 'number' ? val.toFixed(3) : 'N/A');
 
     let finalHtml = '';
-
-    // DÜZELTME: Gelen 'data' objesindeki her bir coin (JUVUSDT, BARUSDT vb.) için döngü oluşturuyoruz.
     for (const coin in data) {
         const res = data[coin];
         const coinSymbol = coin.replace("USDT", "");
         let contentHtml = '';
 
         if (res.status === 'error' || res.status === 'info') {
-            const messageColor = res.status === 'error' ? 'var(--accent-red)' : 'var(--text-secondary)';
-            contentHtml = `<div class="analysis-card-simple-message" style="color:${messageColor};">${res.message}</div>`;
-        } else if (res.status === 'preview' && res.dnaProfile && res.avgReturns) {
+            contentHtml = `<div class="analysis-card-simple-message">${res.message}</div>`;
+        } else if (res.status === 'preview' && res.dnaProfile && res.avgReturns && res.dnaSummary) {
             const profileDataString = JSON.stringify(res.dnaProfile);
             
+            // DNA Özeti Tablosunu Oluşturma
+            let dnaDetailsHtml = '<div class="dna-summary-grid"><div class="dna-summary-header"><span>Parametre</span><span>Ortalama Değer</span></div>';
+            res.dnaSummary.featureOrder.forEach((feature, index) => {
+                dnaDetailsHtml += `
+                    <div class="dna-indicator-group">
+                        <span class="label">${feature}</span>
+                        <span class="value">${formatValue(res.dnaSummary.mean[index])}</span>
+                    </div>`;
+            });
+            dnaDetailsHtml += '</div>';
+
             contentHtml = `
                 <div class="kpi-container">
-                    <div class="kpi-item">
-                        <span class="kpi-value">${res.eventCount}</span>
-                        <span class="kpi-label">Adet Kârlı Fırsat</span>
-                    </div>
-                    <div class="kpi-item">
-                        <span class="kpi-value ${getPerformanceClass(res.avgReturns['1h'])}">${res.avgReturns['1h']}%</span>
-                        <span class="kpi-label">1 Saatlik Ort. Getiri</span>
-                    </div>
-                     <div class="kpi-item">
-                        <span class="kpi-value ${getPerformanceClass(res.avgReturns['4h'])}">${res.avgReturns['4h']}%</span>
-                        <span class="kpi-label">4 Saatlik Ort. Getiri</span>
-                    </div>
-                    <div class="kpi-item">
-                        <span class="kpi-value ${getPerformanceClass(res.avgReturns['1d'])}">${res.avgReturns['1d']}%</span>
-                        <span class="kpi-label">1 Günlük Ort. Getiri</span>
+                    <div class="kpi-item"><span class="kpi-value">${res.eventCount}</span><span class="kpi-label">Adet Fırsat</span></div>
+                    <div class="kpi-item"><span class="kpi-value ${getPerformanceClass(res.avgReturns['1h'])}">${res.avgReturns['1h']}%</span><span class="kpi-label">1S Ort. Getiri</span></div>
+                    <div class="kpi-item"><span class="kpi-value ${getPerformanceClass(res.avgReturns['4h'])}">${res.avgReturns['4h']}%</span><span class="kpi-label">4S Ort. Getiri</span></div>
+                    <div class="kpi-item"><span class="kpi-value ${getPerformanceClass(res.avgReturns['1d'])}">${res.avgReturns['1d']}%</span><span class="kpi-label">1G Ort. Getiri</span></div>
+                </div>
+                <div class="analysis-card-grid">
+                    <div class="analysis-card-col">
+                        <h5 class="setting-subtitle">Fırsat Anının DNA Özeti</h5>
+                        ${dnaDetailsHtml}
                     </div>
                 </div>
                 <div class="preview-actions">
@@ -466,13 +462,10 @@ function renderSignalAnalysisPreview(data) {
             `;
         }
         
-        // Her coin için ayrı bir kart oluşturup finalHtml'e ekliyoruz.
         finalHtml += `<div class="analysis-result-card">
-                    <div class="analysis-card-header">
-                        <h4>${coinSymbol} Analiz Sonuçları</h4>
-                    </div>
-                    ${contentHtml}
-                </div>`;
+                        <div class="analysis-card-header"><h4>${coinSymbol} Analiz Sonuçları</h4></div>
+                        ${contentHtml}
+                      </div>`;
     }
 
     resultContainer.innerHTML = finalHtml;
