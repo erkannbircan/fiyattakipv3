@@ -405,9 +405,15 @@ function saveChartState() {
     }
 }
 
-// ui.js dosyasındaki renderSignalAnalysisPreview fonksiyonunu bulun ve bu blokla değiştirin.
+// ui.js
+
 function renderSignalAnalysisPreview(data) {
     const resultContainer = document.getElementById('signalAnalysisResultContainer');
+    if (!resultContainer) {
+        console.error("Hata: 'signalAnalysisResultContainer' elementi bulunamadı.");
+        return;
+    }
+
     if (!data || Object.keys(data).length === 0) {
         resultContainer.innerHTML = `<p style="text-align: center; color: var(--text-secondary); padding: 20px;">Analiz için sonuç bulunamadı veya belirtilen koşullarda fırsat yok.</p>`;
         return;
@@ -419,7 +425,10 @@ function renderSignalAnalysisPreview(data) {
         return num > 0 ? 'positive' : 'negative';
     };
 
-    const html = Object.keys(data).map(coin => {
+    let finalHtml = '';
+
+    // DÜZELTME: Gelen 'data' objesindeki her bir coin (JUVUSDT, BARUSDT vb.) için döngü oluşturuyoruz.
+    for (const coin in data) {
         const res = data[coin];
         const coinSymbol = coin.replace("USDT", "");
         let contentHtml = '';
@@ -427,66 +436,9 @@ function renderSignalAnalysisPreview(data) {
         if (res.status === 'error' || res.status === 'info') {
             const messageColor = res.status === 'error' ? 'var(--accent-red)' : 'var(--text-secondary)';
             contentHtml = `<div class="analysis-card-simple-message" style="color:${messageColor};">${res.message}</div>`;
-        } else if (res.status === 'preview' && res.params && res.dnaSummary && res.avgReturns && res.dnaProfile) {
+        } else if (res.status === 'preview' && res.dnaProfile && res.avgReturns) {
             const profileDataString = JSON.stringify(res.dnaProfile);
             
-            let detailsHtml = '';
-            if (res.eventDetails && res.eventDetails.length > 0) {
-                const eventListItems = res.eventDetails.map(event => {
-                    const eventDate = new Date(event.timestamp).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' });
-                    return `<tr>
-                                <td>${eventDate}</td>
-                                <td>$${formatPrice(event.priceBefore)}</td>
-                                <td>$${formatPrice(event.priceAfter)}</td>
-                            </tr>`;
-                }).join('');
-                detailsHtml = `
-                    <h5 class="setting-subtitle">Bulunan ${res.eventDetails.length} Fırsatın Detayları</h5>
-                    <div class="table-wrapper compact">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Tarih (İstanbul Saati)</th>
-                                    <th>Sinyal Fiyatı</th>
-                                    <th>Hedef Fiyatı</th>
-                                </tr>
-                            </thead>
-                            <tbody>${eventListItems}</tbody>
-                        </table>
-                    </div>`;
-            }
-
-            // *** HATA DÜZELTMESİ: DNA gruplama mantığı düzeltildi. ***
-            const dnaGroups = {};
-            const paramKeys = ['rsi', 'macd_hist', 'adx', 'volume_mult', 'atr_pct', 'bb_width', 'rv_pct'];
-            
-            paramKeys.forEach(key => {
-                // Sadece seçilen parametreleri göstermek için featureOrder'ı kontrol et
-                if (res.dnaSummary.featureOrder.includes(`${key}_avg`)) {
-                    dnaGroups[key] = {};
-                }
-            });
-
-            (res.dnaSummary.featureOrder || []).forEach((feature, index) => {
-                const parts = feature.split('_');
-                const metric = parts.pop(); // avg, slope, final, vb.
-                const key = parts.join('_'); // rsi, macd_hist, vb.
-                
-                if (dnaGroups[key]) {
-                    dnaGroups[key][metric] = parseFloat(res.dnaSummary.mean[index]).toFixed(3);
-                }
-            });
-
-            // Mum şekli gibi tekil değerleri de ekle
-            (res.dnaSummary.featureOrder || []).forEach((feature, index) => {
-                 if (!feature.includes('_')) { // avg, slope, final içermeyenler
-                    const key = 'candle';
-                    if (!dnaGroups[key]) dnaGroups[key] = {};
-                    dnaGroups[key][feature] = parseFloat(res.dnaSummary.mean[index]).toFixed(3);
-                 }
-            });
-
-
             contentHtml = `
                 <div class="kpi-container">
                     <div class="kpi-item">
@@ -506,51 +458,26 @@ function renderSignalAnalysisPreview(data) {
                         <span class="kpi-label">1 Günlük Ort. Getiri</span>
                     </div>
                 </div>
-
-                <div class="analysis-card-grid">
-                    <div class="analysis-card-col">
-                        ${detailsHtml}
-                    </div>
-
-                    <div class="analysis-card-col">
-                        <h5 class="setting-subtitle">Fırsat Anının DNA Özeti</h5>
-                        <div class="dna-summary-grid">
-                            <div class="dna-summary-header">
-                                <span>Parametre</span><span>Ortalama</span><span>Eğim</span><span>Son Değer</span>
-                            </div>
-                            ${Object.keys(dnaGroups).filter(key => key !== 'candle').map(key => `
-                                <div class="dna-indicator-group">
-                                    <span class="label">${key.replace('_', ' ').toUpperCase()}</span>
-                                    <span class="value">${dnaGroups[key]['avg'] || 'N/A'}</span>
-                                    <span class="value ${getPerformanceClass(dnaGroups[key]['slope'])}">${dnaGroups[key]['slope'] || 'N/A'}</span>
-                                    <span class="value">${dnaGroups[key]['final'] || 'N/A'}</span>
-                                </div>
-                            `).join('')}
-                        </div>
-                        <div class="preview-actions">
-                            <button class="btn btn-primary save-dna-btn" data-profile='${profileDataString}'>
-                                <i class="fas fa-save"></i> DNA Profili Oluştur
-                            </button>
-                        </div>
-                    </div>
+                <div class="preview-actions">
+                    <button class="btn btn-primary save-dna-btn" data-profile='${profileDataString}'>
+                        <i class="fas fa-save"></i> ${res.dnaProfile.name} Profilini Kaydet
+                    </button>
                 </div>
             `;
         }
         
-        return `<div class="analysis-result-card">
+        // Her coin için ayrı bir kart oluşturup finalHtml'e ekliyoruz.
+        finalHtml += `<div class="analysis-result-card">
                     <div class="analysis-card-header">
                         <h4>${coinSymbol} Analiz Sonuçları</h4>
                     </div>
                     ${contentHtml}
                 </div>`;
-    }).join('');
+    }
 
-    resultContainer.innerHTML = html;
+    resultContainer.innerHTML = finalHtml;
 }
-// ui.js
-// openAlarmPanel ve renderAlarms fonksiyonlarını SİLİN.
 
-// renderAlarmReports fonksiyonunu bu yeni versiyonla DEĞİŞTİRİN.
 async function renderAlarmReports() {
     if (!state.userDocRef) return;
     const tableBody = document.getElementById('alarmReportsTable');
