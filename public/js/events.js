@@ -309,6 +309,16 @@ function setupStrategyDiscoveryListeners(parentElement) {
           // Görünürlük + geçici loading
             document.getElementById('discoverySettingsPanel').style.display = 'none';
             document.getElementById('discoveryResultsPanel').style.display = 'block';
+            if (resultPanel) {
+  resultPanel.style.display = 'block';
+  resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Sonuç kutusunu temizle + küçük bir “yükleniyor” göstergesi bırak
+const resultEl = document.getElementById('signalAnalysisResultContainer');
+if (resultEl) {
+  resultEl.innerHTML = '<div class="spinner"></div>';
+}
             const rc = document.getElementById('signalAnalysisResultContainer');
             if (rc) rc.innerHTML = `<div class="loading" style="padding:12px;">Analiz sonuçları hazırlanıyor...</div>`;
 
