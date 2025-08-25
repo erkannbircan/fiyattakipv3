@@ -79,113 +79,96 @@
                                 <h5 class="setting-subtitle">1. Analiz Edilecek Coinler</h5>
                                 <div id="discovery-coin-manager-container" style="margin-bottom: 20px;"></div>
     
-                                <h5 class="setting-subtitle">2. Kârlı Senaryo Tanımı</h5>
-
-<div class="form-2col">
-  <!-- Sol Sütun -->
-  <div class="form-card">
-    <div class="form-row">
-      <label>Zaman Dilimi</label>
-      <select id="signalAnalysisTimeframe">
-        <option value="15m">15 Dakika</option>
-        <option value="1h" selected>1 Saat</option>
-        <option value="4h">4 Saat</option>
-        <option value="1d">1 Gün</option>
-      </select>
-    </div>
-    <div class="form-row">
-      <label>Geçmiş Periyot</label>
-      <select id="signalAnalysisPeriod">
-        <option value="7">Son 7 Gün</option>
-        <option value="30" selected>Son 30 Gün</option>
-        <option value="90">Son 90 Gün</option>
-      </select>
-    </div>
-    <div class="form-row">
-      <label>Yön</label>
-      <select id="signalAnalysisDirection">
-        <option value="up" selected>Artış (+%)</option>
-        <option value="down">Düşüş (-%)</option>
-      </select>
-    </div>
-    <div class="form-row">
-      <label>Değişim (%)</label>
-      <input type="number" id="signalAnalysisChange" value="5" step="0.1" min="0">
-    </div>
+                                <!-- ⬇️ 2. Kârlı Senaryo Tanımı — TEK BUTON KALSIN -->
+<section class="collapsible">
+  <div class="collapsible-header">
+    <span>2. Kârlı Senaryo Tanımı</span>
+    <i class="fas fa-chevron-down"></i>
   </div>
+  <div class="collapsible-content open">
+    <div class="discovery-grid compact">
+      <div>
+        <label>Zaman Dilimi</label>
+        <select id="signalAnalysisTimeframe">
+          <option value="15m">15 Dakika</option>
+          <option value="1h" selected>1 Saat</option>
+          <option value="4h">4 Saat</option>
+          <option value="1d">1 Gün</option>
+        </select>
+      </div>
+      <div>
+        <label>Geçmiş Periyot</label>
+        <select id="signalAnalysisPeriod">
+          <option value="7">Son 7 Gün</option>
+          <option value="30" selected>Son 30 Gün</option>
+          <option value="90">Son 90 Gün</option>
+        </select>
+      </div>
+      <div>
+        <label>Yön</label>
+        <select id="signalAnalysisDirection">
+          <option value="up" selected>Artış (+%)</option>
+          <option value="down">Azalış (-%)</option>
+        </select>
+      </div>
+      <div>
+        <label>Değişim (%)</label>
+        <input id="signalAnalysisChange" type="number" value="5" step="0.1" />
+      </div>
+    </div>
 
-  <!-- Sağ Sütun -->
-  <div class="form-card">
-    <div class="form-row">
-      <label>DNA Mumu</label>
-      <div class="inline">
-        <input type="number" id="signalLookbackCandles" value="3" step="1" min="1" max="20">
-        <label class="check-inline">
-          <input type="checkbox" id="useSmartLookback" checked>
+    <!-- DNA mumu / akıllı öneriler / parametreler -->
+    <div class="discovery-grid compact" style="margin-top:10px;">
+      <div>
+        <label>DNA Mumu</label>
+        <input id="signalLookbackCandles" type="number" value="3" />
+        <label style="display:inline-flex;gap:6px;align-items:center;margin-top:6px;">
+          <input id="useSmartLookback" type="checkbox" checked />
           Akıllı
         </label>
-        <span id="smartLookbackBadge" class="smart-badge">Öneri: -</span>
+        <span id="smartLookbackText" class="badge-tip">Öneri: -</span>
       </div>
-    </div>
-
-    <div class="form-row">
-      <label>Gelecek Penceresi</label>
-      <div class="inline wrap">
+      <div>
+        <label>Gelecek Penceresi</label>
         <select id="fixedLookaheadPreset">
           <option value="auto" selected>Akıllı</option>
-          <option value="1h">+1 Saat</option>
-          <option value="4h">+4 Saat</option>
-          <option value="1d">+1 Gün</option>
+          <option value="1h">1 Saat</option>
+          <option value="4h">4 Saat</option>
+          <option value="1d">1 Gün</option>
         </select>
-        <span class="muted">veya Mum:</span>
-        <input type="number" id="customLookaheadCandles" value="0" step="1" min="0" max="500">
-        <span id="smartLookaheadBadge" class="smart-badge">Öneri: -</span>
+        <input id="customLookaheadCandles" type="number" value="0" placeholder="Örn: 10 mum" style="margin-top:6px;" />
+        <span id="smartLookaheadText" class="badge-tip">Öneri: -</span>
+      </div>
+      <div id="signalDnaParamsGrid" class="filters-grid compact" style="grid-column:1/-1;">
+        <label class="filter-item"><input type="checkbox" data-param="rsi" checked /> RSI</label>
+        <label class="filter-item"><input type="checkbox" data-param="macd" /> MACD</label>
+        <label class="filter-item"><input type="checkbox" data-param="adx" /> ADX</label>
+        <label class="filter-item"><input type="checkbox" data-param="volume" checked /> Hacim</label>
+        <label class="filter-item"><input type="checkbox" data-param="volatility" /> Volatilite</label>
+        <label class="filter-item"><input type="checkbox" data-param="candle" /> Mum Şekli</label>
+        <label class="filter-item"><input type="checkbox" data-param="speed" /> Hız</label>
       </div>
     </div>
 
-    <h5 class="setting-subtitle" style="margin-top: 8px;">3. DNA Parametreleri</h5>
-    <div id="signalDnaParamsGrid" class="param-grid">
-      <label class="param"><input type="checkbox" data-param="rsi_avg" checked> RSI</label>
-      <label class="param"><input type="checkbox" data-param="macd_hist_slope" checked> MACD</label>
-      <label class="param"><input type="checkbox" data-param="adx_avg"> ADX</label>
-      <label class="param"><input type="checkbox" data-param="volume_mult_avg" checked> Hacim</label>
-      <label class="param"><input type="checkbox" data-param="atr_pct_final"> Volatilite</label>
-      <label class="param"><input type="checkbox" data-param="candle_body_pct"> Mum Şekli</label>
-      <label class="param"><input type="checkbox" data-param="rv_pct"> Hız</label>
+    <!-- TEK ANALİZ BUTONU -->
+    <div class="analysis-actions" style="margin-top:14px;">
+      <button id="runSignalAnalysisBtn" class="primary-button">
+        <i class="fas fa-search"></i> Stratejiyi Analiz Et
+      </button>
     </div>
   </div>
-</div>
+</section>
 
-                           <!-- ANALİZ AKSİYONU: tek buton -->
-<div class="analysis-actions">
-  <button id="runSignalAnalysisBtn">
-    <i class="fas fa-search-dollar"></i> Stratejiyi Analiz Et
-  </button>
-</div>
-                        </div>
-                    </div>
-                    
-<div class="discovery-results-panel" id="discoveryResultsPanel" style="display:none;">
-  <div class="collapsible open">
-    <div class="collapsible-header open">
-      <span><i class="fas fa-flask"></i> Analiz Sonuçları</span>
-      <div class="table-controls">
-        <button id="backToSettingsBtn" class="action-btn-sm">
-          <i class="fas fa-arrow-left"></i> Ayarlara Geri Dön
-        </button>
-      </div>
-    </div>
-
-    <div class="collapsible-content open">
-      <!-- SONUÇLARIN DOLDURULACAĞI KONTEYNER -->
-      <div id="signalAnalysisResultContainer" class="analysis-results-below"></div>
-        <!-- JS burayı dolduracak -->
-      </div>
+<!-- ⬇️ SONUÇLARIN GELECEĞİ SABİT ALAN -->
+<section id="discoveryResultsPanel" class="discovery-results-panel">
+  <div id="signalAnalysisResultContainer" class="analysis-section">
+    <div class="placeholder-text">
+      <i class="fas fa-flask"></i>
+      <div>“Stratejiyi Analiz Et” tuşuna bastığınızda sonuçlar burada listelenecek.</div>
     </div>
   </div>
-</div>
-
-    
+</section>
+                                
     <div id="settingsPanel" class="panel"> </div>
     <div id="detailPanel" class="panel"> </div>
     <div id="chartPanel" class="panel"> </div>
@@ -199,12 +182,14 @@
     
     <script src="js/config.js"></script> 
     <script src="js/state.js"></script>
+    <script src="./calculations.js"></script>
     <script src="findSignalDNA.js"></script>
-     <script src="js/api.js"></script>
     <script src="js/ui.js"></script>
+    <script src="js/api.js"></script>
    <script src="js/events.js"></script>
+     <script src="js/app.js"></script>
     <script src="js/telegram.js"></script>
     <script src="js/scanner.js"></script>
-    <script src="js/app.js"></script>
+   
 </body>
 </html>
