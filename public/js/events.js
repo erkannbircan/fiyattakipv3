@@ -305,9 +305,23 @@ function setupStrategyDiscoveryListeners(parentElement) {
 
             console.log('Sunucuya gönderilen analiz parametreleri:', params);
 
+           // ...
             document.getElementById('discoverySettingsPanel').style.display = 'none';
             document.getElementById('discoveryResultsPanel').style.display = 'block';
-            return runSignalAnalysisPreview(params);
+            
+            if (typeof runSignalAnalysisPreview !== 'function') {
+                console.error('runSignalAnalysisPreview bulunamadı.');
+                showNotification('Analiz fonksiyonu yüklenemedi. Lütfen sayfayı tazeleyin.', false);
+                // geri al: kullanıcı boş sayfada kalmasın
+                document.getElementById('discoverySettingsPanel').style.display = 'block';
+                document.getElementById('discoveryResultsPanel').style.display = 'none';
+                return;
+            }
+            return runSignalAnalysisPreview(params).catch(err => {
+                console.error('Analiz hatası:', err);
+                showNotification('Analiz sırasında hata oluştu.', false);
+                document.getElementById('discoverySettingsPanel').style.display = 'block';
+                document.getElementById('discoveryResultsPanel').style.display = 'none';
         })
         .finally(() => { hideLoading(btn); });
 
