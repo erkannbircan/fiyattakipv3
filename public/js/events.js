@@ -259,106 +259,75 @@ function setupStrategyDiscoveryListeners(parentElement) {
       const days = parseInt(document.getElementById('signalAnalysisPeriod').value);
       const changePercent = parseFloat(document.getElementById('signalAnalysisChange').value);
       const direction = document.getElementById('signalAnalysisDirection').value;
-      const useSmartLookback = document.getElementById('useSmartLookback').checked;
+      const useSmartLookback = document.getElementById('useSmartLookback')?.checked;
 
       // DNA parametreleri
       const dnaParams = {};
-      document.querySelectorAll('#signalDnaParamsGrid input[type="checkbox"]:checked').forEach(cb => {
-        dnaParams[cb.dataset.param] = true;
-      });
+      document.querySelectorAll('#signalDnaParamsGrid input[type="checkbox"]:checked')
+        .forEach(cb => { dnaParams[cb.dataset.param] = true; });
 
-      // Lookback & Lookahead
+      // Lookback / Lookahead
       let lookbackCandles = parseInt(document.getElementById('signalLookbackCandles').value) || 3;
-      const fixedPreset = document.getElementById('fixedLookaheadPreset').value; // auto/1h/4h/1d
-      const customLookaheadCandles = parseInt(document.getElementById('customLookaheadCandles').value) || 0;
+      const fixedPreset = document.getElementById('fixedLookaheadPreset')?.value || 'auto';
+      const customLookaheadCandles = parseInt(document.getElementById('customLookaheadCandles')?.value) || 0;
 
-      computeSmartDiscoveryHints({ timeframe, days })
-        .then(smart => {
-          if (useSmartLookback && smart?.lookback) {
-            lookbackCandles = smart.lookback;
-            document.getElementById('signalLookbackCandles').value = lookbackCandles;
-          }
-          // lookahead: öncelik -> custom > preset > smart
-          let lookaheadCandles = 0;
-          if (customLookaheadCandles > 0) {
-            lookaheadCandles = customLookaheadCandles;
-          } else if (fixedPreset !== 'auto') {
-            lookaheadCandles = presetToCandles(fixedPreset, timeframe);
-          } else if (smart?.lookahead) {
-            lookaheadCandles = smart.lookahead;
-          }
+      // Akıllı ipuçları
+      try {
+        const smart = await computeSmartDiscoveryHints({ timeframe, days });
+        if (useSmartLookback && smart?.lookback) {
+          lookbackCandles = smart.lookback;
+          const el = document.getElementById('signalLookbackCandles');
+          if (el) el.value = lookbackCandles;
+        }
+        // lookahead seçimi: custom > preset > smart
+        let lookaheadCandles = 0;
+        if (customLookaheadCandles > 0) {
+          lookaheadCandles = customLookaheadCandles;
+        } else if (fixedPreset !== 'auto') {
+          lookaheadCandles = presetToCandles(fixedPreset, timeframe);
+        } else if (smart?.lookahead) {
+          lookaheadCandles = smart.lookahead;
+        }
+        updateSmartBadges?.(smart); // varsa rozetleri güncelle
 
-          // rozetleri güncelle
-          updateSmartBadges(smart);
+        const params = {
+          coins: state.discoveryCoins,
+          timeframe,
+          changePercent,
+          direction,
+          days,
+          lookbackCandles,
+          lookaheadCandles,
+          lookaheadMode: (customLookaheadCandles > 0 ? 'custom' : (fixedPreset !== 'auto' ? fixedPreset : 'smart')),
+          params: dnaParams,
+          isPreview: true
+        };
 
-          const params = {
-            coins: state.discoveryCoins,
-            timeframe,
-            changePercent,
-            direction,
-            days,
-            lookbackCandles,
-            lookaheadCandles,
-            lookaheadMode: (customLookaheadCandles > 0 ? 'custom' : (fixedPreset !== 'auto' ? fixedPreset : 'smart')),
-            params: dnaParams,
-            isPreview: true
-          };
+        console.log('Sunucuya gönderilen analiz parametreleri:', params);
 
-          console.log('Sunucuya gönderilen analiz parametreleri:', params);
+        // Sonuç alanını göster + “yükleniyor” mesajı
+        const rc = document.getElementById('signalAnalysisResultContainer');
+        if (rc) rc.innerHTML = `<div class="loading" style="padding:12px;">Analiz sonuçları hazırlanıyor...</div>`;
+        document.getElementById('discoveryResultsPanel')?.scrollIntoView({ behavior:'smooth', block:'start' });
 
-          // Sonuç kutusuna yükleniyor yaz
-          const rc = document.getElementById('signalAnalysisResultContainer');
-          if (rc) {
-            rc.innerHTML = `<div class="loading" style="padding:12px;">Analiz sonuçları hazırlanıyor...</div>`;
-            const panel = document.getElementById('discoveryResultsPanel');
-            if (panel) panel.style.display = 'block';
-            panel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-
-          if (typeof runSignalAnalysisPreview !== 'function') {
-            console.error('runSignalAnalysisPreview bulunamadı.');
-            showNotification('Analiz fonksiyonu yüklenemedi. Lütfen sayfayı tazeleyin.', false);
-
-            if (rc) rc.innerHTML = `<div class="error-msg">Analiz fonksiyonu yüklenemedi.</div>`;
-            const panel = document.getElementById('discoveryResultsPanel');
-            if (panel) panel.style.display = 'block';
-
-            return Promise.resolve(); // zinciri bozmamak için
-          }
-
-          return runSignalAnalysisPreview(params);
-        })
-        .catch(err => {
-          console.error('Analiz hatası:', err);
-          showNotification('Analiz sırasında hata oluştu.', false);
-
-          const rc = document.getElementById('signalAnalysisResultContainer');
-          if (rc) rc.innerHTML = `<div class="error-msg">Analiz sırasında hata oluştu.</div>`;
-          const panel = document.getElementById('discoveryResultsPanel');
-          if (panel) panel.style.display = 'block';
-        })
-        .finally(() => { hideLoading(btn); });
-
-      return; // bu if bloğu burada kapanıyor
-    }
-
-    // 2) AYARLARA GERİ DÖN
-    if (target.closest('#backToSettingsBtn')) {
-      document.getElementById('discoverySettingsPanel').style.display = 'block';
-      document.getElementById('discoveryResultsPanel').style.display = 'none';
-
-      // önceki analiz çıktısını temizle
-      const resultEl = document.getElementById('signalAnalysisResultContainer');
-      if (resultEl) resultEl.innerHTML = '';
-
-      const btn = document.querySelector('#runSignalAnalysisBtn');
-      if (btn) hideLoading(btn);
-
-      document.getElementById('discoverySettingsPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Analizi çalıştır
+        if (typeof runSignalAnalysisPreview === 'function') {
+          await runSignalAnalysisPreview(params);
+        } else {
+          console.error('runSignalAnalysisPreview bulunamadı.');
+          if (rc) rc.innerHTML = `<div class="error-msg">Analiz fonksiyonu yüklenemedi.</div>`;
+        }
+      } catch (err) {
+        console.error('Analiz hatası:', err);
+        const rc = document.getElementById('signalAnalysisResultContainer');
+        if (rc) rc.innerHTML = `<div class="error-msg">Analiz sırasında hata oluştu.</div>`;
+      } finally {
+        hideLoading(btn);
+      }
       return;
     }
 
-    // 3) DNA PROFİL KAYDET
+    // 2) DNA PROFİL KAYDET
     const saveBtn = target.closest('.save-dna-btn');
     if (saveBtn) {
       const profileData = JSON.parse(saveBtn.dataset.profile);
@@ -366,13 +335,13 @@ function setupStrategyDiscoveryListeners(parentElement) {
       return;
     }
 
-    // 4) DNA PROFİLLERİ YENİLE
+    // 3) DNA PROFİLLERİ YENİLE
     if (target.closest('#refreshDnaProfilesBtnDiscovery')) {
       await fetchDnaProfiles('dnaProfilesContainerDiscovery');
       return;
     }
 
-    // 5) DNA PROFİL SİL
+    // 4) DNA PROFİL SİL
     const deleteBtn = e.target.closest('.delete-dna-btn');
     if (deleteBtn) {
       const profileId = deleteBtn.dataset.profileId;
@@ -382,8 +351,6 @@ function setupStrategyDiscoveryListeners(parentElement) {
     }
   });
 }
-
-
 
 
 function setupPivotPageActionListeners(parentElement) {
