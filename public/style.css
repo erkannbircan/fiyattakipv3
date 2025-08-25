@@ -843,3 +843,34 @@ input:checked + .slider:before { transform: translateX(24px); }
     flex-direction: column; /* Öğeleri dikeyde sırala */
     gap: 30px; /* Paneller arasına boşluk koy */
 }
+/* --- Akıllı öneri rozetleri --- */
+.smart-badge {
+    background: linear-gradient(135deg, rgba(41,98,255,.15), rgba(38,166,154,.15));
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+}
+
+/* --- Profesyonel birincil buton --- */
+.btn-primary {
+    background: linear-gradient(45deg, #4285F4, #34A853);
+    color: #fff;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    box-shadow: 0 6px 16px rgba(0,0,0,.25);
+    transition: transform .05s ease, box-shadow .2s ease;
+}
+.btn-primary:hover { box-shadow: 0 10px 22px rgba(0,0,0,.35); }
+.btn-primary:active { transform: translateY(1px); }
+
+/* “Tümünü Göster” açılır liste alanı */
+.fold-box { border:1px solid var(--border-color); border-radius:8px; overflow:hidden; }
+.fold-box-header { background:var(--bg-tertiary); padding:10px 12px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; }
+.fold-box-body { display:none; background:var(--bg-secondary); }
+.fold-box.open .fold-box-body { display:block; }
+.fold-toggle { background:none; color:var(--text-secondary); border:1px solid var(--border-color); padding:6px 10px; border-radius:8px; cursor:pointer; }
