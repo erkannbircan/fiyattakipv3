@@ -917,3 +917,36 @@ input:checked + .slider:before { transform: translateX(24px); }
 .analysis-toolbar { display:flex; justify-content:flex-start; margin: 8px 0 12px; }
 
 /* var olan .smart-badge ve .btn-primary stillerin varsa aynı kalsın; yoksa önceki mesajımdaki halleri kullanılabilir */
+/* --- Strateji Keşfi düzenlemeleri (buton iç içe görünmesin) --- */
+.discovery-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.discovery-settings-panel .discovery-grid.compact {
+  grid-template-columns: repeat(5, minmax(120px, 1fr));
+  align-items: end;
+}
+
+@media (max-width: 1024px) {
+  .discovery-settings-panel .discovery-grid.compact {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.analysis-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.analysis-actions #runSignalAnalysisBtn {
+  min-width: 220px;
+}
+
+/* Her ihtimale karşı id çakışmalarından gelen ekstra butonları gizle */
+#discoverySettingsPanel #runSignalAnalysisBtn ~ #runSignalAnalysisBtn {
+  display: none !important;
+}
+
