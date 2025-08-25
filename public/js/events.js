@@ -306,9 +306,12 @@ function setupStrategyDiscoveryListeners(parentElement) {
 
           console.log('Sunucuya gönderilen analiz parametreleri:', params);
 
-          // Görünürlük
-          document.getElementById('discoverySettingsPanel').style.display = 'none';
-          document.getElementById('discoveryResultsPanel').style.display = 'block';
+          // Görünürlük + geçici loading
+            document.getElementById('discoverySettingsPanel').style.display = 'none';
+            document.getElementById('discoveryResultsPanel').style.display = 'block';
+            const rc = document.getElementById('signalAnalysisResultContainer');
+            if (rc) rc.innerHTML = `<div class="loading" style="padding:12px;">Analiz sonuçları hazırlanıyor...</div>`;
+
 
           if (typeof runSignalAnalysisPreview !== 'function') {
             console.error('runSignalAnalysisPreview bulunamadı.');
