@@ -79,77 +79,88 @@
                                 <div id="discovery-coin-manager-container" style="margin-bottom: 20px;"></div>
     
                                 <h5 class="setting-subtitle">2. Kârlı Senaryo Tanımı</h5>
-                                <div class="discovery-grid compact">
-                                    <div>
-                                        <label for="signalAnalysisTimeframe">Zaman Dilimi</label>
-                                        <select id="signalAnalysisTimeframe">
-                                            <option value="15m">15 Dakika</option>
-                                            <option value="1h" selected>1 Saat</option>
-                                            <option value="4h">4 Saat</option>
-                                            <option value="1d">1 Gün</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label for="signalAnalysisPeriod">Geçmiş Periyot</label>
-                                        <select id="signalAnalysisPeriod">
-                                            <option value="7">Son 7 Gün</option>
-                                            <option value="30" selected>Son 30 Gün</option>
-                                            <option value="90">Son 90 Gün</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label for="signalAnalysisDirection">Yön</label>
-                                        <select id="signalAnalysisDirection">
-                                            <option value="up">Artış (+%)</option>
-                                            <option value="down">Azalış (-%)</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label for="signalAnalysisChange">Değişim (%)</label>
-                                        <input type="number" id="signalAnalysisChange" value="5" step="1">
-                                    </div>
-                                    <div>
-                                       <div>
-                                    <label for="signalLookbackCandles">DNA Mumu</label>
-                                    <div style="display:flex; gap:8px; align-items:center;">
-                                        <input type="number" id="signalLookbackCandles" value="3" step="1" min="1" max="20" style="flex:0 0 90px;">
-                                        <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--text-secondary);">
-                                            <input type="checkbox" id="useSmartLookback" checked>
-                                            Akıllı
-                                        </label>
-                                        <span id="smartLookbackBadge" class="smart-badge" title="Oynaklığa göre öneri">Öneri: -</span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label>Gelecek Penceresi</label>
-                                    <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
-                                        <select id="fixedLookaheadPreset">
-                                            <option value="auto" selected>Akıllı</option>
-                                            <option value="1h">+1 Saat</option>
-                                            <option value="4h">+4 Saat</option>
-                                            <option value="1d">+1 Gün</option>
-                                        </select>
-                                        <div style="display:flex; gap:8px; align-items:center;">
-                                            <label for="customLookaheadCandles" style="color:var(--text-secondary); font-size:0.85rem;">veya Mum:</label>
-                                            <input type="number" id="customLookaheadCandles" value="0" step="1" min="0" max="500" style="width:90px;">
-                                        </div>
-                                        <span id="smartLookaheadBadge" class="smart-badge" title="Oynaklık & timeframe bazlı öneri">Öneri: -</span>
-                                    </div>
-                                </div>
-                                
-                                </div>
-                                
-                                <h5 class="setting-subtitle" style="margin-top: 25px;">3. DNA Parametreleri</h5>
-                                <div class="filters-grid compact" id="signalDnaParamsGrid">
-                                    <label class="filter-item"><input type="checkbox" data-param="rsi" checked> RSI</label>
-                                    <label class="filter-item"><input type="checkbox" data-param="macd" checked> MACD</label>
-                                    <label class="filter-item"><input type="checkbox" data-param="adx"> ADX</label>
-                                    <label class="filter-item"><input type="checkbox" data-param="volume" checked> Hacim</label>
-                                    <label class="filter-item"><input type="checkbox" data-param="volatility"> Volatilite</label>
-                                    <label class="filter-item"><input type="checkbox" data-param="candle"> Mum Şekli</label>
-                                    <label class="filter-item"><input type="checkbox" data-param="velocity"> Hız</label>
-                                </div>
-                            </div>
+
+<div class="form-2col">
+  <!-- Sol Sütun -->
+  <div class="form-card">
+    <div class="form-row">
+      <label>Zaman Dilimi</label>
+      <select id="signalAnalysisTimeframe">
+        <option value="15m">15 Dakika</option>
+        <option value="1h" selected>1 Saat</option>
+        <option value="4h">4 Saat</option>
+        <option value="1d">1 Gün</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Geçmiş Periyot</label>
+      <select id="signalAnalysisPeriod">
+        <option value="7">Son 7 Gün</option>
+        <option value="30" selected>Son 30 Gün</option>
+        <option value="90">Son 90 Gün</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Yön</label>
+      <select id="signalAnalysisDirection">
+        <option value="up" selected>Artış (+%)</option>
+        <option value="down">Düşüş (-%)</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Değişim (%)</label>
+      <input type="number" id="signalAnalysisChange" value="5" step="0.1" min="0">
+    </div>
+
+    <div class="form-row actions">
+      <button id="runSignalAnalysisBtn" class="btn-primary">
+        <i class="fas fa-search"></i> Stratejiyi Analiz Et
+      </button>
+    </div>
+  </div>
+
+  <!-- Sağ Sütun -->
+  <div class="form-card">
+    <div class="form-row">
+      <label>DNA Mumu</label>
+      <div class="inline">
+        <input type="number" id="signalLookbackCandles" value="3" step="1" min="1" max="20">
+        <label class="check-inline">
+          <input type="checkbox" id="useSmartLookback" checked>
+          Akıllı
+        </label>
+        <span id="smartLookbackBadge" class="smart-badge">Öneri: -</span>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label>Gelecek Penceresi</label>
+      <div class="inline wrap">
+        <select id="fixedLookaheadPreset">
+          <option value="auto" selected>Akıllı</option>
+          <option value="1h">+1 Saat</option>
+          <option value="4h">+4 Saat</option>
+          <option value="1d">+1 Gün</option>
+        </select>
+        <span class="muted">veya Mum:</span>
+        <input type="number" id="customLookaheadCandles" value="0" step="1" min="0" max="500">
+        <span id="smartLookaheadBadge" class="smart-badge">Öneri: -</span>
+      </div>
+    </div>
+
+    <h5 class="setting-subtitle" style="margin-top: 8px;">3. DNA Parametreleri</h5>
+    <div id="signalDnaParamsGrid" class="param-grid">
+      <label class="param"><input type="checkbox" data-param="rsi_avg" checked> RSI</label>
+      <label class="param"><input type="checkbox" data-param="macd_hist_slope" checked> MACD</label>
+      <label class="param"><input type="checkbox" data-param="adx_avg"> ADX</label>
+      <label class="param"><input type="checkbox" data-param="volume_mult_avg" checked> Hacim</label>
+      <label class="param"><input type="checkbox" data-param="atr_pct_final"> Volatilite</label>
+      <label class="param"><input type="checkbox" data-param="candle_body_pct"> Mum Şekli</label>
+      <label class="param"><input type="checkbox" data-param="rv_pct"> Hız</label>
+    </div>
+  </div>
+</div>
+
                             <div class="analysis-actions">
                                 <button id="runSignalAnalysisBtn"><i class="fas fa-search-dollar"></i> Stratejiyi Analiz Et</button>
                             </div>
@@ -162,14 +173,13 @@
                         </div>
                     </div>
                     
-                    <div class="discovery-results-panel" id="discoveryResultsPanel" style="display:none;">
-                        <div class="page-header" style="text-align: left; padding: 0;">
-                            <h3><i class="fas fa-chart-pie"></i> Analiz Sonuçları</h3>
-                            <button id="backToSettingsBtn" class="action-btn-sm"><i class="fas fa-chevron-left"></i> Ayarlara Geri Dön</button>
-                        </div>
-                        <div id="signalAnalysisResultContainer">
+                    <div id="discoveryResultsPanel" style="display:none;">
+  <div class="analysis-toolbar">
+    <button id="backToSettingsBtn" class="fold-toggle"><i class="fas fa-arrow-left"></i> Ayarlara Geri Dön</button>
+  </div>
+  <div id="signalAnalysisResultContainer"></div>
+</div>
 
-                        </div>
                     </div>
         </div>
     </div>
