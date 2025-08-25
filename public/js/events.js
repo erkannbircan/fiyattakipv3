@@ -261,15 +261,15 @@ function setupStrategyDiscoveryListeners(parentElement) {
       const direction = document.getElementById('signalAnalysisDirection').value;
       const useSmartLookback = document.getElementById('useSmartLookback').checked;
 
-      // 1) DNA parametreleri
+      // DNA parametreleri
       const dnaParams = {};
       document.querySelectorAll('#signalDnaParamsGrid input[type="checkbox"]:checked').forEach(cb => {
         dnaParams[cb.dataset.param] = true;
       });
 
-      // 2) Lookback (akıllıysa hesapla)
+      // Lookback (akıllıysa hesapla)
       let lookbackCandles = parseInt(document.getElementById('signalLookbackCandles').value) || 3;
-      // 3) Lookahead seçimleri
+      // Lookahead seçimleri
       const fixedPreset = document.getElementById('fixedLookaheadPreset').value; // auto/1h/4h/1d
       const customLookaheadCandles = parseInt(document.getElementById('customLookaheadCandles').value) || 0;
 
@@ -329,13 +329,22 @@ function setupStrategyDiscoveryListeners(parentElement) {
         })
         .finally(() => { hideLoading(btn); });
 
-      return; // ✅ bu if bloğu burada KAPANIYOR
-    } // <-- ✅ runSignalAnalysisBtn if'i burada bitti
+      return; // bu if bloğu burada kapanıyor
+    }
 
     // 2) AYARLARA GERİ DÖN
     if (target.closest('#backToSettingsBtn')) {
       document.getElementById('discoverySettingsPanel').style.display = 'block';
       document.getElementById('discoveryResultsPanel').style.display = 'none';
+
+      // önceki analiz çıktısını ve spinner'ı temizle
+      const resultEl = document.getElementById('signalAnalysisResultContainer');
+      if (resultEl) resultEl.innerHTML = '';
+
+      const btn = document.querySelector('#runSignalAnalysisBtn');
+      if (btn) hideLoading(btn);
+
+      document.getElementById('discoverySettingsPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
 
@@ -361,8 +370,9 @@ function setupStrategyDiscoveryListeners(parentElement) {
       await deleteDnaProfile(profileId, containerId);
       return;
     }
-  }); // <-- addEventListener burada doğru şekilde kapanıyor
-} // <-- setupStrategyDiscoveryListeners fonksiyonu burada doğru şekilde kapanıyor
+  });
+}
+
 
 
 function setupPivotPageActionListeners(parentElement) {
