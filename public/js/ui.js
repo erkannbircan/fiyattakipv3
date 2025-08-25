@@ -403,19 +403,23 @@ function saveChartState() {
     }
 }
 
+// ui.js — TAMAMINI DEĞİŞTİR (renderSignalAnalysisPreview)
 async function renderSignalAnalysisPreview(data) {
     const resultContainer = document.getElementById('signalAnalysisResultContainer');
     if (!resultContainer) return;
 
     if (!data || Object.keys(data).length === 0) {
-        resultContainer.innerHTML = `<p style="text-align: center; color: var(--text-secondary); padding: 20px;">Analiz için sonuç bulunamadı.</p>`;
+        resultContainer.innerHTML = `<p style="text-align:center;color:var(--text-secondary);padding:20px;">Analiz için sonuç bulunamadı.</p>`;
         return;
     }
 
-    const getPerformanceClass = (value) => (parseFloat(value) > 0 ? 'positive' : 'negative');
-    const formatValue = (val, d=3) => (typeof val === 'number' ? val.toFixed(d) : 'N/A');
+    const getPerformanceClass = (value) => {
+        const num = parseFloat(value);
+        if (isNaN(num)) return '';
+        return num > 0 ? 'positive' : 'negative';
+    };
+    const formatValue = (val, d = 3) => (typeof val === 'number' ? val.toFixed(d) : 'N/A');
 
-    // UI seçimlerine bak (gösterim için)
     const timeframe = document.getElementById('signalAnalysisTimeframe')?.value || '1h';
 
     let finalHtml = '';
@@ -429,14 +433,14 @@ async function renderSignalAnalysisPreview(data) {
         } else if (res.status === 'preview') {
             const profileDataString = JSON.stringify(res.dnaProfile);
 
-            // 1) Olayları zamana göre (yeni->eski) sırala ve ilk 5’i al
+            // Olayları yeni->eski sırala
             const allEvents = (res.eventDetails || []).slice().sort((a,b)=> b.timestamp - a.timestamp);
             const top5 = allEvents.slice(0,5);
 
-            // 2) High/Low bazlı 1s,4s,1g MFE hesapla (gerekli klines tek sefer)
+            // High/Low bazlı 1s,4s,1g MFE (tek klines çağrısı)
             const perfMap = await computePerEventMFEviaHighLow(coin, timeframe, allEvents);
 
-            // 3) Fırsatlar tablosu + Tümünü Göster
+            // Fırsatlar (İlk 5)
             let eventsTableTop = `
                 <h5 class="setting-subtitle">Bulunan Fırsat Detayları (İlk 5)</h5>
                 <div class="table-wrapper compact"><table><thead>
@@ -463,25 +467,19 @@ async function renderSignalAnalysisPreview(data) {
             });
             eventsTableTop += '</tbody></table></div>';
 
-            // Tümünü Göster kutusu
+            // TÜM Fırsatlar (açılır/kapanır YOK — doğrudan liste)
             let eventsFullHtml = `
-                <div class="fold-box" id="allEventsBox_${coin}">
-                    <div class="fold-box-header" onclick="this.parentElement.classList.toggle('open')">
-                        <span>Tüm Fırsatları Göster</span>
-                        <button class="fold-toggle"><i class="fas fa-chevron-down"></i></button>
-                    </div>
-                    <div class="fold-box-body">
-                        <div class="table-wrapper compact"><table><thead>
-                            <tr>
-                                <th>Sinyal Zamanı</th>
-                                <th>Sinyal Fiyatı</th>
-                                <th>Hedef Zamanı</th>
-                                <th>1s MFE%</th>
-                                <th>4s MFE%</th>
-                                <th>1g MFE%</th>
-                            </tr>
-                        </thead><tbody>`;
-
+                <h5 class="setting-subtitle" style="margin-top:16px;">Tüm Fırsatlar</h5>
+                <div class="table-wrapper compact"><table><thead>
+                    <tr>
+                        <th>Sinyal Zamanı</th>
+                        <th>Sinyal Fiyatı</th>
+                        <th>Hedef Zamanı</th>
+                        <th>1s MFE%</th>
+                        <th>4s MFE%</th>
+                        <th>1g MFE%</th>
+                    </tr>
+                </thead><tbody>`;
             allEvents.forEach(ev => {
                 const p = perfMap.get(ev.timestamp) || {};
                 eventsFullHtml += `
@@ -494,37 +492,14 @@ async function renderSignalAnalysisPreview(data) {
                         <td class="${getPerformanceClass(p.mfe1d)}">${p.mfe1d!=null ? p.mfe1d.toFixed(2)+'%' : 'N/A'}</td>
                     </tr>`;
             });
-            eventsFullHtml += `</tbody></table></div></div></div>`;
+            eventsFullHtml += `</tbody></table></div>`;
 
-            // 4) Parametreleri sade dille + ilk 5 önemli (mutlak değeri en büyük olanlar)
+            // Parametre & Ortalama (İlk 5) + Tam Liste (doğrudan)
             const fo = res.dnaSummary.featureOrder || [];
             const mean = res.dnaSummary.mean || [];
             const pairs = fo.map((f,i)=>({f, m: mean[i]}));
             const sorted = pairs.slice().sort((a,b)=> Math.abs(b.m)-Math.abs(a.m));
             const top5Params = sorted.slice(0,5);
-
-            const prettyName = (k)=> {
-                const base = k.replace(/_/g,' ').toUpperCase();
-                if (k.startsWith('rsi')) return 'RSI';
-                if (k.startsWith('macd_hist')) return 'MACD Histogram';
-                if (k.startsWith('adx')) return 'ADX';
-                if (k.startsWith('volume')) return 'Hacim';
-                if (k.startsWith('atr') || k.includes('atr_pct')) return 'ATR %';
-                if (k.includes('bb_width')) return 'Bollinger Genişliği %';
-                if (k.startsWith('rv') || k.includes('rv_pct')) return 'Gerçekleşen Vol %';
-                if (k.startsWith('candle')) return 'Mum Şekli';
-                return base;
-            };
-
-            const explain = (k)=> {
-                if (k==='rsi_avg') return 'RSI ortalaması (14). 30 altı aşırı satım, 70 üstü aşırı alım.';
-                if (k==='macd_hist_slope') return 'MACD histogram eğimi. Pozitifse momentum artıyor.';
-                if (k==='volume_mult_avg') return 'Hacim / 20MA oranı. 1.5 = %50 daha yüksek hacim.';
-                if (k==='atr_pct_final') return 'ATR’nin fiyata oranı (%). Oynaklık göstergesi.';
-                if (k==='bb_width_final') return 'Bollinger bant genişliği %. Sıkışma/dalgalanma.';
-                if (k.startsWith('candle_body')) return 'Mum gövde yüzdesi. Büyük gövde = güçlü hareket.';
-                return 'Parametre';
-            };
 
             let topParamsHtml = `
                 <h5 class="setting-subtitle">Parametre & Ortalama (İlk 5)</h5>
@@ -536,23 +511,17 @@ async function renderSignalAnalysisPreview(data) {
             });
             topParamsHtml += `</tbody></table></div>`;
 
-            // Tam liste (açılır)
             let allParamsHtml = `
-                <div class="fold-box" id="allParams_${coin}">
-                    <div class="fold-box-header" onclick="this.parentElement.classList.toggle('open')">
-                        <span>Tüm Parametreleri Göster</span>
-                        <button class="fold-toggle"><i class="fas fa-chevron-down"></i></button>
-                    </div>
-                    <div class="fold-box-body">
-                        <div class="table-wrapper compact"><table><thead>
-                            <tr><th>Parametre</th><th>Değer</th><th>Açıklama</th></tr>
-                        </thead><tbody>`;
+                <h5 class="setting-subtitle" style="margin-top:16px;">Tüm Parametreler</h5>
+                <div class="table-wrapper compact"><table><thead>
+                    <tr><th>Parametre</th><th>Değer</th><th>Açıklama</th></tr>
+                </thead><tbody>`;
             pairs.forEach(p=>{
                 allParamsHtml += `<tr><td>${prettyName(p.f)}</td><td>${formatValue(p.m, 4)}</td><td style="text-align:left;">${explain(p.f)}</td></tr>`;
             });
-            allParamsHtml += `</tbody></table></div></div></div>`;
+            allParamsHtml += `</tbody></table></div>`;
 
-            // 5) DNA kısa format (kart üstünde gösterelim)
+            // Kısa DNA formatı
             const dnaFormat = buildDnaShortFormat(res.dnaSummary.featureOrder, res.dnaSummary.mean);
 
             contentHtml = `
@@ -579,20 +548,18 @@ async function renderSignalAnalysisPreview(data) {
                     <button class="btn-primary save-dna-btn" data-profile='${profileDataString}'>
                         <i class="fas fa-floppy-disk"></i> ${res.dnaProfile.name} Profilini Kaydet
                     </button>
-                    <div style="margin-top:8px; color:var(--text-secondary); font-size:.85rem;">
-                        Kaydettikten sonra DNA Kütüphanesi’nden test edebilir ve canlı taramada kullanabilirsiniz.
-                    </div>
                 </div>`;
         }
-        
+
         finalHtml += `<div class="analysis-result-card">
                         <div class="analysis-card-header"><h4>${coinSymbol} Analiz Sonuçları</h4></div>
                         ${contentHtml}
                       </div>`;
     }
+
     resultContainer.innerHTML = finalHtml;
 
-    // Yardımcılar
+    // === Yardımcılar (aynı fonksiyon içinde) ===
     function buildDnaShortFormat(order, mean){
         if (!order || !mean) return '-';
         const parts = [];
@@ -626,7 +593,6 @@ async function renderSignalAnalysisPreview(data) {
 
         // Her event için index bul: en yakın açık zamanı
         for (const ev of events) {
-            // ev.timestamp zaten mum açılış zamanına yakın geliyorsa direkt bulur, aksi halde yakın olanı arayalım
             let i = idxByTs.get(ev.timestamp);
             if (i==null){
                 // en yakın mum
@@ -648,11 +614,17 @@ async function renderSignalAnalysisPreview(data) {
                 const lows  = slice.map(k=>Number(k[3]));
                 const maxH = Math.max(...highs);
                 const minL = Math.min(...lows);
-                const upMFE = ((maxH - entry)/entry)*100;
-                const downMFE = ((minL - entry)/entry)*100;
-                const mfe = upMFE; // yönü UI tarafında bilinmiyorsa yükseliş MFE
-                const t = new Date(slice[slice.length-1][0]).toLocaleString('tr-TR');
-                return { mfe, t };
+
+                // En yüksek ve en düşük değere ulaşılan zamanı bul
+                const idxH = highs.indexOf(maxH);
+                const idxL = lows.indexOf(minL);
+                const t1 = slice[Math.min(idxH, idxL)] ? new Date(Number(slice[Math.min(idxH, idxL)][0])).toLocaleString('tr-TR') : '-';
+
+                // Yükseliş/düşüş yüzdesi (MFE mantığı)
+                const upPct = ((maxH - entry)/entry)*100;
+                const dnPct = ((minL - entry)/entry)*100;
+
+                return { mfe: upPct, t1 };
             };
 
             const p1 = makePerf(60);
@@ -660,14 +632,15 @@ async function renderSignalAnalysisPreview(data) {
             const pD = makePerf(1440);
 
             out.set(ev.timestamp, {
-                mfe1h: p1.mfe, mfe4h: p4.mfe, mfe1d: pD.mfe,
-                t1: p1.t
+                mfe1h: p1.mfe,
+                mfe4h: p4.mfe,
+                mfe1d: pD.mfe,
+                t1: p1.t1 || p4.t1 || pD.t1 || '-'
             });
         }
         return out;
     }
 }
-
 
 
 async function renderAlarmReports() {
