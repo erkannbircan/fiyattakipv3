@@ -101,40 +101,57 @@ function runBacktest(alarmId) {
         });
 }
 
-// API önizleme: findSignalDNA çağır, sonucu UI'ye bas
+// api.js — Strateji keşfi önizleme
 async function runSignalAnalysisPreview(params) {
   try {
-    // findSignalDNA fonksiyonunu güvenle bul
-    const callFn =
-      (typeof window !== 'undefined' && typeof window.findSignalDNA === 'function')
-        ? window.findSignalDNA
-        : (typeof findSignalDNA === 'function' ? findSignalDNA : null);
-
-    const rc = document.getElementById('signalAnalysisResultContainer');
-
-    if (!callFn) {
-      console.error('findSignalDNA tanımlı değil (script sırası?).');
-      if (rc) rc.innerHTML = `<div class="error-msg">Analiz servisi yüklenemedi. Lütfen sayfayı yenileyin.</div>`;
-      return {};
+    // Güvenlik: zorunlu alan kontrolü
+    if (!params || !Array.isArray(params.coins) || params.coins.length === 0) {
+      const msg = 'Analiz edilecek en az bir coin seçin.';
+      console.warn(msg);
+      renderSignalAnalysisPreview({ info: { status:'info', message: msg } });
+      return;
     }
 
-    const resp = await callFn(params);
-    console.log('findSignalDNA sonucu:', resp);
-
-    const data = resp && resp.data ? resp.data : {};
-    if (typeof renderSignalAnalysisPreview === 'function') {
-      await renderSignalAnalysisPreview(data);
-    } else if (rc) {
-      rc.innerHTML = `<pre style="white-space:pre-wrap;">${JSON.stringify(data, null, 2)}</pre>`;
+    // Kütüphane yüklendi mi?
+    if (typeof window.findSignalDNA !== 'function') {
+      console.error('findSignalDNA tanımlı değil. (script sırası / 404?)');
+      renderSignalAnalysisPreview({
+        info: {
+          status: 'error',
+          message: 'Analiz kütüphanesi yüklenemedi (findSignalDNA). Lütfen sayfayı yenileyin.'
+        }
+      });
+      return;
     }
-    return data;
+
+    // Her coin için analiz
+    const out = {};
+    for (const coin of params.coins) {
+      const one = await window.findSignalDNA({
+        coin,
+        timeframe: params.timeframe,
+        changePercent: params.changePercent,
+        direction: params.direction,
+        days: params.days,
+        lookbackCandles: params.lookbackCandles,
+        lookaheadCandles: params.lookaheadCandles,
+        lookaheadMode: params.lookaheadMode,
+        params: params.params,
+        isPreview: true
+      });
+      out[coin] = one;
+    }
+
+    console.log('findSignalDNA sonucu:', out);
+    renderSignalAnalysisPreview(out);
   } catch (err) {
     console.error('runSignalAnalysisPreview hata:', err);
-    const rc = document.getElementById('signalAnalysisResultContainer');
-    if (rc) rc.innerHTML = `<div class="error-msg">Analiz sırasında hata oluştu.</div>`;
-    throw err;
+    renderSignalAnalysisPreview({
+      info: { status:'error', message:'Analiz sırasında beklenmeyen bir hata oluştu.' }
+    });
   }
 }
+
 
 
 async function saveDnaProfile(profileData, button) {
