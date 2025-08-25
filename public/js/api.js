@@ -100,21 +100,32 @@ function runBacktest(alarmId) {
             container.innerHTML = `<p style="color:var(--accent-red)">Hata: ${errorMessage}</p>`;
         });
 }
-// API önizleme: veriyi çek, UI'ye bas
+
+// API önizleme: findSignalDNA çağır, sonucu UI'ye bas
 async function runSignalAnalysisPreview(params) {
   try {
-    const resp = await findSignalDNA(params); // sunucu çağrısı
+    // findSignalDNA fonksiyonunu güvenle bul
+    const callFn =
+      (typeof window !== 'undefined' && typeof window.findSignalDNA === 'function')
+        ? window.findSignalDNA
+        : (typeof findSignalDNA === 'function' ? findSignalDNA : null);
+
+    const rc = document.getElementById('signalAnalysisResultContainer');
+
+    if (!callFn) {
+      console.error('findSignalDNA tanımlı değil (script sırası?).');
+      if (rc) rc.innerHTML = `<div class="error-msg">Analiz servisi yüklenemedi. Lütfen sayfayı yenileyin.</div>`;
+      return {};
+    }
+
+    const resp = await callFn(params);
     console.log('findSignalDNA sonucu:', resp);
 
-    const data = (resp && resp.data) ? resp.data : {};
-    // Hedef container her zaman aynı id
+    const data = resp && resp.data ? resp.data : {};
     if (typeof renderSignalAnalysisPreview === 'function') {
       await renderSignalAnalysisPreview(data);
-    } else {
-      const rc = document.getElementById('signalAnalysisResultContainer');
-      if (rc) {
-        rc.innerHTML = `<pre style="white-space:pre-wrap;">${JSON.stringify(data, null, 2)}</pre>`;
-      }
+    } else if (rc) {
+      rc.innerHTML = `<pre style="white-space:pre-wrap;">${JSON.stringify(data, null, 2)}</pre>`;
     }
     return data;
   } catch (err) {
@@ -124,6 +135,7 @@ async function runSignalAnalysisPreview(params) {
     throw err;
   }
 }
+
 
 async function saveDnaProfile(profileData, button) {
     if (button) showLoading(button);
