@@ -267,9 +267,8 @@ function setupStrategyDiscoveryListeners(parentElement) {
         dnaParams[cb.dataset.param] = true;
       });
 
-      // Lookback (akıllıysa hesapla)
+      // Lookback & Lookahead
       let lookbackCandles = parseInt(document.getElementById('signalLookbackCandles').value) || 3;
-      // Lookahead seçimleri
       const fixedPreset = document.getElementById('fixedLookaheadPreset').value; // auto/1h/4h/1d
       const customLookaheadCandles = parseInt(document.getElementById('customLookaheadCandles').value) || 0;
 
@@ -288,6 +287,7 @@ function setupStrategyDiscoveryListeners(parentElement) {
           } else if (smart?.lookahead) {
             lookaheadCandles = smart.lookahead;
           }
+
           // rozetleri güncelle
           updateSmartBadges(smart);
 
@@ -306,37 +306,37 @@ function setupStrategyDiscoveryListeners(parentElement) {
 
           console.log('Sunucuya gönderilen analiz parametreleri:', params);
 
+          // Sonuç kutusuna yükleniyor yaz
           const rc = document.getElementById('signalAnalysisResultContainer');
-if (rc) {
-  rc.innerHTML = `<div class="loading" style="padding:12px;">Analiz sonuçları hazırlanıyor...</div>`;
-  const panel = document.getElementById('discoveryResultsPanel');
-  if (panel) panel.style.display = 'block';
-  panel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          if (rc) {
+            rc.innerHTML = `<div class="loading" style="padding:12px;">Analiz sonuçları hazırlanıyor...</div>`;
+            const panel = document.getElementById('discoveryResultsPanel');
+            if (panel) panel.style.display = 'block';
+            panel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
 
           if (typeof runSignalAnalysisPreview !== 'function') {
-  console.error('runSignalAnalysisPreview bulunamadı.');
-  showNotification('Analiz fonksiyonu yüklenemedi. Lütfen sayfayı tazeleyin.', false);
+            console.error('runSignalAnalysisPreview bulunamadı.');
+            showNotification('Analiz fonksiyonu yüklenemedi. Lütfen sayfayı tazeleyin.', false);
 
-  const rc = document.getElementById('signalAnalysisResultContainer');
-  if (rc) rc.innerHTML = `<div class="error-msg">Analiz fonksiyonu yüklenemedi.</div>`;
-  const panel = document.getElementById('discoveryResultsPanel');
-  if (panel) panel.style.display = 'block';
+            if (rc) rc.innerHTML = `<div class="error-msg">Analiz fonksiyonu yüklenemedi.</div>`;
+            const panel = document.getElementById('discoveryResultsPanel');
+            if (panel) panel.style.display = 'block';
 
-  return Promise.resolve(); // zinciri bozmamak için
-}
-
+            return Promise.resolve(); // zinciri bozmamak için
+          }
 
           return runSignalAnalysisPreview(params);
         })
         .catch(err => {
-  console.error('Analiz hatası:', err);
-  showNotification('Analiz sırasında hata oluştu.', false);
+          console.error('Analiz hatası:', err);
+          showNotification('Analiz sırasında hata oluştu.', false);
 
-  const rc = document.getElementById('signalAnalysisResultContainer');
-  if (rc) rc.innerHTML = `<div class="error-msg">Analiz sırasında hata oluştu.</div>`;
-  const panel = document.getElementById('discoveryResultsPanel');
-  if (panel) panel.style.display = 'block';
-})
+          const rc = document.getElementById('signalAnalysisResultContainer');
+          if (rc) rc.innerHTML = `<div class="error-msg">Analiz sırasında hata oluştu.</div>`;
+          const panel = document.getElementById('discoveryResultsPanel');
+          if (panel) panel.style.display = 'block';
+        })
         .finally(() => { hideLoading(btn); });
 
       return; // bu if bloğu burada kapanıyor
@@ -347,7 +347,7 @@ if (rc) {
       document.getElementById('discoverySettingsPanel').style.display = 'block';
       document.getElementById('discoveryResultsPanel').style.display = 'none';
 
-      // önceki analiz çıktısını ve spinner'ı temizle
+      // önceki analiz çıktısını temizle
       const resultEl = document.getElementById('signalAnalysisResultContainer');
       if (resultEl) resultEl.innerHTML = '';
 
@@ -382,6 +382,7 @@ if (rc) {
     }
   });
 }
+
 
 
 
