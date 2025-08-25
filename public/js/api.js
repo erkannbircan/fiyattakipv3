@@ -100,45 +100,31 @@ function runBacktest(alarmId) {
             container.innerHTML = `<p style="color:var(--accent-red)">Hata: ${errorMessage}</p>`;
         });
 }
-function runSignalAnalysisPreview(params) {
-    if (!params) {
-        console.error("runSignalAnalysisPreview çağrıldı ancak parametreler eksik.");
-        return Promise.reject("Parametreler eksik.");
+// API önizleme: veriyi çek, UI'ye bas
+async function runSignalAnalysisPreview(params) {
+  try {
+    const resp = await findSignalDNA(params); // sunucu çağrısı
+    console.log('findSignalDNA sonucu:', resp);
+
+    const data = (resp && resp.data) ? resp.data : {};
+    // Hedef container her zaman aynı id
+    if (typeof renderSignalAnalysisPreview === 'function') {
+      await renderSignalAnalysisPreview(data);
+    } else {
+      const rc = document.getElementById('signalAnalysisResultContainer');
+      if (rc) {
+        rc.innerHTML = `<pre style="white-space:pre-wrap;">${JSON.stringify(data, null, 2)}</pre>`;
+      }
     }
-    
-    if (params.coins.length === 0) {
-        showNotification("Lütfen en az bir coin seçin.", false);
-        return Promise.resolve();
-    }
-    
-    const resultContainer = document.getElementById('signalAnalysisResultContainer');
-    resultContainer.innerHTML = '<div class="loading" style="margin: 20px auto; display:block;"></div>';
-    
-    const findSignalDNAFunc = state.firebase.functions.httpsCallable('findSignalDNA');
-    
-    return findSignalDNAFunc(params)
-        .then(result => {
-            console.log("findSignalDNA sonucu:", result);
-            renderSignalAnalysisPreview(result.data);
-        })
-        .catch(error => {
-            console.error("findSignalDNA Hatası:", error);
-            
-            let errorMessage = "Bilinmeyen hata oluştu.";
-            if (error.code) {
-                switch (error.code) {
-                    case 'unauthenticated': errorMessage = "Oturum süresi dolmuş. Lütfen tekrar giriş yapın."; break;
-                    case 'invalid-argument': errorMessage = "Geçersiz parametre gönderildi."; break;
-                    case 'internal': errorMessage = error.message || "İç sunucu hatası oluştu."; break;
-                    default: errorMessage = error.message || errorMessage;
-                }
-            } else if (error.message) {
-                errorMessage = error.message;
-            }
-            
-            resultContainer.innerHTML = `<p style="color:var(--accent-red); padding: 10px;"><strong>Analiz sırasında bir hata oluştu.</strong><br>Detay: ${errorMessage}<br><small>Hata Kodu: ${error.code || 'Bilinmiyor'}</small></p>`;
-        });
+    return data;
+  } catch (err) {
+    console.error('runSignalAnalysisPreview hata:', err);
+    const rc = document.getElementById('signalAnalysisResultContainer');
+    if (rc) rc.innerHTML = `<div class="error-msg">Analiz sırasında hata oluştu.</div>`;
+    throw err;
+  }
 }
+
 async function saveDnaProfile(profileData, button) {
     if (button) showLoading(button);
     
