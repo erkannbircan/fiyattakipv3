@@ -13,6 +13,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-functions-compat.js"></script>
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%231e222d'/%3E%3Cpath d='M16 36l8-16 8 12 8-6 8 14' stroke='%23f59e0b' stroke-width='4' fill='none'/%3E%3C/svg%3E">
 </head>
 <body>
     <div id="app-loader" class="page" style="justify-content: center; align-items: center; display: flex;">
@@ -161,28 +162,44 @@
   </div>
 </div>
 
-                            <div class="analysis-actions">
-                                <button id="runSignalAnalysisBtn"><i class="fas fa-search-dollar"></i> Stratejiyi Analiz Et</button>
-                            </div>
-                            <div class="navigation-box">
-                                <p>Oluşturduğunuz DNA profillerini görüntülemek, yönetmek ve test etmek için:</p>
-                                <a href="./backtest.html" class="primary-button">
-                                    DNA Kütüphanesi ve Test Merkezine Git <i class="fas fa-arrow-right"></i>
-                                </a>
-                            </div>
+                           <!-- ANALİZ AKSİYONU: tek buton -->
+<div class="analysis-actions">
+  <button id="runSignalAnalysisBtn">
+    <i class="fas fa-search-dollar"></i> Stratejiyi Analiz Et
+  </button>
+</div>
+
+<!-- Bilgi / navigasyon -->
+<div class="navigation-box">
+  <p>Oluşturduğunuz DNA profillerini görüntülemek, yönetmek ve test etmek için:</p>
+  <a href="./backtest.html" class="primary-button">
+    DNA Kütüphanesi ve Test Merkezine Git <i class="fas fa-arrow-right"></i>
+  </a>
+</div>
+
                         </div>
                     </div>
                     
-                    <div id="discoveryResultsPanel" style="display:none;">
-  <div class="analysis-toolbar">
-    <button id="backToSettingsBtn" class="fold-toggle"><i class="fas fa-arrow-left"></i> Ayarlara Geri Dön</button>
+<div class="discovery-results-panel" id="discoveryResultsPanel" style="display:none;">
+  <div class="collapsible open">
+    <div class="collapsible-header open">
+      <span><i class="fas fa-flask"></i> Analiz Sonuçları</span>
+      <div class="table-controls">
+        <button id="backToSettingsBtn" class="action-btn-sm">
+          <i class="fas fa-arrow-left"></i> Ayarlara Geri Dön
+        </button>
+      </div>
+    </div>
+
+    <div class="collapsible-content open">
+      <!-- SONUÇLARIN DOLDURULACAĞI KONTEYNER -->
+      <div id="signalAnalysisResultContainer">
+        <!-- JS burayı dolduracak -->
+      </div>
+    </div>
   </div>
-  <div id="signalAnalysisResultContainer"></div>
 </div>
 
-                    </div>
-        </div>
-    </div>
     
     <div id="settingsPanel" class="panel"> </div>
     <div id="detailPanel" class="panel"> </div>
