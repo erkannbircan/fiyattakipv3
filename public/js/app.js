@@ -3,15 +3,42 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initializeApp() {
-    firebase.initializeApp(firebaseConfig);
-    state.firebase.auth = firebase.auth();
-    state.firebase.db = firebase.firestore();
-    state.firebase.functions = firebase.app().functions('europe-west1');
+    // Firebase güvenlik kontrolü
+    if (typeof firebase === 'undefined' || !firebase.initializeApp) {
+        console.error('Firebase SDK yüklenmedi ya da sırası yanlış. Lütfen <script src="firebase-*.js"> etiketlerini kontrol et.');
+        return;
+    }
 
-    setupGlobalEventListeners();
-    setupAuthEventListeners();
+    try {
+        // Tekrar initialize denemelerinde hata atmaması için try/catch
+        if (!firebase.apps || !firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        state.firebase.auth = firebase.auth();
+        state.firebase.db = firebase.firestore();
+        state.firebase.functions = firebase.app().functions('europe-west1');
+    } catch (e) {
+        console.error('Firebase init hatası:', e);
+        return;
+    }
+
+    // Bu fonksiyonlar bazı sayfalarda/yük sıralarında henüz gelmemiş olabilir.
+    if (typeof window.setupGlobalEventListeners === 'function') {
+        window.setupGlobalEventListeners();
+    } else {
+        console.warn('setupGlobalEventListeners henüz yüklenmemiş.');
+    }
+
+    if (typeof window.setupAuthEventListeners === 'function') {
+        window.setupAuthEventListeners();
+    } else {
+        console.warn('setupAuthEventListeners henüz yüklenmemiş.');
+    }
+
+    // Bu dosyada tanımlı olduğu için güvenle çağırabiliriz
     initializeAuthListener();
 }
+
 
 function initializeAuthListener() {
     state.firebase.auth.onAuthStateChanged(async user => {
