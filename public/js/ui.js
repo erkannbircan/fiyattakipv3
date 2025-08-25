@@ -51,6 +51,19 @@ function hideLoading(button) {
     }
     button.disabled = false;
 }
+if (typeof window.getKlines !== 'function') {
+    window.getKlines = async (symbol, interval = '1h', limit = 1000) => {
+        try {
+            const res = await fetch(
+              `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`
+            );
+            return await res.json();
+        } catch (e) {
+            console.error('getKlines hata:', e);
+            return [];
+        }
+    };
+}
 
 const formatPrice = (price) => {
     const num = parseFloat(price);
