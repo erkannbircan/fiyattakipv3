@@ -949,4 +949,13 @@ input:checked + .slider:before { transform: translateX(24px); }
 #discoverySettingsPanel #runSignalAnalysisBtn ~ #runSignalAnalysisBtn {
   display: none !important;
 }
-
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #2b2b3b;
+  border-top-color: #6aa3ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 12px auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
