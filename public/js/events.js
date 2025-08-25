@@ -273,62 +273,62 @@ function setupStrategyDiscoveryListeners(parentElement) {
     let customLookaheadCandles = parseInt(document.getElementById('customLookaheadCandles').value) || 0;
 
     computeSmartDiscoveryHints({ timeframe, days })
-        .then(smart => {
-            if (useSmartLookback && smart?.lookback) {
-                lookbackCandles = smart.lookback;
-                document.getElementById('signalLookbackCandles').value = lookbackCandles;
-            }
-            // lookahead: öncelik -> custom > preset > smart
-            let lookaheadCandles = 0;
-            if (customLookaheadCandles > 0) {
-                lookaheadCandles = customLookaheadCandles;
-            } else if (fixedPreset !== 'auto') {
-                lookaheadCandles = presetToCandles(fixedPreset, timeframe);
-            } else if (smart?.lookahead) {
-                lookaheadCandles = smart.lookahead;
-            }
-            // rozetleri güncelle
-            updateSmartBadges(smart);
+  .then(smart => {
+    if (useSmartLookback && smart?.lookback) {
+      lookbackCandles = smart.lookback;
+      document.getElementById('signalLookbackCandles').value = lookbackCandles;
+    }
+    // lookahead: öncelik -> custom > preset > smart
+    let lookaheadCandles = 0;
+    if (customLookaheadCandles > 0) {
+      lookaheadCandles = customLookaheadCandles;
+    } else if (fixedPreset !== 'auto') {
+      lookaheadCandles = presetToCandles(fixedPreset, timeframe);
+    } else if (smart?.lookahead) {
+      lookaheadCandles = smart.lookahead;
+    }
+    // rozetleri güncelle
+    updateSmartBadges(smart);
 
-            const params = {
-                coins: state.discoveryCoins,
-                timeframe,
-                changePercent,
-                direction,
-                days,
-                lookbackCandles,
-                lookaheadCandles,      // YENİ
-                lookaheadMode: (customLookaheadCandles>0 ? 'custom' : (fixedPreset!=='auto' ? fixedPreset : 'smart')), // YENİ
-                params: dnaParams,
-                isPreview: true
-            };
+    const params = {
+      coins: state.discoveryCoins,
+      timeframe,
+      changePercent,
+      direction,
+      days,
+      lookbackCandles,
+      lookaheadCandles,
+      lookaheadMode: (customLookaheadCandles>0 ? 'custom' : (fixedPreset!=='auto' ? fixedPreset : 'smart')),
+      params: dnaParams,
+      isPreview: true
+    };
 
-            console.log('Sunucuya gönderilen analiz parametreleri:', params);
+    console.log('Sunucuya gönderilen analiz parametreleri:', params);
 
-           // ...
-            document.getElementById('discoverySettingsPanel').style.display = 'none';
-            document.getElementById('discoveryResultsPanel').style.display = 'block';
-            
-            if (typeof runSignalAnalysisPreview !== 'function') {
-                console.error('runSignalAnalysisPreview bulunamadı.');
-                showNotification('Analiz fonksiyonu yüklenemedi. Lütfen sayfayı tazeleyin.', false);
-                // geri al: kullanıcı boş sayfada kalmasın
-                document.getElementById('discoverySettingsPanel').style.display = 'block';
-                document.getElementById('discoveryResultsPanel').style.display = 'none';
-                return;
-            }
-            return runSignalAnalysisPreview(params).catch(err => {
-                console.error('Analiz hatası:', err);
-                showNotification('Analiz sırasında hata oluştu.', false);
-                document.getElementById('discoverySettingsPanel').style.display = 'block';
-                document.getElementById('discoveryResultsPanel').style.display = 'none';
-        })
-        .finally(() => { hideLoading(btn); });
+    // Görünürlük
+    document.getElementById('discoverySettingsPanel').style.display = 'none';
+    document.getElementById('discoveryResultsPanel').style.display = 'block';
 
-    return;
-}
+    if (typeof runSignalAnalysisPreview !== 'function') {
+      console.error('runSignalAnalysisPreview bulunamadı.');
+      showNotification('Analiz fonksiyonu yüklenemedi. Lütfen sayfayı tazeleyin.', false);
+      // geri al
+      document.getElementById('discoverySettingsPanel').style.display = 'block';
+      document.getElementById('discoveryResultsPanel').style.display = 'none';
+      return Promise.resolve(); // zinciri bozmamak için
+    }
 
-        
+    return runSignalAnalysisPreview(params);
+  })
+  .catch(err => {
+    console.error('Analiz hatası:', err);
+    showNotification('Analiz sırasında hata oluştu.', false);
+    document.getElementById('discoverySettingsPanel').style.display = 'block';
+    document.getElementById('discoveryResultsPanel').style.display = 'none';
+  })
+  .finally(() => { hideLoading(btn); });
+
+return; 
         // "Ayarlara Geri Dön" butonu
         if (target.closest('#backToSettingsBtn')) {
             document.getElementById('discoverySettingsPanel').style.display = 'block';
@@ -517,4 +517,41 @@ function updateSmartBadges(smart){
     if (smart && lb) lb.textContent = `Öneri: ${smart.lookback} mum (ATR% ${smart.atrPct})`;
     if (smart && la) la.textContent = `Öneri: ${smart.lookahead} mum`;
 }
-
+/* === window'a sabitleme (global export) === */
+(() => {
+  if (typeof window === 'undefined') return;
+  try {
+    if (typeof setupGlobalEventListeners === 'function')
+      window.setupGlobalEventListeners = window.setupGlobalEventListeners || setupGlobalEventListeners;
+    if (typeof setupAuthEventListeners === 'function')
+      window.setupAuthEventListeners = window.setupAuthEventListeners || setupAuthEventListeners;
+    if (typeof setupTrackerPageEventListeners === 'function')
+      window.setupTrackerPageEventListeners = window.setupTrackerPageEventListeners || setupTrackerPageEventListeners;
+    if (typeof setupTabEventListeners === 'function')
+      window.setupTabEventListeners = window.setupTabEventListeners || setupTabEventListeners;
+    if (typeof setupPanelEventListeners === 'function')
+      window.setupPanelEventListeners = window.setupPanelEventListeners || setupPanelEventListeners;
+    if (typeof setupActionEventListeners === 'function')
+      window.setupActionEventListeners = window.setupActionEventListeners || setupActionEventListeners;
+    if (typeof setupReportEventListeners === 'function')
+      window.setupReportEventListeners = window.setupReportEventListeners || setupReportEventListeners;
+    if (typeof setupCoinManagerEventListeners === 'function')
+      window.setupCoinManagerEventListeners = window.setupCoinManagerEventListeners || setupCoinManagerEventListeners;
+    if (typeof setupAiPageActionListeners === 'function')
+      window.setupAiPageActionListeners = window.setupAiPageActionListeners || setupAiPageActionListeners;
+    if (typeof setupStrategyDiscoveryListeners === 'function')
+      window.setupStrategyDiscoveryListeners = window.setupStrategyDiscoveryListeners || setupStrategyDiscoveryListeners;
+    if (typeof setupPivotPageActionListeners === 'function')
+      window.setupPivotPageActionListeners = window.setupPivotPageActionListeners || setupPivotPageActionListeners;
+    if (typeof setupScannerEventListeners === 'function')
+      window.setupScannerEventListeners = window.setupScannerEventListeners || setupScannerEventListeners;
+    if (typeof setupSaveSettingsButtonListener === 'function')
+      window.setupSaveSettingsButtonListener = window.setupSaveSettingsButtonListener || setupSaveSettingsButtonListener;
+    if (typeof setupUpdateAnalysisButtonListener === 'function')
+      window.setupUpdateAnalysisButtonListener = window.setupUpdateAnalysisButtonListener || setupUpdateAnalysisButtonListener;
+    if (typeof setupBacktestPageEventListeners === 'function')
+      window.setupBacktestPageEventListeners = window.setupBacktestPageEventListeners || setupBacktestPageEventListeners;
+  } catch (e) {
+    console.warn('Global export hatası:', e);
+  }
+})();
