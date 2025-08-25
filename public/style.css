@@ -874,3 +874,46 @@ input:checked + .slider:before { transform: translateX(24px); }
 .fold-box-body { display:none; background:var(--bg-secondary); }
 .fold-box.open .fold-box-body { display:block; }
 .fold-toggle { background:none; color:var(--text-secondary); border:1px solid var(--border-color); padding:6px 10px; border-radius:8px; cursor:pointer; }
+/* --- 2 sütunlu form düzeni --- */
+.form-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 900px) {
+  .form-2col { grid-template-columns: 1fr; }
+}
+
+.form-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.form-row label { color: var(--text-secondary); }
+.form-row .inline { display:flex; gap:10px; align-items:center; }
+.form-row .inline.wrap { flex-wrap:wrap; }
+.form-row .check-inline { display:flex; gap:6px; align-items:center; font-size:.9rem; color:var(--text-secondary); }
+.form-row .muted { color: var(--text-secondary); font-size:.9rem; }
+.form-row.actions { grid-template-columns: 1fr; }
+.form-row.actions .btn-primary { width: fit-content; }
+
+.param-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  gap: 8px 16px;
+  margin-top: 8px;
+}
+.param-grid .param { display:flex; gap:8px; align-items:center; }
+
+.analysis-toolbar { display:flex; justify-content:flex-start; margin: 8px 0 12px; }
+
+/* var olan .smart-badge ve .btn-primary stillerin varsa aynı kalsın; yoksa önceki mesajımdaki halleri kullanılabilir */
