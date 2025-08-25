@@ -255,94 +255,105 @@ function setupStrategyDiscoveryListeners(parentElement) {
       const btn = target.closest('#runSignalAnalysisBtn');
       showLoading(btn);
 
-      try {
-        const timeframe = document.getElementById('signalAnalysisTimeframe').value;
-        const days = parseInt(document.getElementById('signalAnalysisPeriod').value);
-        const changePercent = parseFloat(document.getElementById('signalAnalysisChange').value);
-        const direction = document.getElementById('signalAnalysisDirection').value;
-        const useSmartLookback = document.getElementById('useSmartLookback')?.checked;
+      const timeframe = document.getElementById('signalAnalysisTimeframe').value;
+      const days = parseInt(document.getElementById('signalAnalysisPeriod').value);
+      const changePercent = parseFloat(document.getElementById('signalAnalysisChange').value);
+      const direction = document.getElementById('signalAnalysisDirection').value;
+      const useSmartLookback = document.getElementById('useSmartLookback').checked;
 
-        // DNA parametreleri
-        const dnaParams = {};
-        document
-          .querySelectorAll('#signalDnaParamsGrid input[type="checkbox"]:checked')
-          .forEach(cb => { dnaParams[cb.dataset.param] = true; });
+      // DNA parametreleri
+      const dnaParams = {};
+      document.querySelectorAll('#signalDnaParamsGrid input[type="checkbox"]:checked').forEach(cb => {
+        dnaParams[cb.dataset.param] = true;
+      });
 
-        // Lookback & Lookahead
-        let lookbackCandles = parseInt(document.getElementById('signalLookbackCandles').value) || 3;
-        const fixedPreset = document.getElementById('fixedLookaheadPreset')?.value || 'auto';
-        const customLookaheadCandles = parseInt(document.getElementById('customLookaheadCandles')?.value) || 0;
+      // Lookback (akıllıysa hesapla)
+      let lookbackCandles = parseInt(document.getElementById('signalLookbackCandles').value) || 3;
+      // Lookahead seçimleri
+      const fixedPreset = document.getElementById('fixedLookaheadPreset').value; // auto/1h/4h/1d
+      const customLookaheadCandles = parseInt(document.getElementById('customLookaheadCandles').value) || 0;
 
-        // Akıllı öneriler
-        let smart = null;
-        try {
-          smart = await computeSmartDiscoveryHints({ timeframe, days });
-        } catch (_) { /* sessizce geç */ }
-
-        if (useSmartLookback && smart?.lookback) {
-          lookbackCandles = smart.lookback;
-          const lb = document.getElementById('signalLookbackCandles');
-          if (lb) lb.value = lookbackCandles;
-        }
-
-        let lookaheadCandles = 0;
-        if (customLookaheadCandles > 0) {
-          lookaheadCandles = customLookaheadCandles;
-        } else if (fixedPreset !== 'auto') {
-          lookaheadCandles = presetToCandles(fixedPreset, timeframe);
-        } else if (smart?.lookahead) {
-          lookaheadCandles = smart.lookahead;
-        }
-
-        if (typeof updateSmartBadges === 'function') {
+      computeSmartDiscoveryHints({ timeframe, days })
+        .then(smart => {
+          if (useSmartLookback && smart?.lookback) {
+            lookbackCandles = smart.lookback;
+            document.getElementById('signalLookbackCandles').value = lookbackCandles;
+          }
+          // lookahead: öncelik -> custom > preset > smart
+          let lookaheadCandles = 0;
+          if (customLookaheadCandles > 0) {
+            lookaheadCandles = customLookaheadCandles;
+          } else if (fixedPreset !== 'auto') {
+            lookaheadCandles = presetToCandles(fixedPreset, timeframe);
+          } else if (smart?.lookahead) {
+            lookaheadCandles = smart.lookahead;
+          }
+          // rozetleri güncelle
           updateSmartBadges(smart);
-        }
 
-        const params = {
-          coins: state.discoveryCoins,
-          timeframe,
-          changePercent,
-          direction,
-          days,
-          lookbackCandles,
-          lookaheadCandles,
-          lookaheadMode: (customLookaheadCandles > 0 ? 'custom' : (fixedPreset !== 'auto' ? fixedPreset : 'smart')),
-          params: dnaParams,
-          isPreview: true
-        };
+          const params = {
+            coins: state.discoveryCoins,
+            timeframe,
+            changePercent,
+            direction,
+            days,
+            lookbackCandles,
+            lookaheadCandles,
+            lookaheadMode: (customLookaheadCandles > 0 ? 'custom' : (fixedPreset !== 'auto' ? fixedPreset : 'smart')),
+            params: dnaParams,
+            isPreview: true
+          };
 
-        console.log('Sunucuya gönderilen analiz parametreleri:', params);
+          console.log('Sunucuya gönderilen analiz parametreleri:', params);
 
-        // Sonuç kutusu (ayarları gizlemiyoruz)
-        const rc = document.getElementById('signalAnalysisResultContainer');
-        if (rc) {
-          rc.innerHTML = `<div class="loading" style="padding:12px;">Analiz sonuçları hazırlanıyor...</div>`;
-          rc.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+          const rc = document.getElementById('signalAnalysisResultContainer');
+if (rc) {
+  rc.innerHTML = `<div class="loading" style="padding:12px;">Analiz sonuçları hazırlanıyor...</div>`;
+  const panel = document.getElementById('discoveryResultsPanel');
+  if (panel) panel.style.display = 'block';
+  panel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-        if (typeof runSignalAnalysisPreview !== 'function') {
-          console.error('runSignalAnalysisPreview bulunamadı.');
-          showNotification('Analiz fonksiyonu yüklenemedi. Lütfen sayfayı tazeleyin.', false);
-          if (rc) rc.innerHTML = '';
-          return;
-        }
+          if (typeof runSignalAnalysisPreview !== 'function') {
+  console.error('runSignalAnalysisPreview bulunamadı.');
+  showNotification('Analiz fonksiyonu yüklenemedi. Lütfen sayfayı tazeleyin.', false);
 
-        await runSignalAnalysisPreview(params);
-      } catch (err) {
-        console.error('Analiz hatası:', err);
-        showNotification('Analiz sırasında hata oluştu.', false);
-      } finally {
-        hideLoading(btn);
-      }
-      return;
+  const rc = document.getElementById('signalAnalysisResultContainer');
+  if (rc) rc.innerHTML = `<div class="error-msg">Analiz fonksiyonu yüklenemedi.</div>`;
+  const panel = document.getElementById('discoveryResultsPanel');
+  if (panel) panel.style.display = 'block';
+
+  return Promise.resolve(); // zinciri bozmamak için
+}
+
+
+          return runSignalAnalysisPreview(params);
+        })
+        .catch(err => {
+  console.error('Analiz hatası:', err);
+  showNotification('Analiz sırasında hata oluştu.', false);
+
+  const rc = document.getElementById('signalAnalysisResultContainer');
+  if (rc) rc.innerHTML = `<div class="error-msg">Analiz sırasında hata oluştu.</div>`;
+  const panel = document.getElementById('discoveryResultsPanel');
+  if (panel) panel.style.display = 'block';
+})
+        .finally(() => { hideLoading(btn); });
+
+      return; // bu if bloğu burada kapanıyor
     }
 
-    // 2) AYARLARA GERİ DÖN (varsa)
+    // 2) AYARLARA GERİ DÖN
     if (target.closest('#backToSettingsBtn')) {
-      const rc = document.getElementById('signalAnalysisResultContainer');
-      if (rc) rc.innerHTML = '';
+      document.getElementById('discoverySettingsPanel').style.display = 'block';
+      document.getElementById('discoveryResultsPanel').style.display = 'none';
+
+      // önceki analiz çıktısını ve spinner'ı temizle
+      const resultEl = document.getElementById('signalAnalysisResultContainer');
+      if (resultEl) resultEl.innerHTML = '';
+
       const btn = document.querySelector('#runSignalAnalysisBtn');
       if (btn) hideLoading(btn);
+
       document.getElementById('discoverySettingsPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
@@ -371,7 +382,6 @@ function setupStrategyDiscoveryListeners(parentElement) {
     }
   });
 }
-
 
 
 
