@@ -108,9 +108,34 @@
                                         <input type="number" id="signalAnalysisChange" value="5" step="1">
                                     </div>
                                     <div>
-                                        <label for="signalLookbackCandles">DNA Mumu</label>
-                                        <input type="number" id="signalLookbackCandles" value="3" step="1" min="1" max="10">
+                                       <div>
+                                    <label for="signalLookbackCandles">DNA Mumu</label>
+                                    <div style="display:flex; gap:8px; align-items:center;">
+                                        <input type="number" id="signalLookbackCandles" value="3" step="1" min="1" max="20" style="flex:0 0 90px;">
+                                        <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--text-secondary);">
+                                            <input type="checkbox" id="useSmartLookback" checked>
+                                            Akıllı
+                                        </label>
+                                        <span id="smartLookbackBadge" class="smart-badge" title="Oynaklığa göre öneri">Öneri: -</span>
                                     </div>
+                                </div>
+                                <div>
+                                    <label>Gelecek Penceresi</label>
+                                    <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+                                        <select id="fixedLookaheadPreset">
+                                            <option value="auto" selected>Akıllı</option>
+                                            <option value="1h">+1 Saat</option>
+                                            <option value="4h">+4 Saat</option>
+                                            <option value="1d">+1 Gün</option>
+                                        </select>
+                                        <div style="display:flex; gap:8px; align-items:center;">
+                                            <label for="customLookaheadCandles" style="color:var(--text-secondary); font-size:0.85rem;">veya Mum:</label>
+                                            <input type="number" id="customLookaheadCandles" value="0" step="1" min="0" max="500" style="width:90px;">
+                                        </div>
+                                        <span id="smartLookaheadBadge" class="smart-badge" title="Oynaklık & timeframe bazlı öneri">Öneri: -</span>
+                                    </div>
+                                </div>
+                                
                                 </div>
                                 
                                 <h5 class="setting-subtitle" style="margin-top: 25px;">3. DNA Parametreleri</h5>
@@ -145,8 +170,6 @@
 
                         </div>
                     </div>
-                    
-            <div class="update-time"><i class="far fa-clock"></i>&nbsp;<span data-lang="last_update">Son güncelleme</span>: <span id="updateTime"></span></div>
         </div>
     </div>
     
