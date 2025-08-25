@@ -250,37 +250,70 @@ function setupStrategyDiscoveryListeners(parentElement) {
     parentElement.addEventListener('click', async (e) => {
         const target = e.target;
 
-        // "Stratejiyi Analiz Et" butonu
         if (target.closest('#runSignalAnalysisBtn')) {
-            const btn = target.closest('#runSignalAnalysisBtn');
-            showLoading(btn);
-            
-            const dnaParams = {};
-            // Sadece işaretli olan checkbox'ları seç
-            document.querySelectorAll('#signalDnaParamsGrid input[type="checkbox"]:checked').forEach(cb => {
-                dnaParams[cb.dataset.param] = true;
-            });
+    const btn = target.closest('#runSignalAnalysisBtn');
+    showLoading(btn);
+
+    const timeframe = document.getElementById('signalAnalysisTimeframe').value;
+    const days = parseInt(document.getElementById('signalAnalysisPeriod').value);
+    const changePercent = parseFloat(document.getElementById('signalAnalysisChange').value);
+    const direction = document.getElementById('signalAnalysisDirection').value;
+    const useSmartLookback = document.getElementById('useSmartLookback').checked;
+
+    // 1) DNA parametreleri
+    const dnaParams = {};
+    document.querySelectorAll('#signalDnaParamsGrid input[type="checkbox"]:checked').forEach(cb => {
+        dnaParams[cb.dataset.param] = true;
+    });
+
+    // 2) Lookback (akıllıysa hesapla)
+    let lookbackCandles = parseInt(document.getElementById('signalLookbackCandles').value) || 3;
+    // 3) Lookahead seçimleri
+    const fixedPreset = document.getElementById('fixedLookaheadPreset').value; // auto/1h/4h/1d
+    let customLookaheadCandles = parseInt(document.getElementById('customLookaheadCandles').value) || 0;
+
+    computeSmartDiscoveryHints({ timeframe, days })
+        .then(smart => {
+            if (useSmartLookback && smart?.lookback) {
+                lookbackCandles = smart.lookback;
+                document.getElementById('signalLookbackCandles').value = lookbackCandles;
+            }
+            // lookahead: öncelik -> custom > preset > smart
+            let lookaheadCandles = 0;
+            if (customLookaheadCandles > 0) {
+                lookaheadCandles = customLookaheadCandles;
+            } else if (fixedPreset !== 'auto') {
+                lookaheadCandles = presetToCandles(fixedPreset, timeframe);
+            } else if (smart?.lookahead) {
+                lookaheadCandles = smart.lookahead;
+            }
+            // rozetleri güncelle
+            updateSmartBadges(smart);
 
             const params = {
                 coins: state.discoveryCoins,
-                timeframe: document.getElementById('signalAnalysisTimeframe').value,
-                changePercent: parseFloat(document.getElementById('signalAnalysisChange').value),
-                direction: document.getElementById('signalAnalysisDirection').value,
-                days: parseInt(document.getElementById('signalAnalysisPeriod').value),
-                lookbackCandles: parseInt(document.getElementById('signalLookbackCandles').value) || 3,
+                timeframe,
+                changePercent,
+                direction,
+                days,
+                lookbackCandles,
+                lookaheadCandles,      // YENİ
+                lookaheadMode: (customLookaheadCandles>0 ? 'custom' : (fixedPreset!=='auto' ? fixedPreset : 'smart')), // YENİ
                 params: dnaParams,
                 isPreview: true
             };
-            
+
             console.log('Sunucuya gönderilen analiz parametreleri:', params);
-            
-            // Panelleri göster/gizle
+
             document.getElementById('discoverySettingsPanel').style.display = 'none';
             document.getElementById('discoveryResultsPanel').style.display = 'block';
+            return runSignalAnalysisPreview(params);
+        })
+        .finally(() => { hideLoading(btn); });
 
-            runSignalAnalysisPreview(params).finally(() => { hideLoading(btn); });
-            return;
-        }
+    return;
+}
+
         
         // "Ayarlara Geri Dön" butonu
         if (target.closest('#backToSettingsBtn')) {
@@ -408,3 +441,66 @@ function setupBacktestPageEventListeners() {
         runDnaBacktest(currentProfileId, 30, scoreThreshold, debugMode);
     }
 }
+// Timeframe → dakika
+function tfToMinutes(tf) {
+    const map = { '15m': 15, '1h': 60, '4h': 240, '1d': 1440 };
+    return map[tf] || 60;
+}
+// Preset → mum sayısı
+function presetToCandles(preset, timeframe) {
+    const m = tfToMinutes(timeframe);
+    if (preset === '1h') return Math.ceil(60 / m);
+    if (preset === '4h') return Math.ceil(240 / m);
+    if (preset === '1d') return Math.ceil(1440 / m);
+    return 0;
+}
+
+// Akıllı öneri: ATR% tabanlı, coin listesinden ilk geçerli coin ile hesap
+async function computeSmartDiscoveryHints({ timeframe, days }) {
+    try {
+        const samplePair = (state.discoveryCoins && state.discoveryCoins[0]) || 'BTCUSDT';
+        const limit = Math.min(500, Math.max(100, Math.ceil((days || 30) * (1440 / tfToMinutes(timeframe)) )));
+        const klines = await getKlines(samplePair, timeframe, limit);
+        if (!klines || klines.length < 30) return null;
+
+        // ATR% ~ basit yaklaşım
+        const closes = klines.map(k => Number(k[4]));
+        let trs = [];
+        for (let i=1;i<klines.length;i++){
+            const high = Number(klines[i][2]);
+            const low  = Number(klines[i][3]);
+            const pc   = Number(klines[i-1][4]);
+            const tr = Math.max(high - low, Math.abs(high - pc), Math.abs(low - pc));
+            trs.push(tr);
+        }
+        const N = 14;
+        const atr = average(trs.slice(-N));
+        const lastC = closes[closes.length - 1] || 0;
+        const atrPct = lastC>0 ? (atr/lastC)*100 : 0;
+
+        // Heuristik:
+        // oynaklık ↑ → lookback ↓ ; oynaklık ↓ → lookback ↑
+        // sınırlar: 2..12
+        let lookback = Math.round(clamp( (-0.7*atrPct + 10), 2, 12 ));
+        // lookahead: düşük oynaklıkta daha uzun
+        // sınırlar: 2..Math.ceil(1 gün)
+        const maxOneDay = Math.ceil(1440 / tfToMinutes(timeframe));
+        let lookahead = Math.round(clamp( (0.6* (10/Math.max(atrPct,0.5)) + 3), 2, maxOneDay ));
+
+        return { atrPct: Number(atrPct.toFixed(2)), lookback, lookahead, samplePair };
+    } catch(e){
+        console.warn('computeSmartDiscoveryHints hata:', e);
+        return null;
+    }
+
+    function average(arr){ return arr.reduce((a,b)=>a+b,0)/Math.max(1,arr.length); }
+    function clamp(x,min,max){ return Math.max(min, Math.min(max, x)); }
+}
+
+function updateSmartBadges(smart){
+    const lb = document.getElementById('smartLookbackBadge');
+    const la = document.getElementById('smartLookaheadBadge');
+    if (smart && lb) lb.textContent = `Öneri: ${smart.lookback} mum (ATR% ${smart.atrPct})`;
+    if (smart && la) la.textContent = `Öneri: ${smart.lookahead} mum`;
+}
+
