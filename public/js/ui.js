@@ -403,155 +403,244 @@ function saveChartState() {
     }
 }
 
-// === Strateji Önizleme UI ===
+// ui.js — TAMAMINI DEĞİŞTİR (renderSignalAnalysisPreview)
 async function renderSignalAnalysisPreview(data) {
-  const rc = document.getElementById('signalAnalysisResultContainer');
-  if (!rc) return;
+    const resultContainer = document.getElementById('signalAnalysisResultContainer');
+    if (!resultContainer) return;
 
-  // Hiç veri yoksa
-  if (!data || Object.keys(data).length === 0) {
-    rc.innerHTML = `<div class="empty-msg">Seçilen ayarlarda fırsat bulunamadı.</div>`;
-    return;
-  }
-
-  const timeframe = document.getElementById('signalAnalysisTimeframe')?.value || '1h';
-  const formatPct = (n) => (typeof n === 'number' ? `${n.toFixed(2)}%` : 'N/A');
-  const perfCls = (n) => (typeof n === 'number' ? (n >= 0 ? 'positive' : 'negative') : '');
-
-  let html = '';
-
-  // Her coin için kart
-  for (const coin of Object.keys(data)) {
-    const res = data[coin];
-    const sym = coin.replace('USDT','');
-
-    if (!res || res.status === 'error') {
-      html += `<div class="analysis-result-card">
-        <div class="analysis-card-header"><h4>${sym}</h4></div>
-        <div class="analysis-card-simple-message">${res?.message || 'Sonuç yok.'}</div>
-      </div>`;
-      continue;
+    if (!data || Object.keys(data).length === 0) {
+        resultContainer.innerHTML = `<p style="text-align:center;color:var(--text-secondary);padding:20px;">Analiz için sonuç bulunamadı.</p>`;
+        return;
     }
 
-    // eventDetails boşsa da kullanıcıya net mesaj
-    const events = Array.isArray(res.eventDetails) ? res.eventDetails.slice() : [];
-    const top5   = events.slice(0, 5);
-
-    // High/Low bazlı 1s-4s-1g MFE (tek klines ile)
-    const perfMap = await computePerEventMFEviaHighLow(coin, timeframe, events);
-
-    // KPI üst şerit
-    const kpi = `
-      <div class="kpi-container">
-        <div class="kpi-item"><span class="kpi-value">${res.eventCount ?? events.length}</span><span class="kpi-label">Adet Fırsat</span></div>
-        <div class="kpi-item"><span class="kpi-value ${perfCls(res.avgReturns?.['1h'])}">${formatPct(res.avgReturns?.['1h'])}</span><span class="kpi-label">1S Ort. Getiri</span></div>
-        <div class="kpi-item"><span class="kpi-value ${perfCls(res.avgReturns?.['4h'])}">${formatPct(res.avgReturns?.['4h'])}</span><span class="kpi-label">4S Ort. Getiri</span></div>
-        <div class="kpi-item"><span class="kpi-value ${perfCls(res.avgReturns?.['1d'])}">${formatPct(res.avgReturns?.['1d'])}</span><span class="kpi-label">1G Ort. Getiri</span></div>
-      </div>`;
-
-    // İlk 5 fırsat
-    let topTable = `
-      <h5 class="setting-subtitle">Bulunan Fırsat Detayları (İlk 5)</h5>
-      <div class="table-wrapper compact"><table><thead>
-        <tr><th>Sinyal Zamanı</th><th>Sinyal Fiyatı</th><th>Hedef Zamanı</th><th>1s MFE%</th><th>4s MFE%</th><th>1g MFE%</th></tr>
-      </thead><tbody>`;
-    top5.forEach(ev => {
-      const p = perfMap.get(ev.timestamp) || {};
-      topTable += `<tr>
-        <td>${new Date(ev.timestamp).toLocaleString('tr-TR')}</td>
-        <td>$${formatPrice(ev.priceBefore)}</td>
-        <td>${p.t1 || '-'}</td>
-        <td class="${perfCls(p.mfe1h)}">${typeof p.mfe1h==='number'?p.mfe1h.toFixed(2)+'%':'N/A'}</td>
-        <td class="${perfCls(p.mfe4h)}">${typeof p.mfe4h==='number'?p.mfe4h.toFixed(2)+'%':'N/A'}</td>
-        <td class="${perfCls(p.mfe1d)}">${typeof p.mfe1d==='number'?p.mfe1d.toFixed(2)+'%':'N/A'}</td>
-      </tr>`;
-    });
-    topTable += `</tbody></table></div>`;
-
-    // Tüm fırsatlar (popup/accordion YOK)
-    let fullTable = `
-      <h5 class="setting-subtitle" style="margin-top:16px;">Tüm Fırsatlar</h5>
-      <div class="table-wrapper compact"><table><thead>
-        <tr><th>Sinyal Zamanı</th><th>Sinyal Fiyatı</th><th>Hedef Zamanı</th><th>1s MFE%</th><th>4s MFE%</th><th>1g MFE%</th></tr>
-      </thead><tbody>`;
-    events.forEach(ev => {
-      const p = perfMap.get(ev.timestamp) || {};
-      fullTable += `<tr>
-        <td>${new Date(ev.timestamp).toLocaleString('tr-TR')}</td>
-        <td>$${formatPrice(ev.priceBefore)}</td>
-        <td>${p.t1 || '-'}</td>
-        <td class="${perfCls(p.mfe1h)}">${typeof p.mfe1h==='number'?p.mfe1h.toFixed(2)+'%':'N/A'}</td>
-        <td class="${perfCls(p.mfe4h)}">${typeof p.mfe4h==='number'?p.mfe4h.toFixed(2)+'%':'N/A'}</td>
-        <td class="${perfCls(p.mfe1d)}">${typeof p.mfe1d==='number'?p.mfe1d.toFixed(2)+'%':'N/A'}</td>
-      </tr>`;
-    });
-    fullTable += `</tbody></table></div>`;
-
-    html += `<div class="analysis-result-card">
-      <div class="analysis-card-header"><h4>${sym} Analiz Sonuçları</h4></div>
-      ${kpi}
-      ${topTable}
-      ${fullTable}
-    </div>`;
-  }
-
-  rc.innerHTML = html;
-}
-
-// === High/Low’a göre MFE hesaplayıcı (tek klines çağrısı) ===
-async function computePerEventMFEviaHighLow(symbol, timeframe, events) {
-  const out = new Map();
-  if (!events || !events.length) return out;
-
-  const kl = await getKlines(symbol, timeframe, 1000);
-  if (!kl || kl.length < 5) return out;
-
-  // timestamp -> index haritası
-  const idx = new Map();
-  kl.forEach((k,i)=> idx.set(Number(k[0]), i));
-  const tfMin = { '15m':15, '1h':60, '4h':240, '1d':1440 }[timeframe] || 60;
-  const need = (m)=> Math.ceil(m / tfMin);
-
-  for (const ev of events) {
-    let i = idx.get(ev.timestamp);
-    if (i == null) {
-      // en yakın mumu bul
-      let best=null, bestD=Infinity;
-      kl.forEach((k,ii)=>{
-        const d = Math.abs(Number(k[0]) - ev.timestamp);
-        if (d < bestD) { bestD = d; best = ii; }
-      });
-      i = best;
-    }
-    if (i == null) continue;
-
-    const entry = Number(kl[i][4]);
-    const slice1h = kl.slice(i+1, i+1+need(60));
-    const slice4h = kl.slice(i+1, i+1+need(240));
-    const slice1d = kl.slice(i+1, i+1+need(1440));
-
-    const calc = (arr) => {
-      if (!arr.length) return { mfe:null, t:null };
-      const highs = arr.map(k=>Number(k[2]));
-      const lows  = arr.map(k=>Number(k[3]));
-      const maxH = Math.max(...highs);
-      const minL = Math.min(...lows);
-      const tIdx = Math.min(highs.indexOf(maxH), lows.indexOf(minL));
-      const t = arr[tIdx] ? new Date(Number(arr[tIdx][0])).toLocaleString('tr-TR') : '-';
-      const upPct = ((maxH - entry)/entry)*100;
-      return { mfe: upPct, t };
+    const getPerformanceClass = (value) => {
+        const num = parseFloat(value);
+        if (isNaN(num)) return '';
+        return num > 0 ? 'positive' : 'negative';
     };
+    const formatValue = (val, d = 3) => (typeof val === 'number' ? val.toFixed(d) : 'N/A');
 
-    out.set(ev.timestamp, {
-      mfe1h: calc(slice1h).mfe,
-      mfe4h: calc(slice4h).mfe,
-      mfe1d: calc(slice1d).mfe,
-      t1: calc(slice1h).t || calc(slice4h).t || calc(slice1d).t || '-'
-    });
-  }
-  return out;
+    const timeframe = document.getElementById('signalAnalysisTimeframe')?.value || '1h';
+
+    let finalHtml = '';
+    for (const coin in data) {
+        const res = data[coin];
+        const coinSymbol = coin.replace("USDT", "");
+        let contentHtml = '';
+
+if (res.status === 'error' || res.status === 'info') {
+  contentHtml = `<div class="analysis-card-simple-message">${res.message || 'Sonuç yok.'}</div>`;
+} else { // status yoksa da "preview" gibi işle
+            const profileDataString = JSON.stringify(res.dnaProfile);
+
+            // Olayları yeni->eski sırala
+            const allEvents = (res.eventDetails || []).slice().sort((a,b)=> b.timestamp - a.timestamp);
+            const top5 = allEvents.slice(0,5);
+
+            // High/Low bazlı 1s,4s,1g MFE (tek klines çağrısı)
+            const perfMap = await computePerEventMFEviaHighLow(coin, timeframe, allEvents);
+
+            // Fırsatlar (İlk 5)
+            let eventsTableTop = `
+                <h5 class="setting-subtitle">Bulunan Fırsat Detayları (İlk 5)</h5>
+                <div class="table-wrapper compact"><table><thead>
+                    <tr>
+                        <th>Sinyal Zamanı</th>
+                        <th>Sinyal Fiyatı</th>
+                        <th>Hedef Zamanı</th>
+                        <th>1s MFE%</th>
+                        <th>4s MFE%</th>
+                        <th>1g MFE%</th>
+                    </tr>
+                </thead><tbody>`;
+            top5.forEach(ev => {
+                const p = perfMap.get(ev.timestamp) || {};
+                eventsTableTop += `
+                    <tr>
+                        <td>${new Date(ev.timestamp).toLocaleString('tr-TR')}</td>
+                        <td>$${formatPrice(ev.priceBefore)}</td>
+                        <td>${p.t1 || '-'}</td>
+                        <td class="${getPerformanceClass(p.mfe1h)}">${p.mfe1h!=null ? p.mfe1h.toFixed(2)+'%' : 'N/A'}</td>
+                        <td class="${getPerformanceClass(p.mfe4h)}">${p.mfe4h!=null ? p.mfe4h.toFixed(2)+'%' : 'N/A'}</td>
+                        <td class="${getPerformanceClass(p.mfe1d)}">${p.mfe1d!=null ? p.mfe1d.toFixed(2)+'%' : 'N/A'}</td>
+                    </tr>`;
+            });
+            eventsTableTop += '</tbody></table></div>';
+
+            // TÜM Fırsatlar (açılır/kapanır YOK — doğrudan liste)
+            let eventsFullHtml = `
+                <h5 class="setting-subtitle" style="margin-top:16px;">Tüm Fırsatlar</h5>
+                <div class="table-wrapper compact"><table><thead>
+                    <tr>
+                        <th>Sinyal Zamanı</th>
+                        <th>Sinyal Fiyatı</th>
+                        <th>Hedef Zamanı</th>
+                        <th>1s MFE%</th>
+                        <th>4s MFE%</th>
+                        <th>1g MFE%</th>
+                    </tr>
+                </thead><tbody>`;
+            allEvents.forEach(ev => {
+                const p = perfMap.get(ev.timestamp) || {};
+                eventsFullHtml += `
+                    <tr>
+                        <td>${new Date(ev.timestamp).toLocaleString('tr-TR')}</td>
+                        <td>$${formatPrice(ev.priceBefore)}</td>
+                        <td>${p.t1 || '-'}</td>
+                        <td class="${getPerformanceClass(p.mfe1h)}">${p.mfe1h!=null ? p.mfe1h.toFixed(2)+'%' : 'N/A'}</td>
+                        <td class="${getPerformanceClass(p.mfe4h)}">${p.mfe4h!=null ? p.mfe4h.toFixed(2)+'%' : 'N/A'}</td>
+                        <td class="${getPerformanceClass(p.mfe1d)}">${p.mfe1d!=null ? p.mfe1d.toFixed(2)+'%' : 'N/A'}</td>
+                    </tr>`;
+            });
+            eventsFullHtml += `</tbody></table></div>`;
+
+            // Parametre & Ortalama (İlk 5) + Tam Liste (doğrudan)
+            const fo = res.dnaSummary.featureOrder || [];
+            const mean = res.dnaSummary.mean || [];
+            const pairs = fo.map((f,i)=>({f, m: mean[i]}));
+            const sorted = pairs.slice().sort((a,b)=> Math.abs(b.m)-Math.abs(a.m));
+            const top5Params = sorted.slice(0,5);
+
+            let topParamsHtml = `
+                <h5 class="setting-subtitle">Parametre & Ortalama (İlk 5)</h5>
+                <div class="table-wrapper compact"><table><thead>
+                    <tr><th>Parametre</th><th>Değer</th><th>Açıklama</th></tr>
+                </thead><tbody>`;
+            top5Params.forEach(p=>{
+                topParamsHtml += `<tr><td>${prettyName(p.f)}</td><td>${formatValue(p.m, 4)}</td><td style="text-align:left;">${explain(p.f)}</td></tr>`;
+            });
+            topParamsHtml += `</tbody></table></div>`;
+
+            let allParamsHtml = `
+                <h5 class="setting-subtitle" style="margin-top:16px;">Tüm Parametreler</h5>
+                <div class="table-wrapper compact"><table><thead>
+                    <tr><th>Parametre</th><th>Değer</th><th>Açıklama</th></tr>
+                </thead><tbody>`;
+            pairs.forEach(p=>{
+                allParamsHtml += `<tr><td>${prettyName(p.f)}</td><td>${formatValue(p.m, 4)}</td><td style="text-align:left;">${explain(p.f)}</td></tr>`;
+            });
+            allParamsHtml += `</tbody></table></div>`;
+
+            // Kısa DNA formatı
+            const dnaFormat = buildDnaShortFormat(res.dnaSummary.featureOrder, res.dnaSummary.mean);
+
+            contentHtml = `
+                <div class="kpi-container">
+                    <div class="kpi-item"><span class="kpi-value">${res.eventCount}</span><span class="kpi-label">Adet Fırsat</span></div>
+                    <div class="kpi-item"><span class="kpi-value ${getPerformanceClass(res.avgReturns['1h'])}">${res.avgReturns['1h']}%</span><span class="kpi-label">1S Ort. Getiri</span></div>
+                    <div class="kpi-item"><span class="kpi-value ${getPerformanceClass(res.avgReturns['4h'])}">${res.avgReturns['4h']}%</span><span class="kpi-label">4S Ort. Getiri</span></div>
+                    <div class="kpi-item"><span class="kpi-value ${getPerformanceClass(res.avgReturns['1d'])}">${res.avgReturns['1d']}%</span><span class="kpi-label">1G Ort. Getiri</span></div>
+                </div>
+
+                <div class="analysis-card-grid">
+                    <div class="analysis-card-col">
+                        <div class="dna-recommendation"><strong>DNA Formatı:</strong> ${dnaFormat}</div>
+                        ${eventsTableTop}
+                        ${eventsFullHtml}
+                    </div>
+                    <div class="analysis-card-col">
+                        ${topParamsHtml}
+                        ${allParamsHtml}
+                    </div>
+                </div>
+
+                <div class="preview-actions">
+                    <button class="btn-primary save-dna-btn" data-profile='${profileDataString}'>
+                        <i class="fas fa-floppy-disk"></i> ${res.dnaProfile.name} Profilini Kaydet
+                    </button>
+                </div>`;
+        }
+
+        finalHtml += `<div class="analysis-result-card">
+                        <div class="analysis-card-header"><h4>${coinSymbol} Analiz Sonuçları</h4></div>
+                        ${contentHtml}
+                      </div>`;
+    }
+
+    resultContainer.innerHTML = finalHtml;
+
+    // === Yardımcılar (aynı fonksiyon içinde) ===
+    function buildDnaShortFormat(order, mean){
+        if (!order || !mean) return '-';
+        const parts = [];
+        order.forEach((f,i)=>{
+            const v = mean[i];
+            if (f.startsWith('rsi')) parts.push(`RSI ${formatValue(v,1)}`);
+            else if (f.startsWith('macd_hist') && f.includes('slope')) parts.push(`MACD Hist: ↑`);
+            else if (f.startsWith('macd_hist')) parts.push(`MACD Hist ${formatValue(v,3)}`);
+            else if (f.startsWith('volume_mult')) parts.push(`Hacim x${formatValue(v,2)}`);
+            else if (f.includes('atr_pct')) parts.push(`ATR% ${formatValue(v,2)}`);
+            else if (f.includes('bb_width')) parts.push(`BB% ${formatValue(v,2)}`);
+            else if (f.startsWith('candle_bullish')) parts.push(`Mum: ${v>0.5?'Boğa':'Ayı'}`);
+        });
+        return parts.join(' | ');
+    }
+
+    async function computePerEventMFEviaHighLow(pair, tf, events){
+        const out = new Map();
+        if (!events || events.length===0) return out;
+
+        // Klines al
+        const limit = 1000;
+        const klines = await getKlines(pair, tf, limit);
+        if (!klines || klines.length<10) return out;
+
+        const tfMin = { '15m':15, '1h':60, '4h':240, '1d':1440 }[tf] || 60;
+        const candlesFor = (minutes)=> Math.ceil(minutes / tfMin);
+
+        const idxByTs = new Map();
+        klines.forEach((k,i)=> idxByTs.set(Number(k[0]), i));
+
+        // Her event için index bul: en yakın açık zamanı
+        for (const ev of events) {
+            let i = idxByTs.get(ev.timestamp);
+            if (i==null){
+                // en yakın mum
+                let best=null, bestDiff=Infinity;
+                klines.forEach((k,idx)=>{
+                    const d = Math.abs(Number(k[0]) - ev.timestamp);
+                    if (d<bestDiff){ bestDiff=d; best=idx; }
+                });
+                i = best;
+            }
+            if (i==null || i>=klines.length-2){ out.set(ev.timestamp, {}); continue; }
+
+            const entry = Number(klines[i][4]); // referans
+            const makePerf = (minutes)=>{
+                const fIdx = i + candlesFor(minutes);
+                const slice = klines.slice(i+1, Math.min(fIdx+1, klines.length));
+                if (!slice.length) return { mfe:null, t:null };
+                const highs = slice.map(k=>Number(k[2]));
+                const lows  = slice.map(k=>Number(k[3]));
+                const maxH = Math.max(...highs);
+                const minL = Math.min(...lows);
+
+                // En yüksek ve en düşük değere ulaşılan zamanı bul
+                const idxH = highs.indexOf(maxH);
+                const idxL = lows.indexOf(minL);
+                const t1 = slice[Math.min(idxH, idxL)] ? new Date(Number(slice[Math.min(idxH, idxL)][0])).toLocaleString('tr-TR') : '-';
+
+                // Yükseliş/düşüş yüzdesi (MFE mantığı)
+                const upPct = ((maxH - entry)/entry)*100;
+                const dnPct = ((minL - entry)/entry)*100;
+
+                return { mfe: upPct, t1 };
+            };
+
+            const p1 = makePerf(60);
+            const p4 = makePerf(240);
+            const pD = makePerf(1440);
+
+            out.set(ev.timestamp, {
+                mfe1h: p1.mfe,
+                mfe4h: p4.mfe,
+                mfe1d: pD.mfe,
+                t1: p1.t1 || p4.t1 || pD.t1 || '-'
+            });
+        }
+        return out;
+    }
 }
-
 
 
 async function renderAlarmReports() {
