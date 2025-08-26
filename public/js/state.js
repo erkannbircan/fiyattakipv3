@@ -1,3 +1,12 @@
+// ---- GLOBAL ÇATI (her JS dosyasının en üstüne koy) ----
+window.App = window.App || {
+  // sürüm bilgisi bu tur için (elle güncelle)
+  version: 'v3.0.0-' + (window.App?.versionTag || ''),
+  loaded: {},
+  guards: {},
+  log: (...args) => console.log('[App]', ...args),
+};
+
 let state = {
     currentUserRole: null,
     coinLimit: 10,
