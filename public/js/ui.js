@@ -1,7 +1,7 @@
 // ---- GLOBAL ÇATI (her JS dosyasının en üstüne koy) ----
 window.App = window.App || {
   // sürüm bilgisi bu tur için (elle güncelle)
-  version: 'v3.0.0-' + (window.App?.versionTag || ''),
+  version: 'v3.0.1-' + (window.App?.versionTag || ''),
   loaded: {},
   guards: {},
   log: (...args) => console.log('[App]', ...args),
@@ -439,132 +439,137 @@ function saveChartState() {
 const clsPerf = v => (typeof v === 'number' ? (v >= 0 ? 'positive' : 'negative') : '');
 
 // === Strateji Önizleme UI (aynı sayfada render) ===
-async function renderSignalAnalysisPreview(data) {
-  const rc = document.getElementById('signalAnalysisResultContainer');
-  if (!rc) return;
+// === REPLACE: renderSignalAnalysisPreview (tamamı) ===
+function renderSignalAnalysisPreview(data) {
+  const resultContainer = document.getElementById('signalAnalysisResultContainer');
+  if (!resultContainer) return;
 
   if (!data || Object.keys(data).length === 0) {
-    rc.innerHTML = `<div class="empty-msg">Seçilen ayarlarda fırsat bulunamadı.</div>`;
+    resultContainer.innerHTML = `<p style="text-align:center;color:var(--text-secondary);padding:20px;">Analiz için sonuç bulunamadı.</p>`;
     return;
   }
 
-  const tf = document.getElementById('signalAnalysisTimeframe')?.value || '1h';
-  let html = '';
+  // Yardımcılar
+  const round2 = (n) => (typeof n === 'number' && isFinite(n)) ? n.toFixed(2) : 'N/A';
+  const pct = (from, to, dir='up') => {
+    if (!isFinite(from) || !isFinite(to) || from === 0) return null;
+    const change = ((to - from) / from) * 100;
+    return dir === 'down' ? -change : change;
+  };
 
-  for (const coin of Object.keys(data)) {
+  // Her coin için kart üret
+  const html = Object.keys(data).map((coin) => {
     const res = data[coin];
-    if (!res || res.status === 'error') {
-      html += `<div class="analysis-result-card"><div class="analysis-card-header"><h4>${coin}</h4></div>
-               <div class="analysis-card-simple-message">${res?.message || 'Sonuç yok.'}</div></div>`;
-      continue;
+    const coinSymbol = coin.replace('USDT','');
+
+    // Basit durum mesajları
+    if (!res || res.status === 'error' || res.status === 'info') {
+      const msg = (res && res.message) ? res.message : 'Sonuç yok.';
+      const color = (res && res.status === 'error') ? 'var(--accent-red)' : 'var(--text-secondary)';
+      return `<div class="analysis-card"><h4>${coinSymbol}</h4><div style="color:${color};padding:10px;">${msg}</div></div>`;
     }
 
-    const events = Array.isArray(res.eventDetails) ? res.eventDetails : [];
-    const top5 = events.slice(0, 5);
+    // Güvenli ortalama getiriler (2 ondalık)
+    const avg15m = round2(res.avgReturns?.['15m'] ?? NaN);
+    const avg1h  = round2(res.avgReturns?.['1h']  ?? NaN);
+    const avg4h  = round2(res.avgReturns?.['4h']  ?? NaN);
+    const avg1d  = round2(res.avgReturns?.['1d']  ?? NaN);
 
-    // MFE hesapları (1s/4s/1g)
-    const perfMap = await computePerEventMFEviaHighLow(coin, tf, events);
+    // Parametreleri okunur listeye çevir (boş kalmasın)
+    const paramLines = [];
+    if (res.params && typeof res.params === 'object') {
+      Object.keys(res.params).forEach(k => {
+        if (res.params[k]) paramLines.push(k.toUpperCase());
+      });
+    }
+    const paramsHtml = paramLines.length ? paramLines.map(p=>`<span class="pill">${p}</span>`).join('') : '<span class="muted">Parametre seçilmedi</span>';
 
-    const kpi = `
-      <div class="kpi-container">
-        <div class="kpi-item"><span class="kpi-value">${res.eventCount ?? events.length}</span><span class="kpi-label">Adet Fırsat</span></div>
-        <div class="kpi-item"><span class="kpi-value ${clsPerf(res.avgReturns?.['1h'])}">${formatPct(res.avgReturns?.['1h'])}</span><span class="kpi-label">1S Ort. Getiri</span></div>
-        <div class="kpi-item"><span class="kpi-value ${clsPerf(res.avgReturns?.['4h'])}">${formatPct(res.avgReturns?.['4h'])}</span><span class="kpi-label">4S Ort. Getiri</span></div>
-        <div class="kpi-item"><span class="kpi-value ${clsPerf(res.avgReturns?.['1d'])}">${formatPct(res.avgReturns?.['1d'])}</span><span class="kpi-label">1G Ort. Getiri</span></div>
-      </div>`;
+    // Fırsatlar tablosu (yalnızca ilk 5)
+    let eventsHtml = '<tbody><tr><td colspan="6" class="muted">Fırsat bulunamadı</td></tr></tbody>';
+    if (Array.isArray(res.eventDetails) && res.eventDetails.length) {
+      const rows = res.eventDetails.slice(0,5).map(ev => {
+        const when  = new Date(ev.timestamp).toLocaleString('tr-TR');
+        const pB    = isFinite(ev.priceBefore) ? `$${Number(ev.priceBefore).toFixed(4)}` : 'N/A';
+        const pA    = isFinite(ev.priceAfter)  ? `$${Number(ev.priceAfter ).toFixed(4)}` : 'N/A';
+        const p15   = (ev.perf?.['15m']!=null) ? `${round2(ev.perf['15m'])}%` : '—';
+        const p1h   = (ev.perf?.['1h'] !=null) ? `${round2(ev.perf['1h']) }%` : '—';
+        const p4h   = (ev.perf?.['4h'] !=null) ? `${round2(ev.perf['4h']) }%` : '—';
+        const p1d   = (ev.perf?.['1d'] !=null) ? `${round2(ev.perf['1d']) }%` : '—';
+        return `<tr>
+          <td>${when}</td><td>${pB}</td><td>${pA}</td>
+          <td>${p15}</td><td>${p1h}</td><td>${p4h}</td><td>${p1d}</td>
+        </tr>`;
+      }).join('');
+      eventsHtml = `<tbody>${rows}</tbody>`;
+    }
 
-    // DNA format metni
-    const dnaFormat = res.dnaFormat || '-';
+    // DNA özetini anlaşılır gruplar halinde göster
+    let dnaHtml = '';
+    if (res.dnaSummary && Array.isArray(res.dnaSummary.featureOrder) && Array.isArray(res.dnaSummary.mean)) {
+      const groups = {};
+      res.dnaSummary.featureOrder.forEach((key,i)=>{
+        const parts = key.split('_'); const metric = parts.pop(); const base = parts.join('_');
+        if (!groups[base]) groups[base] = {};
+        groups[base][metric] = round2(Number(res.dnaSummary.mean[i]));
+      });
+      dnaHtml = Object.keys(groups).slice(0,5).map(k=>{
+        const g=groups[k];
+        return `<div class="dna-indicator-group"><span class="label">${k}</span><span class="value">${g.avg ?? '—'}</span></div>`;
+      }).join('');
+      dnaHtml = `<div class="dna-summary-grid"><div class="dna-summary-header"><span>Parametre</span><span>Ortalama</span></div>${dnaHtml}</div>`;
+    } else {
+      dnaHtml = '<div class="muted">DNA özeti sağlanmadı.</div>';
+    }
 
-    // Parametreler
-    const selectedParams = Object.entries(res.dnaProfile?.params || {})
-      .filter(([,v]) => v)
-      .map(([k]) => paramNice(k));
-
-    const paramsPanel = `
-      <div class="table-wrapper compact">
-        <table>
-          <thead><tr><th>Parametre</th><th>Değer</th><th>Açıklama</th></tr></thead>
-          <tbody>
-            ${selectedParams.length
-              ? selectedParams.map(p=>`<tr><td>${p}</td><td>Seçili</td><td>${p} sinyale dahil.</td></tr>`).join('')
-              : `<tr><td colspan="3">Seçili parametre yok.</td></tr>`}
-          </tbody>
-        </table>
-      </div>`;
-
-    // İlk 5
-    let topTable = `
-      <h5 class="setting-subtitle">Bulunan Fırsat Detayları (İlk 5)</h5>
-      <div class="table-wrapper compact"><table><thead>
-        <tr><th>Sinyal Zamanı</th><th>Sinyal Fiyatı</th><th>Hedef Zamanı</th><th>1s MFE</th><th>4s MFE</th><th>1g MFE</th></tr>
-      </thead><tbody>`;
-    top5.forEach(ev => {
-      const p = perfMap.get(ev.timestamp) || {};
-      topTable += `<tr>
-        <td>${new Date(ev.timestamp).toLocaleString('tr-TR', trTimeFmt)}</td>
-        <td>$${formatPrice(ev.priceBefore)}</td>
-        <td>${p.t1 || '-'}</td>
-        <td class="${clsPerf(p.mfe1h)}">${typeof p.mfe1h==='number'?p.mfe1h.toFixed(2)+'%':'N/A'}</td>
-        <td class="${clsPerf(p.mfe4h)}">${typeof p.mfe4h==='number'?p.mfe4h.toFixed(2)+'%':'N/A'}</td>
-        <td class="${clsPerf(p.mfe1d)}">${typeof p.mfe1d==='number'?p.mfe1d.toFixed(2)+'%':'N/A'}</td>
-      </tr>`;
-    });
-    topTable += `</tbody></table></div>`;
-
-    // Tüm fırsatlar (çoksa yine de gösteririz; satır sayısı 500'e frenlendi)
-    let fullTable = `
-      <h5 class="setting-subtitle" style="margin-top:16px;">Tüm Fırsatlar</h5>
-      <div class="table-wrapper compact"><table><thead>
-        <tr><th>Sinyal Zamanı</th><th>Sinyal Fiyatı</th><th>Hedef Zamanı</th><th>1s MFE</th><th>4s MFE</th><th>1g MFE</th></tr>
-      </thead><tbody>`;
-    events.forEach(ev => {
-      const p = perfMap.get(ev.timestamp) || {};
-      fullTable += `<tr>
-        <td>${new Date(ev.timestamp).toLocaleString('tr-TR', trTimeFmt)}</td>
-        <td>$${formatPrice(ev.priceBefore)}</td>
-        <td>${p.t1 || '-'}</td>
-        <td class="${clsPerf(p.mfe1h)}">${typeof p.mfe1h==='number'?p.mfe1h.toFixed(2)+'%':'N/A'}</td>
-        <td class="${clsPerf(p.mfe4h)}">${typeof p.mfe4h==='number'?p.mfe4h.toFixed(2)+'%':'N/A'}</td>
-        <td class="${clsPerf(p.mfe1d)}">${typeof p.mfe1d==='number'?p.mfe1d.toFixed(2)+'%':'N/A'}</td>
-      </tr>`;
-    });
-    fullTable += `</tbody></table></div>
-      <div class="hint muted" style="margin-top:6px;">
-        <strong>MFE</strong> = Maximum Favorable Excursion: Sinyalden sonra belirtilen ufukta (1s/4s/1g) görülen en iyi (max) lehte hareket yüzdesi.
-        <br/><strong>Hedef Zamanı</strong> = Bu en iyi hareketin gerçekleştiği mumun zamanı.
-      </div>`;
-
-    html += `<div class="analysis-result-card">
-      <div class="analysis-card-header"><h4>${coin} Analiz Sonuçları</h4></div>
-      ${kpi}
-      <div class="two-col">
-        <div>
-          <div class="panel">
-            <div class="panel-title">DNA Formatı:</div>
-            <div class="panel-body">${dnaFormat}</div>
+    // Kart gövdesi
+    return `
+      <div class="analysis-card">
+        <div class="analysis-card-header">
+          <h4>${coinSymbol}</h4>
+          <div class="kpi">
+            <div class="kpi-item"><span>15Dk Ort.</span><b>${avg15m}%</b></div>
+            <div class="kpi-item"><span>1S Ort.</span><b>${avg1h}%</b></div>
+            <div class="kpi-item"><span>4S Ort.</span><b>${avg4h}%</b></div>
+            <div class="kpi-item"><span>1G Ort.</span><b>${avg1d}%</b></div>
           </div>
-          ${topTable}
-          ${fullTable}
         </div>
-        <div>
-          <h5 class="setting-subtitle">Parametre & Ortalama (İlk 5)</h5>
-          ${paramsPanel}
-          <h5 class="setting-subtitle" style="margin-top:16px;">Tüm Parametreler</h5>
-          ${paramsPanel}
-        </div>
-      </div>
-      <div class="analysis-actions" style="margin-top:12px;">
-        <button class="save-dna-btn secondary-button"
-          data-profile='${JSON.stringify(res.dnaProfile)}'>
-          <i class="fas fa-bookmark"></i> ${res.dnaProfile?.name || (coin + ' DNA Profili')}
-        </button>
-      </div>
-    </div>`;
-  }
 
-  rc.innerHTML = html;
+        <div class="analysis-card-body">
+          <section>
+            <h5 class="setting-subtitle">Bulunan Fırsat Detayları (İlk 5)</h5>
+            <div class="table-wrapper compact">
+              <table>
+                <thead>
+                  <tr><th>Zaman</th><th>Sinyal Fiyatı</th><th>Hedef Fiyatı</th><th>15Dk %</th><th>1S %</th><th>4S %</th><th>1G %</th></tr>
+                </thead>
+                ${eventsHtml}
+              </table>
+            </div>
+          </section>
+
+          <section>
+            <h5 class="setting-subtitle">Parametreler</h5>
+            <div class="pill-row">${paramsHtml}</div>
+          </section>
+
+          <section>
+            <h5 class="setting-subtitle">DNA Özeti (ilk 5)</h5>
+            ${dnaHtml}
+          </section>
+        </div>
+
+        <div class="analysis-card-footer">
+          <button class="save-dna-btn" data-profile='${JSON.stringify(res.dnaProfile || {})}'>
+            DNA Profilini Kaydet
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  resultContainer.innerHTML = html;
 }
+
 
 async function computePerEventMFEviaHighLow(symbol, timeframe, events) {
   const out = new Map();
@@ -618,6 +623,19 @@ async function computePerEventMFEviaHighLow(symbol, timeframe, events) {
   }
   return out;
 }
+
+function computeSimpleMFE(event, direction='up') {
+  // Yüksek/düşük veriniz yoksa "priceBefore -> priceAfter" yüzdesini baz al.
+  if (event?.mfeHigh != null && event?.mfeLow != null && isFinite(event.priceBefore)) {
+    const ref = event.priceBefore;
+    const up  = ((event.mfeHigh - ref)/ref)*100;
+    const dn  = ((event.mfeLow  - ref)/ref)*100;
+    return direction === 'up' ? up : -dn;
+  }
+  const p = ((event.priceAfter - event.priceBefore)/event.priceBefore)*100;
+  return direction === 'down' ? -p : p;
+}
+
 
 async function renderAlarmReports() {
     if (!state.userDocRef) return;
