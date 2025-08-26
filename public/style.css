@@ -959,3 +959,29 @@ input:checked + .slider:before { transform: translateX(24px); }
   margin: 12px auto;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+/* Strateji form hizası */
+.discovery-grid.compact {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: 12px;
+}
+#signalDnaParamsGrid {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  gap: 8px;
+}
+.analysis-actions { grid-column: 1 / -1; }
+
+/* Sonuç tabloları: kayma/üst üste binme olmasın */
+.table-wrapper.compact { overflow-x: auto; }
+.table-wrapper.compact table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.table-wrapper.compact th, .table-wrapper.compact td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* KPI sayılarını taşırmayalım */
+.kpi-container { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 12px; }
+.kpi-value { font-variant-numeric: tabular-nums; }
+
+/* İki kolonlu sonuç yerleşimi */
+.two-col { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+@media (max-width: 1100px) { .two-col { grid-template-columns: 1fr; } }
