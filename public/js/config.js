@@ -1,3 +1,12 @@
+// ---- GLOBAL ÇATI (her JS dosyasının en üstüne koy) ----
+window.App = window.App || {
+  // sürüm bilgisi bu tur için (elle güncelle)
+  version: 'v3.0.0-' + (window.App?.versionTag || ''),
+  loaded: {},
+  guards: {},
+  log: (...args) => console.log('[App]', ...args),
+};
+
 const firebaseConfig = {
     apiKey: "AIzaSyA3flTu3Jz9E1D1U_DympYE7B4I4FDxj88",
     authDomain: "fiyattakipv3.firebaseapp.com",
