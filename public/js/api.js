@@ -101,8 +101,7 @@ function runBacktest(alarmId) {
         });
 }
 
-// api.js — Strateji keşfi önizleme (İSTEMCİ)
-// api.js — Strateji keşfi önizleme (istemci tarafı)
+// api.js — Strateji keşfi önizleme (istemci tarafı, kapalı blok)
 async function runSignalAnalysisPreview(params) {
   try {
     if (!params || !Array.isArray(params.coins) || params.coins.length === 0) {
@@ -117,15 +116,12 @@ async function runSignalAnalysisPreview(params) {
     const days = Number(params.days) || 30;
     const lb = Number(params.lookbackCandles)  || 3;
 
-    // lookahead (mum)
     let la = Number(params.lookaheadCandles) || 0;
     if (!la) {
-      // preset "Akıllı" ise 1 günün mum eşleniğini tavan sayalım, orta bir değer verelim
       const perDay = Math.max(1, Math.ceil(1440 / (tfMin[tf] || 60)));
-      la = Math.min(24, Math.floor(perDay / 3)); // 1/3 gün
+      la = Math.min(24, Math.floor(perDay / 3)); // akıllı varsayılan
     }
 
-    // Kline limiti (görüntülemek için yeterli)
     const perDay = Math.max(1, Math.ceil(1440 / (tfMin[tf] || 60)));
     const limit  = Math.min(1000, Math.max(200, days * perDay + lb + la + 20));
 
@@ -143,77 +139,77 @@ async function runSignalAnalysisPreview(params) {
 
       const events = [];
       const len = kl.length;
-      const cooldown = Math.max(la, 3); // tekrarları azalt
+      const cooldown = Math.max(la, 3);
       let skipUntil = -1;
 
-      // Olay tespiti: sinyal mumu = i; gelecek pencere (i+1 .. i+la)
       for (let i = lb; i < len - la - 1; i++) {
         if (i < skipUntil) continue;
+        const entryLow  = L(i);
+        const entryHigh = H(i);
 
-        const entry = C(i);
         let maxH = -Infinity, minL = +Infinity;
         for (let j = i + 1; j <= i + la; j++) {
           const h = H(j), l = L(j);
           if (h > maxH) maxH = h;
           if (l < minL) minL = l;
         }
-        const upPct = ((maxH - entry) / entry) * 100;
-        const dnPct = ((minL - entry) / entry) * 100;
-        const hit = (dir === 'up' && upPct >= change) || (dir === 'down' && dnPct <= -change);
+        const upPct = ((maxH - entryLow)  / entryLow)  * 100;
+        const dnPct = ((entryHigh - minL) / entryHigh) * 100;
+        const hit = (dir === 'up' && upPct >= change) || (dir === 'down' && dnPct >= change);
 
         if (hit) {
-          events.push({ timestamp: Number(kl[i][0]), priceBefore: entry });
-          skipUntil = i + cooldown; // bir süre aynı bölgeden yeni sinyal üretme
+          events.push({ timestamp: Number(kl[i][0]), priceBefore: C(i) });
+          skipUntil = i + cooldown;
         }
       }
 
-      // 1s/4s/1g MFE (High/Low)
       const candlesFor = mins => Math.ceil(mins / (tfMin[tf] || 60));
       const horizons = { '1h':60, '4h':240, '1d':1440 };
       const sums = { '1h':0, '4h':0, '1d':0 }, counts = { '1h':0, '4h':0, '1d':0 };
 
       for (const ev of events) {
-        // sinyal index'i
         let i = kl.findIndex(k => Number(k[0]) === ev.timestamp);
         if (i < 0) {
           let best=null, bestD=Infinity;
-          kl.forEach((k, idx)=>{ const d=Math.abs(Number(k[0])-ev.timestamp); if(d<bestD){bestD=d;best=idx;} });
+          kl.forEach((k,ii)=>{ const d=Math.abs(Number(k[0])-ev.timestamp); if(d<bestD){bestD=d;best=ii;} });
           i = best ?? -1;
         }
         if (i < 0 || i >= len - 2) continue;
 
-        const entry = C(i);
-        for (const key of Object.keys(horizons)) {
-          const f = i + candlesFor(horizons[key]);
+        const entryLow  = L(i);
+        const entryHigh = H(i);
+
+        const calc = (mins) => {
+          const f = i + candlesFor(mins);
           const slice = kl.slice(i+1, Math.min(f+1, len));
-          if (!slice.length) continue;
+          if (!slice.length) return null;
           const maxH = Math.max(...slice.map(x=>Number(x[2])));
           const minL = Math.min(...slice.map(x=>Number(x[3])));
-          const mfe = (dir === 'down')
-            ? ((minL - entry) / entry) * 100
-            : ((maxH - entry) / entry) * 100;
-          sums[key] += mfe;
-          counts[key] += 1;
-        }
+          const up = ((maxH - entryLow) / entryLow) * 100;
+          const dn = ((entryHigh - minL) / entryHigh) * 100;
+          return dir === 'down' ? dn : up;
+        };
+
+        const r1 = calc(60), r4 = calc(240), rD = calc(1440);
+        if (typeof r1 === 'number') { sums['1h'] += r1; counts['1h']++; }
+        if (typeof r4 === 'number') { sums['4h'] += r4; counts['4h']++; }
+        if (typeof rD === 'number') { sums['1d'] += rD; counts['1d']++; }
       }
 
       const avg = {
         '1h': counts['1h'] ? Number((sums['1h']/counts['1h']).toFixed(2)) : null,
         '4h': counts['4h'] ? Number((sums['4h']/counts['4h']).toFixed(2)) : null,
-        '1d': counts['1d'] ? Number((sums['1d']/counts['1d']).toFixed(2)) : null,
+        '1d': counts['1d'] ? Number((sums['1d']/counts['1d']).toFixed(2)) : null
       };
 
-      // Seçili parametrelerin okunabilir listesi
       const niceParam = key => ({rsi:'RSI', macd:'MACD', adx:'ADX', volume:'Hacim', volatility:'Volatilite', candle:'Mum Şekli', speed:'Hız'}[key] || key);
       const selectedParams = Object.keys(params.params || {}).filter(k => params.params[k]).map(niceParam);
-
-      // DNA profil & format metni
       const dirTxt = (dir==='up' ? 'Yükseliş' : 'Düşüş');
       const dnaFormat = `TF:${tf} | Yön:${dirTxt} | Değişim:${change}% | LB:${lb} | LA:${la} | Parametreler:${selectedParams.join(', ') || '-'}`;
 
       out[coin] = {
         status: 'ok',
-        eventDetails: events.slice(0, 500),            // aşırı uzun listeyi frenle
+        eventDetails: events.slice(0, 500),
         eventCount: events.length,
         avgReturns: avg,
         dnaFormat,
