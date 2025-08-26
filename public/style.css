@@ -985,3 +985,35 @@ input:checked + .slider:before { transform: translateX(24px); }
 /* İki kolonlu sonuç yerleşimi */
 .two-col { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
 @media (max-width: 1100px) { .two-col { grid-template-columns: 1fr; } }
+/* === Strateji formu hizalama (compact grid) === */
+.strategy-form-grid{
+  display:grid; grid-template-columns: repeat(4, minmax(180px,1fr));
+  gap:12px 16px; align-items:center;
+}
+.strategy-form-grid .form-field label{display:block;font-size:.9rem;color:var(--text-secondary);margin-bottom:6px}
+.strategy-form-grid .inline{
+  display:flex; align-items:center; gap:10px;
+}
+.pill-row{display:flex;flex-wrap:wrap;gap:8px}
+.pill{background:var(--chip-bg,#223);border:1px solid var(--border);padding:4px 8px;border-radius:999px;font-size:.85rem}
+
+/* === Sonuç kartları === */
+.analysis-card{background:var(--panel-bg);border:1px solid var(--border);border-radius:10px;margin:14px 0;padding:14px}
+.analysis-card-header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.kpi{display:grid;grid-template-columns:repeat(4,minmax(70px,1fr));gap:8px}
+.kpi-item{background:#00000020;border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center}
+.kpi-item b{font-size:1.05rem}
+.muted{color:var(--text-secondary)}
+.table-wrapper.compact table thead th{white-space:nowrap}
+.dna-summary-grid{display:grid;grid-template-columns:1fr 1fr}
+.dna-summary-header{display:contents}
+.dna-summary-header span{font-weight:600}
+.dna-indicator-group{display:contents}
+.dna-indicator-group .label{padding:6px 8px;border-bottom:1px solid var(--border)}
+.dna-indicator-group .value{padding:6px 8px;border-bottom:1px solid var(--border);text-align:right}
+
+/* === Loader merkezde kalsın === */
+.loading{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent-blue);
+  border-radius:50%;animation:spin 1s linear infinite;display:block;margin:20px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+#signalAnalysisResultContainer{min-height:140px}
