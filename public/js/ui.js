@@ -7,6 +7,19 @@ window.App = window.App || {
   log: (...args) => console.log('[App]', ...args),
 };
 
+// ---- UI HELPERS (tekil) ----
+(() => {
+  if (window.App.guards.uiHelpers) return;
+  window.App.guards.uiHelpers = true;
+
+  App.trTimeFmt   = { year:'2-digit', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' };
+  App.formatPct   = v => (typeof v === 'number' ? `${v.toFixed(2)}%` : 'N/A');
+  App.formatPrice = v => (typeof v === 'number' ? (v >= 1 ? v.toFixed(2) : v.toPrecision(6)) : 'N/A');
+  App.paramNice   = k => ({rsi:'RSI', macd:'MACD', adx:'ADX', volume:'Hacim', volatility:'Volatilite', candle:'Mum Şekli', speed:'Hız'}[k] || k);
+  App.clsPerf     = v => (typeof v === 'number' ? (v >= 0 ? 'positive' : 'negative') : '');
+})();
+
+
 function translatePage(lang) {
     document.querySelectorAll('[data-lang]').forEach(el => {
         const key = el.getAttribute('data-lang');
