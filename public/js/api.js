@@ -175,8 +175,10 @@ async function runSignalAnalysisPreview(params) {
 
       // 1s/4s/1g MFE ortalamaları
       const candlesFor = mins => Math.ceil(mins / (tfMin[tf] || 60));
-      const horizons = { '1h':60, '4h':240, '1d':1440 };
-      const sums = { '1h':0, '4h':0, '1d':0 }, counts = { '1h':0, '4h':0, '1d':0 };
+      const horizons = { '15m':15, '1h':60, '4h':240, '1d':1440 };
+      const sums  = { '15m':0, '1h':0, '4h':0, '1d':0 };
+      const counts= { '15m':0, '1h':0, '4h':0, '1d':0 };
+
 
       for (const ev of events) {
         let i = kl.findIndex(k => Number(k[0]) === ev.timestamp);
@@ -208,10 +210,11 @@ async function runSignalAnalysisPreview(params) {
       }
 
       const avg = {
-        '1h': counts['1h'] ? Number((sums['1h']/counts['1h']).toFixed(2)) : null,
-        '4h': counts['4h'] ? Number((sums['4h']/counts['4h']).toFixed(2)) : null,
-        '1d': counts['1d'] ? Number((sums['1d']/counts['1d']).toFixed(2)) : null
-      };
+  '15m': counts['15m'] ? Number((sums['15m']/counts['15m']).toFixed(2)) : null,
+  '1h' : counts['1h']  ? Number((sums['1h'] /counts['1h']).toFixed(2))  : null,
+  '4h' : counts['4h']  ? Number((sums['4h'] /counts['4h']).toFixed(2))  : null,
+  '1d' : counts['1d']  ? Number((sums['1d'] /counts['1d']).toFixed(2))  : null
+};
 
       const niceParam = key => ({rsi:'RSI', macd:'MACD', adx:'ADX', volume:'Hacim', volatility:'Volatilite', candle:'Mum Şekli', speed:'Hız'}[key] || key);
       const selectedParams = Object.keys(params.params || {}).filter(k => params.params[k]).map(niceParam);
@@ -406,4 +409,18 @@ async function analyzeWithGemini(dataToAnalyze) {
         console.error("Gemini analizi sırasında hata:", error);
         analysisContent.innerHTML = `<p style="color:var(--accent-red); text-align:center;">Analiz sırasında bir hata oluştu: ${error.message}</p>`;
     }
+}
+
+// === YENİ: Sunucu tabanlı gerçek önizleme ===
+async function runSignalAnalysisPreviewRemote(params) {
+  try {
+    const func = state.firebase.functions.httpsCallable('findSignalDNA');
+    const result = await func(params);
+    renderSignalAnalysisPreview(result.data);
+  } catch (err) {
+    console.error('runSignalAnalysisPreviewRemote hata:', err);
+    renderSignalAnalysisPreview({
+      info: { status:'error', message: 'Sunucu önizleme başarısız. Lütfen ayarları kontrol edin.' }
+    });
+  }
 }
