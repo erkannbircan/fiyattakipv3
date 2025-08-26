@@ -503,12 +503,12 @@ async function computeSmartDiscoveryHints({ timeframe, days }) {
 }
 
 function updateSmartBadges(smart){
-    // HTML'de var olan id'ler:
-    const lb = document.getElementById('smartLookbackText')  || document.getElementById('smartLookbackBadge');
-    const la = document.getElementById('smartLookaheadText') || document.getElementById('smartLookaheadBadge');
-    if (smart && lb) lb.textContent = `Öneri: ${smart.lookback} mum (ATR% ${smart.atrPct})`;
-    if (smart && la) la.textContent = `Öneri: ${smart.lookahead} mum`;
+  const lb = document.getElementById('smartLookbackText')  || document.getElementById('smartLookbackBadge');
+  const la = document.getElementById('smartLookaheadText') || document.getElementById('smartLookaheadBadge');
+  if (smart && lb) lb.textContent = `Öneri: ${smart.lookback} mum (ATR% ${Number(smart.atrPct ?? 0).toFixed(2)})`;
+  if (smart && la) la.textContent = `Öneri: ${smart.lookahead} mum`;
 }
+
 /* === window'a sabitleme (global export) === */
 (() => {
   if (typeof window === 'undefined') return;
