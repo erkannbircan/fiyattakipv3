@@ -1,3 +1,12 @@
+// ---- GLOBAL ÇATI (her JS dosyasının en üstüne koy) ----
+window.App = window.App || {
+  // sürüm bilgisi bu tur için (elle güncelle)
+  version: 'v3.0.0-' + (window.App?.versionTag || ''),
+  loaded: {},
+  guards: {},
+  log: (...args) => console.log('[App]', ...args),
+};
+
 function setupGlobalEventListeners() {
     document.body.addEventListener('click', async (e) => {
         if (e.target.closest('.close-btn') || e.target === document.getElementById('modalOverlay')) {
