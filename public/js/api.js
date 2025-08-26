@@ -240,17 +240,6 @@ async function runSignalAnalysisPreview(params) {
 
 
 
-    // 3) UI'ye yazdır
-    renderSignalAnalysisPreview(out);
-  } catch (err) {
-    console.error('runSignalAnalysisPreview hata:', err);
-    renderSignalAnalysisPreview({
-      info: { status:'error', message:'Analiz sırasında beklenmeyen bir hata oluştu.' }
-    });
-  }
-}
-
-
 async function saveDnaProfile(profileData, button) {
     if (button) showLoading(button);
     
