@@ -85,60 +85,63 @@
     <span>2. Kârlı Senaryo Tanımı</span>
     <i class="fas fa-chevron-down"></i>
   </div>
-  <div class="collapsible-content open">
-    <div class="discovery-grid compact">
-      <div>
-        <label>Zaman Dilimi</label>
-        <select id="signalAnalysisTimeframe">
-          <option value="15m">15 Dakika</option>
-          <option value="1h" selected>1 Saat</option>
-          <option value="4h">4 Saat</option>
-          <option value="1d">1 Gün</option>
-        </select>
-      </div>
-      <div>
-        <label>Geçmiş Periyot</label>
-        <select id="signalAnalysisPeriod">
-          <option value="7">Son 7 Gün</option>
-          <option value="30" selected>Son 30 Gün</option>
-          <option value="90">Son 90 Gün</option>
-        </select>
-      </div>
-      <div>
-        <label>Yön</label>
-        <select id="signalAnalysisDirection">
-          <option value="up" selected>Artış (+%)</option>
-          <option value="down">Azalış (-%)</option>
-        </select>
-      </div>
-      <div>
-        <label>Değişim (%)</label>
-        <input id="signalAnalysisChange" type="number" value="5" step="0.1" />
-      </div>
-    </div>
+  <!-- 2. Karlı Senaryo Tanımı -->
+<div class="strategy-form-grid">
+  <div class="form-field">
+    <label for="signalAnalysisTimeframe">Zaman Dilimi</label>
+    <select id="signalAnalysisTimeframe">
+      <option value="15m">15 Dakika</option>
+      <option value="1h" selected>1 Saat</option>
+      <option value="4h">4 Saat</option>
+      <option value="1d">1 Gün</option>
+    </select>
+  </div>
 
-    <!-- DNA mumu / akıllı öneriler / parametreler -->
-    <div class="discovery-grid compact" style="margin-top:10px;">
-      <div>
-        <label>DNA Mumu</label>
-        <input id="signalLookbackCandles" type="number" value="3" />
-        <label style="display:inline-flex;gap:6px;align-items:center;margin-top:6px;">
-          <input id="useSmartLookback" type="checkbox" checked />
-          Akıllı
-        </label>
-        <span id="smartLookbackText" class="badge-tip">Öneri: -</span>
-      </div>
-      <div>
-        <label>Gelecek Penceresi</label>
-        <select id="fixedLookaheadPreset">
-          <option value="auto" selected>Akıllı</option>
-          <option value="1h">1 Saat</option>
-          <option value="4h">4 Saat</option>
-          <option value="1d">1 Gün</option>
-        </select>
-        <input id="customLookaheadCandles" type="number" value="0" placeholder="Örn: 10 mum" style="margin-top:6px;" />
-        <span id="smartLookaheadText" class="badge-tip">Öneri: -</span>
-      </div>
+  <div class="form-field">
+    <label for="signalAnalysisPeriod">Geçmiş Periyot</label>
+    <select id="signalAnalysisPeriod">
+      <option value="7">Son 7 Gün</option>
+      <option value="30" selected>Son 30 Gün</option>
+      <option value="90">Son 90 Gün</option>
+    </select>
+  </div>
+
+  <div class="form-field">
+    <label for="signalAnalysisDirection">Yön</label>
+    <select id="signalAnalysisDirection">
+      <option value="up" selected>Artış (+%)</option>
+      <option value="down">Düşüş (-%)</option>
+    </select>
+  </div>
+
+  <div class="form-field">
+    <label for="signalAnalysisChange">Değişim (%)</label>
+    <input id="signalAnalysisChange" type="number" value="5" min="1" step="0.5">
+  </div>
+
+  <div class="form-field">
+    <label for="signalLookbackCandles">DNA Mumu</label>
+    <div class="inline">
+      <input id="signalLookbackCandles" type="number" value="9" min="1" step="1">
+      <label class="inline"><input type="checkbox" id="useSmartLookback" checked> Akıllı</label>
+      <span id="smartLookbackHint" class="muted">Öneri: 9 mum</span>
+    </div>
+  </div>
+
+  <div class="form-field">
+    <label for="fixedLookaheadPreset">Gelecek Penceresi</label>
+    <div class="inline">
+      <select id="fixedLookaheadPreset">
+        <option value="auto" selected>Akıllı</option>
+        <option value="1h">1 Saat</option>
+        <option value="4h">4 Saat</option>
+        <option value="1d">1 Gün</option>
+      </select>
+      <span>veya Mum:</span>
+      <input id="customLookaheadCandles" type="number" value="0" min="0" step="1" style="width:90px">
+      <span id="smartLookaheadHint" class="muted">Öneri: 8 mum</span>
+    </div>
+  </div>
       <div id="signalDnaParamsGrid" class="filters-grid compact" style="grid-column:1/-1;">
         <label class="filter-item"><input type="checkbox" data-param="rsi" checked /> RSI</label>
         <label class="filter-item"><input type="checkbox" data-param="macd" /> MACD</label>
