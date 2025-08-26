@@ -110,7 +110,7 @@ function runBacktest(alarmId) {
         });
 }
 
-// api.js — Strateji keşfi önizleme (istemci tarafı, kapalı blok)
+// api.js — Strateji keşfi önizleme (istemci)
 async function runSignalAnalysisPreview(params) {
   try {
     if (!params || !Array.isArray(params.coins) || params.coins.length === 0) {
@@ -151,6 +151,7 @@ async function runSignalAnalysisPreview(params) {
       const cooldown = Math.max(la, 3);
       let skipUntil = -1;
 
+      // sinyal i → (i+1..i+la) high/low penceresi
       for (let i = lb; i < len - la - 1; i++) {
         if (i < skipUntil) continue;
         const entryLow  = L(i);
@@ -172,6 +173,7 @@ async function runSignalAnalysisPreview(params) {
         }
       }
 
+      // 1s/4s/1g MFE ortalamaları
       const candlesFor = mins => Math.ceil(mins / (tfMin[tf] || 60));
       const horizons = { '1h':60, '4h':240, '1d':1440 };
       const sums = { '1h':0, '4h':0, '1d':0 }, counts = { '1h':0, '4h':0, '1d':0 };
@@ -235,6 +237,7 @@ async function runSignalAnalysisPreview(params) {
     renderSignalAnalysisPreview({ info: { status:'error', message:'Analiz sırasında beklenmeyen bir hata oluştu.' } });
   }
 }
+
 
 
     // 3) UI'ye yazdır
