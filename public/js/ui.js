@@ -492,19 +492,20 @@ if (Array.isArray(res.eventDetails) && res.eventDetails.length) {
   const top5 = all.slice(0,5);
 
   const row = (ev) => {
-    const when  = new Date(ev.timestamp).toLocaleString('tr-TR');
-    const tgt   = ev.targetTime ? new Date(ev.targetTime).toLocaleString('tr-TR') : '—';
-    const pB    = isFinite(ev.priceBefore) ? `$${Number(ev.priceBefore).toFixed(4)}` : 'N/A';
-    const pA    = isFinite(ev.priceAfter)  ? `$${Number(ev.priceAfter ).toFixed(4)}` : 'N/A';
-    const p15   = (ev.perf?.['15m']!=null) ? `${round2(ev.perf['15m'])}%` : '—';
-    const p1h   = (ev.perf?.['1h'] !=null) ? `${round2(ev.perf['1h']) }%` : '—';
-    const p4h   = (ev.perf?.['4h'] !=null) ? `${round2(ev.perf['4h']) }%` : '—';
-    const p1d   = (ev.perf?.['1d'] !=null) ? `${round2(ev.perf['1d']) }%` : '—';
-    return `<tr>
-      <td>${when}</td><td>${tgt}</td><td>${pB}</td><td>${pA}</td>
-      <td>${p15}</td><td>${p1h}</td><td>${p4h}</td><td>${p1d}</td>
-    </tr>`;
-  };
+  const when  = new Date(ev.timestamp).toLocaleString('tr-TR');
+  const tgt   = ev.targetTime ? new Date(ev.targetTime).toLocaleString('tr-TR') : '—';
+  const pB    = Number.isFinite(ev.priceBefore) ? `$${formatPrice(ev.priceBefore)}` : 'N/A';
+  const pA    = Number.isFinite(ev.priceAfter)  ? `$${formatPrice(ev.priceAfter)}`  : 'N/A';
+  const p15   = (ev.perf && ev.perf['15m']!=null) ? `${ev.perf['15m'].toFixed(2)}%` : '—';
+  const p1h   = (ev.perf && ev.perf['1h'] !=null) ? `${ev.perf['1h'].toFixed(2)}%`  : '—';
+  const p4h   = (ev.perf && ev.perf['4h'] !=null) ? `${ev.perf['4h'].toFixed(2)}%`  : '—';
+  const p1d   = (ev.perf && ev.perf['1d'] !=null) ? `${ev.perf['1d'].toFixed(2)}%`  : '—';
+  return `<tr>
+    <td><div>${when}</div><div class="muted">${pB}</div></td>
+    <td><div>${tgt}</div><div class="muted">${pA}</div></td>
+    <td>${p15}</td><td>${p1h}</td><td>${p4h}</td><td>${p1d}</td>
+  </tr>`;
+};
 
   const rowsTop5 = top5.map(row).join('');
   const rowsAll  = all.map(row).join('');
