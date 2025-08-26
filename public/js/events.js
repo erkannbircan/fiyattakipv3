@@ -320,8 +320,10 @@ function setupStrategyDiscoveryListeners(parentElement) {
         document.getElementById('discoveryResultsPanel')?.scrollIntoView({ behavior:'smooth', block:'start' });
 
         // Analizi çalıştır
-        if (typeof runSignalAnalysisPreview === 'function') {
-          await runSignalAnalysisPreview(params);
+        if (typeof runSignalAnalysisPreviewRemote === 'function') {
+        await runSignalAnalysisPreviewRemote(params);
+        } else if (typeof runSignalAnalysisPreview === 'function') {
+        await runSignalAnalysisPreview(params);
         } else {
           console.error('runSignalAnalysisPreview bulunamadı.');
           if (rc) rc.innerHTML = `<div class="error-msg">Analiz fonksiyonu yüklenemedi.</div>`;
