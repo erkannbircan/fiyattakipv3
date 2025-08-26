@@ -101,48 +101,128 @@ function runBacktest(alarmId) {
         });
 }
 
-// api.js — Strateji keşfi önizleme
+// api.js — Strateji keşfi önizleme (İSTEMCİ)
 async function runSignalAnalysisPreview(params) {
   try {
-    // Güvenlik: zorunlu alan kontrolü
+    // 1) Giriş kontrolleri
     if (!params || !Array.isArray(params.coins) || params.coins.length === 0) {
       const msg = 'Analiz edilecek en az bir coin seçin.';
-      console.warn(msg);
       renderSignalAnalysisPreview({ info: { status:'info', message: msg } });
       return;
     }
 
-    // Kütüphane yüklendi mi?
-    if (typeof window.findSignalDNA !== 'function') {
-      console.error('findSignalDNA tanımlı değil. (script sırası / 404?)');
-      renderSignalAnalysisPreview({
-        info: {
-          status: 'error',
-          message: 'Analiz kütüphanesi yüklenemedi (findSignalDNA). Lütfen sayfayı yenileyin.'
-        }
-      });
-      return;
-    }
+    const tfMin = { '15m':15, '1h':60, '4h':240, '1d':1440 };
+    const tf = params.timeframe || '1h';
+    const change = Number(params.changePercent) || 5;
+    const dir = params.direction || 'up';
+    const days = Number(params.days) || 30;
+    const lb = Number(params.lookbackCandles)  || 3;
+    const la = Number(params.lookaheadCandles) || Math.ceil((tfMin[tf] || 60) / (tfMin[tf] || 60));
 
-    // Her coin için analiz
+    const perDay = Math.max(1, Math.ceil(1440 / (tfMin[tf] || 60)));
+    const limit  = Math.min(1000, Math.max(200, days * perDay + lb + la + 20));
+
+    // 2) Her coin için klines çek, olayları bul, MFE ortalamalarını hesapla
     const out = {};
     for (const coin of params.coins) {
-      const one = await window.findSignalDNA({
-        coin,
-        timeframe: params.timeframe,
-        changePercent: params.changePercent,
-        direction: params.direction,
-        days: params.days,
-        lookbackCandles: params.lookbackCandles,
-        lookaheadCandles: params.lookaheadCandles,
-        lookaheadMode: params.lookaheadMode,
-        params: params.params,
-        isPreview: true
-      });
-      out[coin] = one;
+      const klines = await getKlines(coin, tf, limit);
+      if (!Array.isArray(klines) || klines.length < (lb + la + 5)) {
+        out[coin] = { status:'error', message:'Analiz için yeterli veri yok.' };
+        continue;
+      }
+
+      // Yardımcılar
+      const highAt = i => Number(klines[i][2]);
+      const lowAt  = i => Number(klines[i][3]);
+      const closeAt= i => Number(klines[i][4]);
+
+      const events = [];
+      const len = klines.length;
+
+      // 2.a Olay (event) tespiti — High/Low ile hedefe ulaşan PENCERE varsa başarı
+      // i: sinyal mumu; gelecek pencere: (i+1) .. (i+la)
+      for (let i = lb; i < len - la - 1; i++) {
+        const entry = closeAt(i); // referans olarak giriş close'u
+        const sliceHighs = [], sliceLows = [];
+        for (let j = i + 1; j <= i + la; j++) {
+          sliceHighs.push(highAt(j));
+          sliceLows.push(lowAt(j));
+        }
+        const maxH = Math.max(...sliceHighs);
+        const minL = Math.min(...sliceLows);
+        const upPct = ((maxH - entry) / entry) * 100;
+        const dnPct = ((minL - entry) / entry) * 100;
+
+        const hit =
+          (dir === 'up'   && upPct >= change) ||
+          (dir === 'down' && dnPct <= -change);
+
+        if (hit) {
+          events.push({
+            timestamp: Number(klines[i][0]),
+            priceBefore: entry
+          });
+        }
+      }
+
+      // 2.b 1s/4s/1g için High/Low tabanlı MFE ortalamaları
+      const candlesFor = mins => Math.ceil(mins / (tfMin[tf] || 60));
+      const horizons = { '1h': 60, '4h': 240, '1d': 1440 };
+      const sums = { '1h':0, '4h':0, '1d':0 }, counts = { '1h':0, '4h':0, '1d':0 };
+
+      for (const ev of events) {
+        // sinyal index'i (tam eşleşme yoksa en yakınını bul)
+        let i = klines.findIndex(k => Number(k[0]) === ev.timestamp);
+        if (i < 0) {
+          let best=null, bestDiff=Infinity;
+          klines.forEach((k, idx)=> {
+            const d = Math.abs(Number(k[0]) - ev.timestamp);
+            if (d < bestDiff){ bestDiff = d; best = idx; }
+          });
+          i = best==null ? -1 : best;
+        }
+        if (i < 0 || i >= len - 2) continue;
+
+        const entry = closeAt(i);
+
+        for (const key of Object.keys(horizons)) {
+          const f = i + candlesFor(horizons[key]);
+          const slice = klines.slice(i+1, Math.min(f+1, len));
+          if (!slice.length) continue;
+          const maxH = Math.max(...slice.map(k=>Number(k[2])));
+          const minL = Math.min(...slice.map(k=>Number(k[3])));
+
+          // yönsel MFE
+          const mfe = (dir === 'down')
+            ? ((minL - entry) / entry) * 100  // negatif beklenir
+            : ((maxH - entry) / entry) * 100; // pozitif beklenir
+
+          sums[key] += mfe;
+          counts[key] += 1;
+        }
+      }
+
+      const avg = {
+        '1h': counts['1h'] ? (sums['1h']/counts['1h']) : null,
+        '4h': counts['4h'] ? (sums['4h']/counts['4h']) : null,
+        '1d': counts['1d'] ? (sums['1d']/counts['1d']) : null,
+      };
+
+      // 2.c UI'nin beklediği minimum alanlar
+      out[coin] = {
+        status: 'ok',
+        eventDetails: events,                 // tablo & MFE hesapları için
+        eventCount: events.length,            // KPI
+        avgReturns: avg,                      // KPI
+        dnaSummary: { featureOrder: [], mean: [] }, // açıklama tabloları için boş ama güvenli
+        dnaProfile: {
+          name: `${dir==='up'?'Yükseliş':'Düşüş'} ${change}% / ${tf} / LB:${lb} LA:${la}`,
+          params: params.params || {}
+        }
+      };
     }
 
-    console.log('findSignalDNA sonucu:', out);
+    // 3) UI'ye yazdır
     renderSignalAnalysisPreview(out);
   } catch (err) {
     console.error('runSignalAnalysisPreview hata:', err);
@@ -151,7 +231,6 @@ async function runSignalAnalysisPreview(params) {
     });
   }
 }
-
 
 
 async function saveDnaProfile(profileData, button) {
