@@ -80,15 +80,10 @@
                                 <div id="discovery-coin-manager-container" style="margin-bottom: 20px;"></div>
     
                                 <!-- ⬇️ 2. Kârlı Senaryo Tanımı — TEK BUTON KALSIN -->
-<section class="collapsible">
-  <div class="collapsible-header">
-    <span>2. Kârlı Senaryo Tanımı</span>
-    <i class="fas fa-chevron-down"></i>
-  </div>
-  <!-- 2. Karlı Senaryo Tanımı -->
+<!-- 2. Karlı Senaryo Tanımı (Sade/Net Etiketler) -->
 <div class="strategy-form-grid">
   <div class="form-field">
-    <label for="signalAnalysisTimeframe">Zaman Dilimi</label>
+    <label for="signalAnalysisTimeframe">Zaman Dilimi <small class="muted">(Sinyallerin mumu)</small></label>
     <select id="signalAnalysisTimeframe">
       <option value="15m">15 Dakika</option>
       <option value="1h" selected>1 Saat</option>
@@ -98,7 +93,7 @@
   </div>
 
   <div class="form-field">
-    <label for="signalAnalysisPeriod">Geçmiş Periyot</label>
+    <label for="signalAnalysisPeriod">Geçmiş Dönem <small class="muted">(Veri penceresi)</small></label>
     <select id="signalAnalysisPeriod">
       <option value="7">Son 7 Gün</option>
       <option value="30" selected>Son 30 Gün</option>
@@ -115,18 +110,22 @@
   </div>
 
   <div class="form-field">
-    <label for="signalAnalysisChange">Değişim (%)</label>
+    <label for="signalAnalysisChange">Hedef Değişim (%) <small class="muted">(Örn. 5)</small></label>
     <input id="signalAnalysisChange" type="number" value="5" min="1" step="0.5">
   </div>
 
   <div class="form-field">
-    <label for="signalLookbackCandles">DNA Mumu</label>
+    <label for="signalLookbackCandles">DNA Mumu <small class="muted">(Desen için bakılacak geçmiş mum sayısı)</small></label>
     <div class="inline">
       <input id="signalLookbackCandles" type="number" value="9" min="1" step="1">
-      <label class="inline"><input type="checkbox" id="useSmartLookback" checked> Akıllı</label>
+      <label class="inline">
+        <input type="checkbox" id="useSmartLookback" checked> Akıllı Öner
+      </label>
       <span id="smartLookbackHint" class="muted">Öneri: 9 mum</span>
     </div>
   </div>
+</div>
+
 
   <div class="form-field">
     <label for="fixedLookaheadPreset">Gelecek Penceresi</label>
