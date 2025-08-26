@@ -485,23 +485,49 @@ function renderSignalAnalysisPreview(data) {
     const paramsHtml = paramLines.length ? paramLines.map(p=>`<span class="pill">${p}</span>`).join('') : '<span class="muted">Parametre seçilmedi</span>';
 
     // Fırsatlar tablosu (yalnızca ilk 5)
-    let eventsHtml = '<tbody><tr><td colspan="6" class="muted">Fırsat bulunamadı</td></tr></tbody>';
-    if (Array.isArray(res.eventDetails) && res.eventDetails.length) {
-      const rows = res.eventDetails.slice(0,5).map(ev => {
-        const when  = new Date(ev.timestamp).toLocaleString('tr-TR');
-        const pB    = isFinite(ev.priceBefore) ? `$${Number(ev.priceBefore).toFixed(4)}` : 'N/A';
-        const pA    = isFinite(ev.priceAfter)  ? `$${Number(ev.priceAfter ).toFixed(4)}` : 'N/A';
-        const p15   = (ev.perf?.['15m']!=null) ? `${round2(ev.perf['15m'])}%` : '—';
-        const p1h   = (ev.perf?.['1h'] !=null) ? `${round2(ev.perf['1h']) }%` : '—';
-        const p4h   = (ev.perf?.['4h'] !=null) ? `${round2(ev.perf['4h']) }%` : '—';
-        const p1d   = (ev.perf?.['1d'] !=null) ? `${round2(ev.perf['1d']) }%` : '—';
-        return `<tr>
-          <td>${when}</td><td>${pB}</td><td>${pA}</td>
-          <td>${p15}</td><td>${p1h}</td><td>${p4h}</td><td>${p1d}</td>
-        </tr>`;
-      }).join('');
-      eventsHtml = `<tbody>${rows}</tbody>`;
-    }
+    // Fırsatlar tablosu — en yeni 5 + tümü
+let eventsHtml = '<tbody><tr><td colspan="8" class="muted">Fırsat bulunamadı</td></tr></tbody>';
+if (Array.isArray(res.eventDetails) && res.eventDetails.length) {
+  const all = res.eventDetails.slice().sort((a,b)=>Number(b.timestamp)-Number(a.timestamp));
+  const top5 = all.slice(0,5);
+
+  const row = (ev) => {
+    const when  = new Date(ev.timestamp).toLocaleString('tr-TR');
+    const tgt   = ev.targetTime ? new Date(ev.targetTime).toLocaleString('tr-TR') : '—';
+    const pB    = isFinite(ev.priceBefore) ? `$${Number(ev.priceBefore).toFixed(4)}` : 'N/A';
+    const pA    = isFinite(ev.priceAfter)  ? `$${Number(ev.priceAfter ).toFixed(4)}` : 'N/A';
+    const p15   = (ev.perf?.['15m']!=null) ? `${round2(ev.perf['15m'])}%` : '—';
+    const p1h   = (ev.perf?.['1h'] !=null) ? `${round2(ev.perf['1h']) }%` : '—';
+    const p4h   = (ev.perf?.['4h'] !=null) ? `${round2(ev.perf['4h']) }%` : '—';
+    const p1d   = (ev.perf?.['1d'] !=null) ? `${round2(ev.perf['1d']) }%` : '—';
+    return `<tr>
+      <td>${when}</td><td>${tgt}</td><td>${pB}</td><td>${pA}</td>
+      <td>${p15}</td><td>${p1h}</td><td>${p4h}</td><td>${p1d}</td>
+    </tr>`;
+  };
+
+  const rowsTop5 = top5.map(row).join('');
+  const rowsAll  = all.map(row).join('');
+
+  eventsHtml = `
+    <tbody>${rowsTop5}</tbody>
+    <tfoot>
+      <tr><td colspan="8" style="text-align:right">
+        <details>
+          <summary>Tüm fırsatları göster (${all.length})</summary>
+          <div class="table-wrapper compact" style="margin-top:8px;">
+            <table>
+              <thead>
+                <tr><th>Zaman</th><th>Hedef Zamanı</th><th>Sinyal Fiyatı</th><th>Hedef Fiyatı</th><th>15Dk %</th><th>1S %</th><th>4S %</th><th>1G %</th></tr>
+              </thead>
+              <tbody>${rowsAll}</tbody>
+            </table>
+          </div>
+        </details>
+      </td></tr>
+    </tfoot>`;
+}
+
 
     // DNA özetini anlaşılır gruplar halinde göster
     let dnaHtml = '';
@@ -526,12 +552,13 @@ function renderSignalAnalysisPreview(data) {
       <div class="analysis-card">
         <div class="analysis-card-header">
           <h4>${coinSymbol}</h4>
-          <div class="kpi">
-            <div class="kpi-item"><span>15Dk Ort.</span><b>${avg15m}%</b></div>
-            <div class="kpi-item"><span>1S Ort.</span><b>${avg1h}%</b></div>
-            <div class="kpi-item"><span>4S Ort.</span><b>${avg4h}%</b></div>
-            <div class="kpi-item"><span>1G Ort.</span><b>${avg1d}%</b></div>
-          </div>
+          <div class="kpi-container">
+  <div class="kpi-item"><span class="kpi-label">Başarılı Sinyal</span><span class="kpi-value">${Number(res.eventCount||0)}</span></div>
+  <div class="kpi-item"><span class="kpi-label">15Dk Ort.</span><span class="kpi-value ${avg15m>=0?'positive':'negative'}">${avg15m}%</span></div>
+  <div class="kpi-item"><span class="kpi-label">1S Ort.</span><span class="kpi-value ${avg1h>=0?'positive':'negative'}">${avg1h}%</span></div>
+  <div class="kpi-item"><span class="kpi-label">4S Ort.</span><span class="kpi-value ${avg4h>=0?'positive':'negative'}">${avg4h}%</span></div>
+  <div class="kpi-item"><span class="kpi-label">1G Ort.</span><span class="kpi-value ${avg1d>=0?'positive':'negative'}">${avg1d}%</span></div>
+</div>
         </div>
 
         <div class="analysis-card-body">
