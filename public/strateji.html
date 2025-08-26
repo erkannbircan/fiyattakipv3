@@ -67,21 +67,23 @@
                     
                             <div class="discovery-settings-panel" id="discoverySettingsPanel">
                             <div class="collapsible">
-                                <div class="collapsible-header open">
-                                    <span><i class="fas fa-flask"></i> Strateji Keşif Aracı</span>
-                                    <i class="fas fa-chevron-down"></i>
-                                </div>
-                                <div class="collapsible-content open">
-                            <p class="section-description">
-                                Geçmiş verileri analiz ederek kârlı senaryoların "DNA profillerini" oluşturun ve kaydedin.
-                            </p>
-                            <div class="settings-section" style="border: none; padding: 0;">
-                                <h5 class="setting-subtitle">1. Analiz Edilecek Coinler</h5>
-                                <div id="discovery-coin-manager-container" style="margin-bottom: 20px;"></div>
- <section class="collapsible">
-  <div class="collapsible-header">
-    <span>2. Kârlı Senaryo Tanımı</span>
+  <div class="collapsible-header open">
+    <span><i class="fas fa-flask"></i> Strateji Keşif Aracı</span>
     <i class="fas fa-chevron-down"></i>
+  </div>
+  <div class="collapsible-content open">
+    <p class="section-description">
+      Geçmiş veriden “zaman dilimi + yön (+/−) + eşik % + DNA mumu” seçerek kârlı senaryoları buluruz.
+      Sistem, seçilen aralıkta eşiği geçen en iyi anları ve ortalama getirileri hesaplar.
+    </p>
+
+    <!-- Yeni: kompakt form grid -->
+    <div class="settings-section strategy-form">
+      <h5 class="setting-subtitle">1. Analiz Edilecek Coinler</h5>
+      <div id="discovery-coin-manager-container"></div>
+
+      <h5 class="setting-subtitle">2. Kârlı Senaryo Tanımı</h5>
+     <div class="form-grid-compact">
   </div>
   <div class="muted" style="margin:8px 0 12px;">
     <b>Kısaca:</b> Zaman dilimi + yön (+/−) + eşik % + DNA mumu seç.
