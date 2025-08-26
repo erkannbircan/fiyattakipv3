@@ -1017,3 +1017,16 @@ input:checked + .slider:before { transform: translateX(24px); }
   border-radius:50%;animation:spin 1s linear infinite;display:block;margin:20px auto}
 @keyframes spin{to{transform:rotate(360deg)}}
 #signalAnalysisResultContainer{min-height:140px}
+/* Tabloda yeni "Hedef Zamanı" sütunu da sabit genişlikte kalsın */
+.table-wrapper.compact table th,
+.table-wrapper.compact table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* KPI metrikleri daha okunur */
+.kpi-container { gap: 12px; }
+.kpi-item { align-items: center; }
+.kpi-label { font-size: .85rem; color: var(--text-secondary); }
+.kpi-value { font-size: 1.6rem; font-weight: 600; }
