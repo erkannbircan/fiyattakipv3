@@ -102,12 +102,11 @@ function runBacktest(alarmId) {
 }
 
 // api.js — Strateji keşfi önizleme (İSTEMCİ)
+// api.js — Strateji keşfi önizleme (istemci tarafı)
 async function runSignalAnalysisPreview(params) {
   try {
-    // 1) Giriş kontrolleri
     if (!params || !Array.isArray(params.coins) || params.coins.length === 0) {
-      const msg = 'Analiz edilecek en az bir coin seçin.';
-      renderSignalAnalysisPreview({ info: { status:'info', message: msg } });
+      renderSignalAnalysisPreview({ info: { status:'info', message:'Analiz edilecek en az bir coin seçin.' } });
       return;
     }
 
@@ -117,110 +116,121 @@ async function runSignalAnalysisPreview(params) {
     const dir = params.direction || 'up';
     const days = Number(params.days) || 30;
     const lb = Number(params.lookbackCandles)  || 3;
-    const la = Number(params.lookaheadCandles) || Math.ceil((tfMin[tf] || 60) / (tfMin[tf] || 60));
 
+    // lookahead (mum)
+    let la = Number(params.lookaheadCandles) || 0;
+    if (!la) {
+      // preset "Akıllı" ise 1 günün mum eşleniğini tavan sayalım, orta bir değer verelim
+      const perDay = Math.max(1, Math.ceil(1440 / (tfMin[tf] || 60)));
+      la = Math.min(24, Math.floor(perDay / 3)); // 1/3 gün
+    }
+
+    // Kline limiti (görüntülemek için yeterli)
     const perDay = Math.max(1, Math.ceil(1440 / (tfMin[tf] || 60)));
     const limit  = Math.min(1000, Math.max(200, days * perDay + lb + la + 20));
 
-    // 2) Her coin için klines çek, olayları bul, MFE ortalamalarını hesapla
     const out = {};
     for (const coin of params.coins) {
-      const klines = await getKlines(coin, tf, limit);
-      if (!Array.isArray(klines) || klines.length < (lb + la + 5)) {
+      const kl = await getKlines(coin, tf, limit);
+      if (!Array.isArray(kl) || kl.length < (lb + la + 5)) {
         out[coin] = { status:'error', message:'Analiz için yeterli veri yok.' };
         continue;
       }
 
-      // Yardımcılar
-      const highAt = i => Number(klines[i][2]);
-      const lowAt  = i => Number(klines[i][3]);
-      const closeAt= i => Number(klines[i][4]);
+      const H = i => Number(kl[i][2]);
+      const L = i => Number(kl[i][3]);
+      const C = i => Number(kl[i][4]);
 
       const events = [];
-      const len = klines.length;
+      const len = kl.length;
+      const cooldown = Math.max(la, 3); // tekrarları azalt
+      let skipUntil = -1;
 
-      // 2.a Olay (event) tespiti — High/Low ile hedefe ulaşan PENCERE varsa başarı
-      // i: sinyal mumu; gelecek pencere: (i+1) .. (i+la)
+      // Olay tespiti: sinyal mumu = i; gelecek pencere (i+1 .. i+la)
       for (let i = lb; i < len - la - 1; i++) {
-        const entry = closeAt(i); // referans olarak giriş close'u
-        const sliceHighs = [], sliceLows = [];
+        if (i < skipUntil) continue;
+
+        const entry = C(i);
+        let maxH = -Infinity, minL = +Infinity;
         for (let j = i + 1; j <= i + la; j++) {
-          sliceHighs.push(highAt(j));
-          sliceLows.push(lowAt(j));
+          const h = H(j), l = L(j);
+          if (h > maxH) maxH = h;
+          if (l < minL) minL = l;
         }
-        const maxH = Math.max(...sliceHighs);
-        const minL = Math.min(...sliceLows);
         const upPct = ((maxH - entry) / entry) * 100;
         const dnPct = ((minL - entry) / entry) * 100;
-
-        const hit =
-          (dir === 'up'   && upPct >= change) ||
-          (dir === 'down' && dnPct <= -change);
+        const hit = (dir === 'up' && upPct >= change) || (dir === 'down' && dnPct <= -change);
 
         if (hit) {
-          events.push({
-            timestamp: Number(klines[i][0]),
-            priceBefore: entry
-          });
+          events.push({ timestamp: Number(kl[i][0]), priceBefore: entry });
+          skipUntil = i + cooldown; // bir süre aynı bölgeden yeni sinyal üretme
         }
       }
 
-      // 2.b 1s/4s/1g için High/Low tabanlı MFE ortalamaları
+      // 1s/4s/1g MFE (High/Low)
       const candlesFor = mins => Math.ceil(mins / (tfMin[tf] || 60));
-      const horizons = { '1h': 60, '4h': 240, '1d': 1440 };
+      const horizons = { '1h':60, '4h':240, '1d':1440 };
       const sums = { '1h':0, '4h':0, '1d':0 }, counts = { '1h':0, '4h':0, '1d':0 };
 
       for (const ev of events) {
-        // sinyal index'i (tam eşleşme yoksa en yakınını bul)
-        let i = klines.findIndex(k => Number(k[0]) === ev.timestamp);
+        // sinyal index'i
+        let i = kl.findIndex(k => Number(k[0]) === ev.timestamp);
         if (i < 0) {
-          let best=null, bestDiff=Infinity;
-          klines.forEach((k, idx)=> {
-            const d = Math.abs(Number(k[0]) - ev.timestamp);
-            if (d < bestDiff){ bestDiff = d; best = idx; }
-          });
-          i = best==null ? -1 : best;
+          let best=null, bestD=Infinity;
+          kl.forEach((k, idx)=>{ const d=Math.abs(Number(k[0])-ev.timestamp); if(d<bestD){bestD=d;best=idx;} });
+          i = best ?? -1;
         }
         if (i < 0 || i >= len - 2) continue;
 
-        const entry = closeAt(i);
-
+        const entry = C(i);
         for (const key of Object.keys(horizons)) {
           const f = i + candlesFor(horizons[key]);
-          const slice = klines.slice(i+1, Math.min(f+1, len));
+          const slice = kl.slice(i+1, Math.min(f+1, len));
           if (!slice.length) continue;
-          const maxH = Math.max(...slice.map(k=>Number(k[2])));
-          const minL = Math.min(...slice.map(k=>Number(k[3])));
-
-          // yönsel MFE
+          const maxH = Math.max(...slice.map(x=>Number(x[2])));
+          const minL = Math.min(...slice.map(x=>Number(x[3])));
           const mfe = (dir === 'down')
-            ? ((minL - entry) / entry) * 100  // negatif beklenir
-            : ((maxH - entry) / entry) * 100; // pozitif beklenir
-
+            ? ((minL - entry) / entry) * 100
+            : ((maxH - entry) / entry) * 100;
           sums[key] += mfe;
           counts[key] += 1;
         }
       }
 
       const avg = {
-        '1h': counts['1h'] ? (sums['1h']/counts['1h']) : null,
-        '4h': counts['4h'] ? (sums['4h']/counts['4h']) : null,
-        '1d': counts['1d'] ? (sums['1d']/counts['1d']) : null,
+        '1h': counts['1h'] ? Number((sums['1h']/counts['1h']).toFixed(2)) : null,
+        '4h': counts['4h'] ? Number((sums['4h']/counts['4h']).toFixed(2)) : null,
+        '1d': counts['1d'] ? Number((sums['1d']/counts['1d']).toFixed(2)) : null,
       };
 
-      // 2.c UI'nin beklediği minimum alanlar
+      // Seçili parametrelerin okunabilir listesi
+      const niceParam = key => ({rsi:'RSI', macd:'MACD', adx:'ADX', volume:'Hacim', volatility:'Volatilite', candle:'Mum Şekli', speed:'Hız'}[key] || key);
+      const selectedParams = Object.keys(params.params || {}).filter(k => params.params[k]).map(niceParam);
+
+      // DNA profil & format metni
+      const dirTxt = (dir==='up' ? 'Yükseliş' : 'Düşüş');
+      const dnaFormat = `TF:${tf} | Yön:${dirTxt} | Değişim:${change}% | LB:${lb} | LA:${la} | Parametreler:${selectedParams.join(', ') || '-'}`;
+
       out[coin] = {
         status: 'ok',
-        eventDetails: events,                 // tablo & MFE hesapları için
-        eventCount: events.length,            // KPI
-        avgReturns: avg,                      // KPI
-        dnaSummary: { featureOrder: [], mean: [] }, // açıklama tabloları için boş ama güvenli
+        eventDetails: events.slice(0, 500),            // aşırı uzun listeyi frenle
+        eventCount: events.length,
+        avgReturns: avg,
+        dnaFormat,
         dnaProfile: {
-          name: `${dir==='up'?'Yükseliş':'Düşüş'} ${change}% / ${tf} / LB:${lb} LA:${la}`,
+          name: `${coin} | ${dirTxt} ${change}% / ${tf} / LB:${lb} LA:${la}`,
           params: params.params || {}
         }
       };
     }
+
+    renderSignalAnalysisPreview(out);
+  } catch (err) {
+    console.error('runSignalAnalysisPreview hata:', err);
+    renderSignalAnalysisPreview({ info: { status:'error', message:'Analiz sırasında beklenmeyen bir hata oluştu.' } });
+  }
+}
+
 
     // 3) UI'ye yazdır
     renderSignalAnalysisPreview(out);
