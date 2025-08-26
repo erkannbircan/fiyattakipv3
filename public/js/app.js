@@ -576,3 +576,28 @@ function updateAdminUI() {
         backtestTab.style.display = isAdmin ? 'block' : 'none';
     }
 }
+// ---- YÜKLEME DENETÇİSİ ----
+(() => {
+  // Basit showPage yedeği (yoksa)
+  if (typeof window.showPage !== 'function') {
+    window.showPage = function(id) {
+      document.querySelectorAll('.page').forEach(el => el.style.display = (el.id === id ? 'block' : 'none'));
+    };
+  }
+
+  // Beklenen globaller:
+  const expected = [
+    ['UI',   () => typeof window.renderSignalAnalysisPreview === 'function'],
+    ['API',  () => typeof window.runSignalAnalysisPreview === 'function' || typeof window.getKlines === 'function'],
+    ['EVT',  () => typeof window.setupStrategyDiscoveryListeners === 'function']
+  ];
+
+  const missing = expected.filter(([name, test]) => !test());
+  if (missing.length) {
+    console.group('[App] Eksik modüller');
+    missing.forEach(([n]) => console.error('Eksik:', n));
+    console.groupEnd();
+  } else {
+    App.log('Tüm modüller yüklendi.');
+  }
+})();
