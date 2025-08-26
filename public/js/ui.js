@@ -403,10 +403,17 @@ function saveChartState() {
     }
 }
 
-const trTimeFmt = { year:'2-digit', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' };
-const formatPct = v => (typeof v === 'number' ? `${v.toFixed(2)}%` : 'N/A');
-const formatPrice = v => (typeof v === 'number' ? (v>=1 ? v.toFixed(2) : v.toPrecision(6)) : 'N/A');
-const paramNice = k => ({rsi:'RSI', macd:'MACD', adx:'ADX', volume:'Hacim', volatility:'Volatilite', candle:'Mum Şekli', speed:'Hız'}[k] || k);
+(function attachUiHelpersOnce() {
+  if (!window.__UI_HELPERS__) {
+    const trTimeFmt = { year:'2-digit', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' };
+    const formatPct   = v => (typeof v === 'number' ? `${v.toFixed(2)}%` : 'N/A');
+    const formatPrice = v => (typeof v === 'number' ? (v >= 1 ? v.toFixed(2) : v.toPrecision(6)) : 'N/A');
+    const paramNice   = k => ({rsi:'RSI', macd:'MACD', adx:'ADX', volume:'Hacim', volatility:'Volatilite', candle:'Mum Şekli', speed:'Hız'}[k] || k);
+    const clsPerf     = v => (typeof v === 'number' ? (v >= 0 ? 'positive' : 'negative') : '');
+
+    window.__UI_HELPERS__ = { trTimeFmt, formatPct, formatPrice, paramNice, clsPerf };
+  }
+})();
 const clsPerf = v => (typeof v === 'number' ? (v >= 0 ? 'positive' : 'negative') : '');
 
 // === Strateji Önizleme UI (aynı sayfada render) ===
