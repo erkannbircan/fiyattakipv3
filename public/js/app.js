@@ -49,13 +49,13 @@ function initializeApp() {
     document.querySelectorAll('.page').forEach(el => {
       el.style.display = (el.id === id ? 'block' : 'none');
     });
-    // varsa scroll reset
     try { document.getElementById(id)?.scrollIntoView({ behavior:'auto', block:'start' }); } catch (_) {}
   };
-
-    // Bu dosyada tanımlı olduğu için güvenle çağırabiliriz
-    initializeAuthListener();
 }
+// Bu dosyada tanımlı olduğu için güvenle çağırabiliriz (her durumda çalışsın)
+initializeAuthListener();
+} // <-- initializeApp burada biter (EKLENDİ)
+
 
 
 function initializeAuthListener() {
@@ -341,29 +341,6 @@ async function handleAddCoin(listName) {
         if (listName === 'ai') await fetchAiDataAndRender();
     }
     input.value = '';
-}
-
-// app.js dosyasındaki handleRemoveCoin fonksiyonunu bununla değiştirin
-async function handleRemoveCoin(listName, pair) {
-    let assetList;
-    if (listName === 'crypto') assetList = state.userPortfolios[state.activePortfolio];
-    else if (listName === 'ai') assetList = state.cryptoAiPairs;
-    else if (listName === 'discovery') assetList = state.discoveryCoins;
-    else if (listName === 'alarm') assetList = state.tempAlarmCoins;
-    else return;
-
-    const updatedList = (assetList || []).filter(p => p !== pair);
-
-    if (listName === 'crypto') state.userPortfolios[state.activePortfolio] = updatedList;
-    else if (listName === 'ai') state.cryptoAiPairs = updatedList;
-    else if (listName === 'discovery') state.discoveryCoins = updatedList;
-    else if (listName === 'alarm') state.tempAlarmCoins = updatedList;
-
-    // İyileştirme: UI güncellemesi de aktif sekmeyi hedeflesin
-    updateCoinList(listName, updatedList);
-    await saveCoinListToFirestore(listName);
-    if (listName === 'crypto') await fetchAllDataAndRender();
-    if (listName === 'ai') await fetchAiDataAndRender();
 }
 
 async function handleRemoveCoin(listName, pair) {
