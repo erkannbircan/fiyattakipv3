@@ -34,6 +34,15 @@ function initializeApp() {
     } else {
         console.warn('setupAuthEventListeners henüz yüklenmemiş.');
     }
+    
+    if (typeof window.showPage !== 'function') {
+  window.showPage = function(id) {
+    document.querySelectorAll('.page').forEach(el => {
+      el.style.display = (el.id === id ? 'block' : 'none');
+    });
+    // varsa scroll reset
+    try { document.getElementById(id)?.scrollIntoView({ behavior:'auto', block:'start' }); } catch (_) {}
+  };
 
     // Bu dosyada tanımlı olduğu için güvenle çağırabiliriz
     initializeAuthListener();
