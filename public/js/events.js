@@ -259,10 +259,25 @@ function setupStrategyDiscoveryListeners(parentElement) {
   parentElement.addEventListener('click', async (e) => {
     const target = e.target;
 
-    // 1) STRATEJİYİ ANALİZ ET
+    // "TÜM FIRSATLARI GÖSTER" BUTONU
+    if (target.matches('.show-all-opportunities-btn')) {
+        const coinSymbol = target.dataset.coin;
+        document.querySelectorAll(`.opportunity-row.hidden[data-coin="${coinSymbol}"]`).forEach(row => {
+            row.classList.remove('hidden');
+        });
+        target.style.display = 'none'; // Butonu gizle
+        return;
+    }
+
+    // STRATEJİYİ ANALİZ ET
     if (target.closest('#runSignalAnalysisBtn')) {
       const btn = target.closest('#runSignalAnalysisBtn');
       showLoading(btn);
+
+      // 3- Ayrı bir "yükleniyor" butonu yerine mevcut sonuç alanında animasyon gösteriyoruz
+      const rc = document.getElementById('signalAnalysisResultContainer');
+      if (rc) rc.innerHTML = `<div class="loading" style="padding:12px; margin-top: 20px;">Analiz sonuçları hazırlanıyor...</div>`;
+      document.getElementById('discoveryResultsPanel')?.scrollIntoView({ behavior:'smooth', block:'start' });
 
       try {
         const timeframe = document.getElementById('signalAnalysisTimeframe').value;
@@ -271,63 +286,49 @@ function setupStrategyDiscoveryListeners(parentElement) {
         const direction = document.getElementById('signalAnalysisDirection').value;
         const useSmartLookback = document.getElementById('useSmartLookback')?.checked;
 
-        // DNA parametreleri
         const dnaParams = {};
         document.querySelectorAll('#signalDnaParamsGrid input[type="checkbox"]:checked')
           .forEach(cb => { dnaParams[cb.dataset.param] = true; });
 
-        // Lookback / Lookahead (DÜZELTİLMİŞ MANTIK)
         let lookbackCandles = parseInt(document.getElementById('signalLookbackCandles').value) || 9;
         const lookaheadModeSelect = document.getElementById('fixedLookaheadPreset')?.value || 'auto';
         const customLookaheadCandles = parseInt(document.getElementById('customLookaheadCandles')?.value) || 0;
         
+        // 7- Akıllı öneri metinlerini geri getiriyoruz
         const smart = await computeSmartDiscoveryHints({ timeframe, days });
-        
+        updateSmartBadges(smart); // Öneri metinlerini ekrana yazdır
+
         if (useSmartLookback && smart?.lookback) {
           lookbackCandles = smart.lookback;
           const el = document.getElementById('signalLookbackCandles');
           if (el) el.value = lookbackCandles;
         }
 
-        // Öncelik Sırası: 1. Özel Mum, 2. Sabit Preset (1s, 4s), 3. Akıllı Öneri
         let lookaheadFinalCandles = 0;
-        let finalMode = 'smart'; // Varsayılan
+        let finalMode = 'smart';
 
         if (customLookaheadCandles > 0) {
             lookaheadFinalCandles = customLookaheadCandles;
             finalMode = 'custom';
         } else if (lookaheadModeSelect !== 'auto') {
             lookaheadFinalCandles = presetToCandles(lookaheadModeSelect, timeframe);
-            finalMode = lookaheadModeSelect; // '1h', '4h', '1d'
+            finalMode = lookaheadModeSelect;
         } else if (smart?.lookahead) {
             lookaheadFinalCandles = smart.lookahead;
         }
         
-        updateSmartBadges?.(smart);
-
         const params = {
           coins: state.discoveryCoins,
-          timeframe,
-          changePercent,
-          direction,
-          days,
-          lookbackCandles: Number(lookbackCandles), // Sayı olduğundan emin ol
-          lookaheadCandles: Number(lookaheadFinalCandles), // Sayı olduğundan emin ol
+          timeframe, changePercent, direction, days,
+          lookbackCandles: Number(lookbackCandles),
+          lookaheadCandles: Number(lookaheadFinalCandles),
           lookaheadMode: finalMode,
           params: dnaParams,
         };
 
-        console.log('Sunucuya gönderilen analiz parametreleri:', params);
-
-        const rc = document.getElementById('signalAnalysisResultContainer');
-        if (rc) rc.innerHTML = `<div class="loading" style="padding:12px;">Analiz sonuçları hazırlanıyor...</div>`;
-        document.getElementById('discoveryResultsPanel')?.scrollIntoView({ behavior:'smooth', block:'start' });
-
-        // Sunucu tabanlı analizi çalıştır
         if (typeof runSignalAnalysisPreviewRemote === 'function') {
             await runSignalAnalysisPreviewRemote(params);
         } else {
-            console.error('runSignalAnalysisPreviewRemote fonksiyonu bulunamadı.');
             if (rc) rc.innerHTML = `<div class="error-msg">Analiz fonksiyonu yüklenemedi.</div>`;
         }
 
@@ -341,29 +342,22 @@ function setupStrategyDiscoveryListeners(parentElement) {
       return;
     }
 
-    // 2) DNA PROFİL KAYDET
+    // DNA PROFİL KAYDET
     const saveBtn = target.closest('.save-dna-btn');
     if (saveBtn) {
       const profileData = JSON.parse(saveBtn.dataset.profile);
       await saveDnaProfile(profileData, saveBtn);
       return;
     }
-
-    // 3) DNA PROFİLLERİ YENİLE
-    if (target.closest('#refreshDnaProfilesBtnDiscovery')) {
-      await fetchDnaProfiles('dnaProfilesContainerDiscovery');
-      return;
-    }
-
-    // 4) DNA PROFİL SİL
-    const deleteBtn = e.target.closest('.delete-dna-btn');
-    if (deleteBtn) {
-      const profileId = deleteBtn.dataset.profileId;
-      const containerId = deleteBtn.closest('.collapsible-content').id;
-      await deleteDnaProfile(profileId, containerId);
-      return;
-    }
   });
+
+  // Sayfa ilk yüklendiğinde de akıllı önerileri hesapla ve göster
+  (async () => {
+    const timeframe = document.getElementById('signalAnalysisTimeframe').value;
+    const days = parseInt(document.getElementById('signalAnalysisPeriod').value);
+    const smart = await computeSmartDiscoveryHints({ timeframe, days });
+    updateSmartBadges(smart);
+  })();
 }
 
 
