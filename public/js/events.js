@@ -264,40 +264,46 @@ function setupStrategyDiscoveryListeners(parentElement) {
       const btn = target.closest('#runSignalAnalysisBtn');
       showLoading(btn);
 
-      const timeframe = document.getElementById('signalAnalysisTimeframe').value;
-      const days = parseInt(document.getElementById('signalAnalysisPeriod').value);
-      const changePercent = parseFloat(document.getElementById('signalAnalysisChange').value);
-      const direction = document.getElementById('signalAnalysisDirection').value;
-      const useSmartLookback = document.getElementById('useSmartLookback')?.checked;
-
-      // DNA parametreleri
-      const dnaParams = {};
-      document.querySelectorAll('#signalDnaParamsGrid input[type="checkbox"]:checked')
-        .forEach(cb => { dnaParams[cb.dataset.param] = true; });
-
-      // Lookback / Lookahead
-      let lookbackCandles = parseInt(document.getElementById('signalLookbackCandles').value) || 3;
-      const fixedPreset = document.getElementById('fixedLookaheadPreset')?.value || 'auto';
-      const customLookaheadCandles = parseInt(document.getElementById('customLookaheadCandles')?.value) || 0;
-
-      // Akıllı ipuçları
       try {
+        const timeframe = document.getElementById('signalAnalysisTimeframe').value;
+        const days = parseInt(document.getElementById('signalAnalysisPeriod').value);
+        const changePercent = parseFloat(document.getElementById('signalAnalysisChange').value);
+        const direction = document.getElementById('signalAnalysisDirection').value;
+        const useSmartLookback = document.getElementById('useSmartLookback')?.checked;
+
+        // DNA parametreleri
+        const dnaParams = {};
+        document.querySelectorAll('#signalDnaParamsGrid input[type="checkbox"]:checked')
+          .forEach(cb => { dnaParams[cb.dataset.param] = true; });
+
+        // Lookback / Lookahead (DÜZELTİLMİŞ MANTIK)
+        let lookbackCandles = parseInt(document.getElementById('signalLookbackCandles').value) || 9;
+        const lookaheadModeSelect = document.getElementById('fixedLookaheadPreset')?.value || 'auto';
+        const customLookaheadCandles = parseInt(document.getElementById('customLookaheadCandles')?.value) || 0;
+        
         const smart = await computeSmartDiscoveryHints({ timeframe, days });
+        
         if (useSmartLookback && smart?.lookback) {
           lookbackCandles = smart.lookback;
           const el = document.getElementById('signalLookbackCandles');
           if (el) el.value = lookbackCandles;
         }
-        // lookahead seçimi: custom > preset > smart
-        let lookaheadCandles = 0;
+
+        // Öncelik Sırası: 1. Özel Mum, 2. Sabit Preset (1s, 4s), 3. Akıllı Öneri
+        let lookaheadFinalCandles = 0;
+        let finalMode = 'smart'; // Varsayılan
+
         if (customLookaheadCandles > 0) {
-          lookaheadCandles = customLookaheadCandles;
-        } else if (fixedPreset !== 'auto') {
-          lookaheadCandles = presetToCandles(fixedPreset, timeframe);
+            lookaheadFinalCandles = customLookaheadCandles;
+            finalMode = 'custom';
+        } else if (lookaheadModeSelect !== 'auto') {
+            lookaheadFinalCandles = presetToCandles(lookaheadModeSelect, timeframe);
+            finalMode = lookaheadModeSelect; // '1h', '4h', '1d'
         } else if (smart?.lookahead) {
-          lookaheadCandles = smart.lookahead;
+            lookaheadFinalCandles = smart.lookahead;
         }
-        updateSmartBadges?.(smart); // varsa rozetleri güncelle
+        
+        updateSmartBadges?.(smart);
 
         const params = {
           coins: state.discoveryCoins,
@@ -305,29 +311,26 @@ function setupStrategyDiscoveryListeners(parentElement) {
           changePercent,
           direction,
           days,
-          lookbackCandles,
-          lookaheadCandles,
-          lookaheadMode: (customLookaheadCandles > 0 ? 'custom' : (fixedPreset !== 'auto' ? fixedPreset : 'smart')),
+          lookbackCandles: Number(lookbackCandles), // Sayı olduğundan emin ol
+          lookaheadCandles: Number(lookaheadFinalCandles), // Sayı olduğundan emin ol
+          lookaheadMode: finalMode,
           params: dnaParams,
-          isPreview: true
         };
 
         console.log('Sunucuya gönderilen analiz parametreleri:', params);
 
-        // Sonuç alanını göster + “yükleniyor” mesajı
         const rc = document.getElementById('signalAnalysisResultContainer');
         if (rc) rc.innerHTML = `<div class="loading" style="padding:12px;">Analiz sonuçları hazırlanıyor...</div>`;
         document.getElementById('discoveryResultsPanel')?.scrollIntoView({ behavior:'smooth', block:'start' });
 
-        // Analizi çalıştır
+        // Sunucu tabanlı analizi çalıştır
         if (typeof runSignalAnalysisPreviewRemote === 'function') {
-        await runSignalAnalysisPreviewRemote(params);
-        } else if (typeof runSignalAnalysisPreview === 'function') {
-        await runSignalAnalysisPreview(params);
+            await runSignalAnalysisPreviewRemote(params);
         } else {
-          console.error('runSignalAnalysisPreview bulunamadı.');
-          if (rc) rc.innerHTML = `<div class="error-msg">Analiz fonksiyonu yüklenemedi.</div>`;
+            console.error('runSignalAnalysisPreviewRemote fonksiyonu bulunamadı.');
+            if (rc) rc.innerHTML = `<div class="error-msg">Analiz fonksiyonu yüklenemedi.</div>`;
         }
+
       } catch (err) {
         console.error('Analiz hatası:', err);
         const rc = document.getElementById('signalAnalysisResultContainer');
