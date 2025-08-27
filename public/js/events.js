@@ -442,6 +442,13 @@ function setupBacktestPageEventListeners() {
         const rerunBtn = e.target.closest('#rerunBacktestBtn');
         const refreshBtn = e.target.closest('#refreshDnaProfilesBtn');
         const toggleLink = e.target.closest('.toggle-details-link');
+        const deleteBtn   = e.target.closest('.delete-dna-btn');
+
+          if (deleteBtn) {
+    const pid = deleteBtn.dataset.profileId;
+    const containerId = deleteBtn.dataset.containerId || 'dnaProfilesContainer';
+    await deleteDnaProfile(pid, containerId);
+  }
         
         if (backtestBtn) {
             currentProfileId = backtestBtn.dataset.profileId;
@@ -463,11 +470,7 @@ function setupBacktestPageEventListeners() {
                 detailsContent.classList.toggle('open');
             }
         }
-      if (deleteBtn) {
-    const pid = deleteBtn.dataset.profileId;
-    const containerId = deleteBtn.dataset.containerId || 'dnaProfilesContainer';
-    await deleteDnaProfile(pid, containerId);
-  }
+  
     });
     
     function runTest() {
