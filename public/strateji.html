@@ -62,122 +62,113 @@
                 <a href="./sinyal-performans.html" class="tab-link" data-page="sinyal-performans" id="alarm-reports-tab" style="display: none;">Sinyal Performansı</a>
             </nav>
             
-          <div id="strategy-discovery-content" class="tab-content active">
-                <div class="discovery-content-wrapper">
+        <div id="strategy-discovery-content" class="tab-content active">
+    <div class="discovery-content-wrapper">
+        
+        <div class="discovery-settings-panel" id="discoverySettingsPanel">
+            <div class="collapsible">
+                <div class="collapsible-header open">
+                    <span><i class="fas fa-flask"></i> Strateji Keşif Aracı</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="collapsible-content open">
+                    <p class="section-description">
+                        Geçmiş veriyi analiz ederek kârlı senaryoların "DNA profillerini" bulun ve test edin.
+                    </p>
                     
-                            <div class="discovery-settings-panel" id="discoverySettingsPanel">
-                            <div class="collapsible">
-  <div class="collapsible-header open">
-    <span><i class="fas fa-flask"></i> Strateji Keşif Aracı</span>
-    <i class="fas fa-chevron-down"></i>
-  </div>
-  <div class="collapsible-content open">
-    <p class="section-description">
-      Geçmiş veriden “zaman dilimi + yön (+/−) + eşik % + DNA mumu” seçerek kârlı senaryoları buluruz.
-      Sistem, seçilen aralıkta eşiği geçen en iyi anları ve ortalama getirileri hesaplar.
-    </p>
+                    <div class="settings-section">
+                        <h5 class="setting-subtitle">1. Analiz Edilecek Coinler</h5>
+                        <div id="discovery-coin-manager-container"></div>
 
-    <!-- Yeni: kompakt form grid -->
-    <div class="settings-section strategy-form">
-      <h5 class="setting-subtitle">1. Analiz Edilecek Coinler</h5>
-      <div id="discovery-coin-manager-container"></div>
+                        <h5 class="setting-subtitle">2. Kârlı Senaryo Tanımı</h5>
+                        <div class="form-grid-compact">
+                            <div class="form-field">
+                                <label for="signalAnalysisTimeframe">Zaman Dilimi</label>
+                                <select id="signalAnalysisTimeframe">
+                                    <option value="15m">15 Dakika</option>
+                                    <option value="1h" selected>1 Saat</option>
+                                    <option value="4h">4 Saat</option>
+                                    <option value="1d">1 Gün</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="signalAnalysisPeriod">Geçmiş Dönem</label>
+                                <select id="signalAnalysisPeriod">
+                                    <option value="7">Son 7 Gün</option>
+                                    <option value="30" selected>Son 30 Gün</option>
+                                    <option value="90">Son 90 Gün</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="signalAnalysisDirection">Yön</label>
+                                <select id="signalAnalysisDirection">
+                                    <option value="up" selected>Artış (+%)</option>
+                                    <option value="down">Düşüş (-%)</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="signalAnalysisChange">Hedef Değişim (%)</label>
+                                <input id="signalAnalysisChange" type="number" value="5" min="1" step="0.5">
+                            </div>
+                        </div>
 
-      <h5 class="setting-subtitle">2. Kârlı Senaryo Tanımı</h5>
-     <div class="form-grid-compact">
-  </div>
-  <div class="muted" style="margin:8px 0 12px;">
-    <b>Kısaca:</b> Zaman dilimi + yön (+/−) + eşik % + DNA mumu seç.
-    Sistem, seçtiğin aralıkta eşiği geçen en iyi anları ve ortalama getirileri hesaplar.
-  </div>   
-<div class="strategy-form-grid">
-  <div class="form-field">
-    <label for="signalAnalysisTimeframe">Zaman Dilimi <small class="muted">(Sinyallerin mumu)</small></label>
-    <select id="signalAnalysisTimeframe">
-      <option value="15m">15 Dakika</option>
-      <option value="1h" selected>1 Saat</option>
-      <option value="4h">4 Saat</option>
-      <option value="1d">1 Gün</option>
-    </select>
-  </div>
+                        <h5 class="setting-subtitle">3. DNA ve Zamanlama Ayarları</h5>
+                        <div class="form-grid-compact">
+                            <div class="form-field">
+                                <label>DNA Mumu (Geçmiş)</label>
+                                <div class="inline">
+                                    <input id="signalLookbackCandles" type="number" value="9" min="1" step="1" style="width: 80px;">
+                                    <label class="check-inline" title="ATR (ortalama gerçek aralık) yüzdesine göre otomatik öneri sunar. Volatiliteye göre ayarlar.">
+                                        <input type="checkbox" id="useSmartLookback" checked> Akıllı
+                                    </label>
+                                </div>
+                                <div id="smartLookbackHint" class="muted small-text"></div>
+                            </div>
+                            <div class="form-field">
+                                <label>Gelecek Penceresi (Hedef)</label>
+                                <div class="inline">
+                                    <select id="fixedLookaheadPreset">
+                                        <option value="auto" selected>Akıllı</option>
+                                        <option value="1h">1 Saat</option>
+                                        <option value="4h">4 Saat</option>
+                                        <option value="1d">1 Gün</option>
+                                    </select>
+                                    <span class="muted">veya</span>
+                                    <input id="customLookaheadCandles" type="number" value="0" min="0" step="1" placeholder="Mum" style="width: 80px;">
+                                </div>
+                                <div id="smartLookaheadHint" class="muted small-text"></div>
+                            </div>
+                        </div>
 
-  <div class="form-field">
-    <label for="signalAnalysisPeriod">Geçmiş Dönem <small class="muted">(Veri penceresi)</small></label>
-    <select id="signalAnalysisPeriod">
-      <option value="7">Son 7 Gün</option>
-      <option value="30" selected>Son 30 Gün</option>
-      <option value="90">Son 90 Gün</option>
-    </select>
-  </div>
+                        <h5 class="setting-subtitle">4. DNA Parametreleri</h5>
+                        <div id="signalDnaParamsGrid" class="filters-grid compact">
+                            <label class="filter-item"><input type="checkbox" data-param="rsi" checked> RSI</label>
+                            <label class="filter-item"><input type="checkbox" data-param="macd"> MACD</label>
+                            <label class="filter-item"><input type="checkbox" data-param="adx"> ADX</label>
+                            <label class="filter-item"><input type="checkbox" data-param="volume" checked> Hacim</label>
+                            <label class="filter-item"><input type="checkbox" data-param="volatility"> Volatilite</label>
+                            <label class="filter-item"><input type="checkbox" data-param="candle"> Mum Şekli</label>
+                            <label class="filter-item"><input type="checkbox" data-param="velocity"> Hız</label>
+                        </div>
+                    </div>
 
-  <div class="form-field">
-    <label for="signalAnalysisDirection">Yön</label>
-    <select id="signalAnalysisDirection">
-      <option value="up" selected>Artış (+%)</option>
-      <option value="down">Düşüş (-%)</option>
-    </select>
-  </div>
+                    <div class="analysis-actions">
+                        <button id="runSignalAnalysisBtn" class="primary-button">
+                            <i class="fas fa-search"></i> Stratejiyi Analiz Et
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-  <div class="form-field">
-    <label for="signalAnalysisChange">Hedef Değişim (%) <small class="muted">(Örn. 5)</small></label>
-    <input id="signalAnalysisChange" type="number" value="5" min="1" step="0.5">
-  </div>
-
-  <div class="form-field">
-    <label for="signalLookbackCandles">DNA Mumu <small class="muted">(Desen için bakılacak geçmiş mum sayısı)</small></label>
-    <div class="inline">
-      <input id="signalLookbackCandles" type="number" value="9" min="1" step="1">
-      <label class="inline">
-        <input type="checkbox" id="useSmartLookback" checked> Akıllı Öner
-      </label>
-      <span id="smartLookbackHint" class="muted">Öneri: 9 mum</span>
-    </div>
-  </div>
-</div>
-
-
-  <div class="form-field">
-    <label for="fixedLookaheadPreset">Gelecek Penceresi</label>
-    <div class="inline">
-      <select id="fixedLookaheadPreset">
-        <option value="auto" selected>Akıllı</option>
-        <option value="1h">1 Saat</option>
-        <option value="4h">4 Saat</option>
-        <option value="1d">1 Gün</option>
-      </select>
-      <span>veya Mum:</span>
-      <input id="customLookaheadCandles" type="number" value="0" min="0" step="1" style="width:90px">
-      <span id="smartLookaheadHint" class="muted">Öneri: 8 mum</span>
-    </div>
-  </div>
-      <div id="signalDnaParamsGrid" class="filters-grid compact" style="grid-column:1/-1;">
-        <label class="filter-item"><input type="checkbox" data-param="rsi" checked /> RSI</label>
-        <label class="filter-item"><input type="checkbox" data-param="macd" /> MACD</label>
-        <label class="filter-item"><input type="checkbox" data-param="adx" /> ADX</label>
-        <label class="filter-item"><input type="checkbox" data-param="volume" checked /> Hacim</label>
-        <label class="filter-item"><input type="checkbox" data-param="volatility" /> Volatilite</label>
-        <label class="filter-item"><input type="checkbox" data-param="candle" /> Mum Şekli</label>
-        <label class="filter-item"><input type="checkbox" data-param="speed" /> Hız</label>
-      </div>
-    </div>
-
-    <!-- TEK ANALİZ BUTONU -->
-    <div class="analysis-actions" style="margin-top:14px;">
-      <button id="runSignalAnalysisBtn" class="primary-button">
-        <i class="fas fa-search"></i> Stratejiyi Analiz Et
-      </button>
-    </div>
-  </div>
-</section>
-
-<!-- ⬇️ SONUÇLARIN GELECEĞİ SABİT ALAN -->
-<section id="discoveryResultsPanel" class="discovery-results-panel">
-  <div id="signalAnalysisResultContainer" class="analysis-section">
-    <div class="placeholder-text">
-      <i class="fas fa-flask"></i>
-      <div>“Stratejiyi Analiz Et” tuşuna bastığınızda sonuçlar burada listelenecek.</div>
-    </div>
-  </div>
-</section>
+        <section id="discoveryResultsPanel" class="discovery-results-panel">
+            <div id="signalAnalysisResultContainer" class="analysis-section">
+                <div class="placeholder-text">
+                    <i class="fas fa-flask"></i>
+                    <div>“Stratejiyi Analiz Et” butonuna bastığınızda sonuçlar burada listelenecektir.</div>
+                </div>
+            </div>
+        </section>
                                 
     <div id="settingsPanel" class="panel"> </div>
     <div id="detailPanel" class="panel"> </div>
