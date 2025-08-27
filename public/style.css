@@ -1050,3 +1050,199 @@ input:checked + .slider:before { transform: translateX(24px); }
 .table-wrapper.compact table td {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* === STRATEJİ SAYFASI YENİ TASARIM === */
+
+.discovery-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.form-grid-compact {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px 20px;
+    align-items: end;
+    margin-bottom: 20px;
+}
+
+.form-field label {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.form-field input, .form-field select {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.form-field .inline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-field .check-inline {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.muted.small-text {
+    font-size: 0.8rem;
+    margin-top: 4px;
+    min-height: 1.2em;
+}
+
+#signalDnaParamsGrid.filters-grid.compact {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+}
+
+.analysis-actions {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+}
+
+.placeholder-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    border: 2px dashed var(--border-color);
+    border-radius: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 20px;
+}
+.placeholder-text i {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+/* --- SONUÇ KARTLARI --- */
+.analysis-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.analysis-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+}
+.analysis-card-header h4 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--accent-yellow);
+}
+
+.kpi-container {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+.kpi-item {
+    background: var(--bg-primary);
+    padding: 8px 12px;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+}
+.kpi-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    display: block;
+}
+.kpi-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.kpi-value.positive { color: var(--accent-green); }
+.kpi-value.negative { color: var(--accent-red); }
+
+.analysis-card-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.table-wrapper.compact table {
+    table-layout: auto;
+}
+.table-wrapper.compact th:nth-child(1), .table-wrapper.compact th:nth-child(2) { width: 30%; }
+
+
+.table-wrapper.compact table td > div {
+    line-height: 1.3;
+}
+.table-wrapper.compact table .muted {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.pill {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-size: 0.85rem;
+}
+
+.dna-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 8px;
+}
+.dna-indicator-group {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px;
+    background-color: var(--bg-primary);
+    border-radius: 6px;
+}
+.dna-indicator-group .label {
+    color: var(--text-secondary);
+}
+.dna-indicator-group .value {
+    font-weight: 600;
+}
+
+.analysis-card-footer {
+    padding: 15px 20px;
+    background-color: var(--bg-tertiary);
+    border-top: 1px solid var(--border-color);
+    text-align: right;
+}
+
+.save-dna-btn {
+    background-color: var(--accent-green);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+}
