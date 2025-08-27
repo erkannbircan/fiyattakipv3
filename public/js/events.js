@@ -463,6 +463,11 @@ function setupBacktestPageEventListeners() {
                 detailsContent.classList.toggle('open');
             }
         }
+      if (deleteBtn) {
+    const pid = deleteBtn.dataset.profileId;
+    const containerId = deleteBtn.dataset.containerId || 'dnaProfilesContainer';
+    await deleteDnaProfile(pid, containerId);
+  }
     });
     
     function runTest() {
