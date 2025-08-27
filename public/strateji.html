@@ -120,9 +120,9 @@
                 <label>DNA Mumu (Geçmiş)</label>
                 <div class="inline">
                     <input id="signalLookbackCandles" type="number" value="9" min="1" step="1">
-                    <label class="check-inline" title="ATR (ortalama gerçek aralık) yüzdesine göre otomatik öneri sunar. Volatiliteye göre ayarlar.">
-                        <input type="checkbox" id="useSmartLookback" checked> Akıllı
-                    </label>
+                    <label class="check-inline" title="ATR (ortalama gerçek aralık) yüzdesine göre otomatik öneri sunar. Volatiliteye göre ayarlar." id="smartLookbackLabel">
+    <input type="checkbox" id="useSmartLookback" checked> Akıllı <span class="smart-hint" id="lookbackHintText"></span>
+</label>
                 </div>
                 <div id="smartLookbackHint" class="muted small-text"></div>
             </div>
@@ -130,7 +130,7 @@
                 <label>Gelecek Penceresi (Hedef)</label>
                 <div class="inline">
                     <select id="fixedLookaheadPreset">
-                        <option value="auto" selected>Akıllı</option>
+    <option value="auto" selected>Akıllı <span class="smart-hint" id="lookaheadHintText"></span></option>
                         <option value="1h">1 Saat</option>
                         <option value="4h">4 Saat</option>
                         <option value="1d">1 Gün</option>
