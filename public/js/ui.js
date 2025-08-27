@@ -438,157 +438,118 @@ function saveChartState() {
 })();
 const clsPerf = v => (typeof v === 'number' ? (v >= 0 ? 'positive' : 'negative') : '');
 
-// === Strateji Önizleme UI (aynı sayfada render) ===
-// === REPLACE: renderSignalAnalysisPreview (tamamı) ===
+
 function renderSignalAnalysisPreview(data) {
   const resultContainer = document.getElementById('signalAnalysisResultContainer');
   if (!resultContainer) return;
 
   if (!data || Object.keys(data).length === 0) {
-    resultContainer.innerHTML = `<p style="text-align:center;color:var(--text-secondary);padding:20px;">Analiz için sonuç bulunamadı.</p>`;
+    resultContainer.innerHTML = `<p class="placeholder-text">Analiz için sonuç bulunamadı.</p>`;
     return;
   }
 
-  // Yardımcılar
   const round2 = (n) => (typeof n === 'number' && isFinite(n)) ? n.toFixed(2) : 'N/A';
-  const pct = (from, to, dir='up') => {
-    if (!isFinite(from) || !isFinite(to) || from === 0) return null;
-    const change = ((to - from) / from) * 100;
-    return dir === 'down' ? -change : change;
-  };
 
-  // Her coin için kart üret
   const html = Object.keys(data).map((coin) => {
     const res = data[coin];
     const coinSymbol = coin.replace('USDT','');
 
-    // Basit durum mesajları
     if (!res || res.status === 'error' || res.status === 'info') {
       const msg = (res && res.message) ? res.message : 'Sonuç yok.';
       const color = (res && res.status === 'error') ? 'var(--accent-red)' : 'var(--text-secondary)';
-      return `<div class="analysis-card"><h4>${coinSymbol}</h4><div style="color:${color};padding:10px;">${msg}</div></div>`;
+      return `<div class="analysis-card"><div class="analysis-card-header"><h4>${coinSymbol}</h4></div><div style="color:${color};padding:20px;">${msg}</div></div>`;
     }
 
-    // Güvenli ortalama getiriler (2 ondalık)
-    const avg15m = round2(res.avgReturns?.['15m'] ?? NaN);
-    const avg1h  = round2(res.avgReturns?.['1h']  ?? NaN);
-    const avg4h  = round2(res.avgReturns?.['4h']  ?? NaN);
-    const avg1d  = round2(res.avgReturns?.['1d']  ?? NaN);
+    const avg15m = round2(res.avgReturns?.['15m']);
+    const avg1h  = round2(res.avgReturns?.['1h']);
+    const avg4h  = round2(res.avgReturns?.['4h']);
+    const avg1d  = round2(res.avgReturns?.['1d']);
 
-    // Parametreleri okunur listeye çevir (boş kalmasın)
-    const paramLines = [];
-    if (res.params && typeof res.params === 'object') {
-      Object.keys(res.params).forEach(k => {
-        if (res.params[k]) paramLines.push(k.toUpperCase());
-      });
-    }
-    const paramsHtml = paramLines.length ? paramLines.map(p=>`<span class="pill">${p}</span>`).join('') : '<span class="muted">Parametre seçilmedi</span>';
+    const paramsHtml = res.dnaProfile?.featureOrder
+      .map(f => f.split('_')[0].toUpperCase())
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .map(p => `<span class="pill">${p}</span>`).join('') || '<span class="muted">Parametre seçilmedi</span>';
 
-    // Fırsatlar tablosu (yalnızca ilk 5)
-    // Fırsatlar tablosu — en yeni 5 + tümü
-let eventsHtml = '<tbody><tr><td colspan="8" class="muted">Fırsat bulunamadı</td></tr></tbody>';
-if (Array.isArray(res.eventDetails) && res.eventDetails.length) {
-  const all = res.eventDetails.slice().sort((a,b)=>Number(b.timestamp)-Number(a.timestamp));
-  const top5 = all.slice(0,5);
+    let eventsHtml = '<tbody><tr><td colspan="6" class="muted" style="text-align:center; padding: 20px;">Fırsat bulunamadı</td></tr></tbody>';
+    if (Array.isArray(res.eventDetails) && res.eventDetails.length) {
+      const all = res.eventDetails.slice().sort((a,b) => Number(b.timestamp) - Number(a.timestamp));
+      const top5 = all.slice(0, 5);
 
-  const row = (ev) => {
-  const when  = new Date(ev.timestamp).toLocaleString('tr-TR');
-  const tgt   = ev.targetTime ? new Date(ev.targetTime).toLocaleString('tr-TR') : '—';
-  const pB    = Number.isFinite(ev.priceBefore) ? `$${formatPrice(ev.priceBefore)}` : 'N/A';
-  const pA    = Number.isFinite(ev.priceAfter)  ? `$${formatPrice(ev.priceAfter)}`  : 'N/A';
-  const p15   = (ev.perf && ev.perf['15m']!=null) ? `${ev.perf['15m'].toFixed(2)}%` : '—';
-  const p1h   = (ev.perf && ev.perf['1h'] !=null) ? `${ev.perf['1h'].toFixed(2)}%`  : '—';
-  const p4h   = (ev.perf && ev.perf['4h'] !=null) ? `${ev.perf['4h'].toFixed(2)}%`  : '—';
-  const p1d   = (ev.perf && ev.perf['1d'] !=null) ? `${ev.perf['1d'].toFixed(2)}%`  : '—';
-  return `<tr>
-    <td><div>${when}</div><div class="muted">${pB}</div></td>
-    <td><div>${tgt}</div><div class="muted">${pA}</div></td>
-    <td>${p15}</td><td>${p1h}</td><td>${p4h}</td><td>${p1d}</td>
-  </tr>`;
-};
-
-  const rowsTop5 = top5.map(row).join('');
-  const rowsAll  = all.map(row).join('');
-
-  eventsHtml = `
-    <tbody>${rowsTop5}</tbody>
-    <tfoot>
-      <tr><td colspan="8" style="text-align:right">
-        <details>
-          <summary>Tüm fırsatları göster (${all.length})</summary>
-          <div class="table-wrapper compact" style="margin-top:8px;">
-            <table>
-              <thead>
-                <tr><th>Zaman</th><th>Hedef Zamanı</th><th>Sinyal Fiyatı</th><th>Hedef Fiyatı</th><th>15Dk %</th><th>1S %</th><th>4S %</th><th>1G %</th></tr>
-              </thead>
-              <tbody>${rowsAll}</tbody>
-            </table>
-          </div>
-        </details>
-      </td></tr>
-    </tfoot>`;
-}
-
-
-    // DNA özetini anlaşılır gruplar halinde göster
-    let dnaHtml = '';
-    if (res.dnaSummary && Array.isArray(res.dnaSummary.featureOrder) && Array.isArray(res.dnaSummary.mean)) {
-      const groups = {};
-      res.dnaSummary.featureOrder.forEach((key,i)=>{
-        const parts = key.split('_'); const metric = parts.pop(); const base = parts.join('_');
-        if (!groups[base]) groups[base] = {};
-        groups[base][metric] = round2(Number(res.dnaSummary.mean[i]));
-      });
-      dnaHtml = Object.keys(groups).slice(0,5).map(k=>{
-        const g=groups[k];
-        return `<div class="dna-indicator-group"><span class="label">${k}</span><span class="value">${g.avg ?? '—'}</span></div>`;
-      }).join('');
-      dnaHtml = `<div class="dna-summary-grid"><div class="dna-summary-header"><span>Parametre</span><span>Ortalama</span></div>${dnaHtml}</div>`;
-    } else {
-      dnaHtml = '<div class="muted">DNA özeti sağlanmadı.</div>';
+      const row = (ev) => {
+        const when  = new Date(ev.timestamp).toLocaleString('tr-TR', App.trTimeFmt);
+        const tgt   = ev.targetTime ? new Date(ev.targetTime).toLocaleString('tr-TR', App.trTimeFmt) : '—';
+        const pB    = Number.isFinite(ev.priceBefore) ? `$${formatPrice(ev.priceBefore)}` : 'N/A';
+        const pA    = Number.isFinite(ev.priceAfter)  ? `$${formatPrice(ev.priceAfter)}`  : 'N/A';
+        const p15   = (ev.perf && ev.perf['15m'] != null) ? `${ev.perf['15m'].toFixed(2)}%` : '—';
+        const p1h   = (ev.perf && ev.perf['1h']  != null) ? `${ev.perf['1h'].toFixed(2)}%`  : '—';
+        const p4h   = (ev.perf && ev.perf['4h']  != null) ? `${ev.perf['4h'].toFixed(2)}%`  : '—';
+        const p1d   = (ev.perf && ev.perf['1d']  != null) ? `${ev.perf['1d'].toFixed(2)}%`  : '—';
+        return `<tr>
+          <td><div>${when}</div><div class="muted">${pB}</div></td>
+          <td><div>${tgt}</div><div class="muted">${pA}</div></td>
+          <td class="${App.clsPerf(ev.perf?.['15m'])}">${p15}</td>
+          <td class="${App.clsPerf(ev.perf?.['1h'])}">${p1h}</td>
+          <td class="${App.clsPerf(ev.perf?.['4h'])}">${p4h}</td>
+          <td class="${App.clsPerf(ev.perf?.['1d'])}">${p1d}</td>
+        </tr>`;
+      };
+      eventsHtml = `<tbody>${top5.map(row).join('')}</tbody>`;
+       if (all.length > 5) {
+        eventsHtml += `<tfoot>
+          <tr><td colspan="6" style="text-align:right">
+            <details>
+              <summary>Tüm fırsatları göster (${all.length})</summary>
+              <div class="table-wrapper compact" style="margin-top:8px; max-height: 300px; overflow-y: auto;">
+                <table><thead><tr><th>Zaman/Fiyat</th><th>Hedef/Fiyat</th><th>15Dk %</th><th>1S %</th><th>4S %</th><th>1G %</th></tr></thead>
+                <tbody>${all.map(row).join('')}</tbody></table>
+              </div>
+            </details>
+          </td></tr>
+        </tfoot>`;
+      }
     }
 
-    // Kart gövdesi
+    let dnaHtml = '<div class="muted">DNA özeti oluşturulamadı.</div>';
+    if (res.dnaSummary && res.dnaSummary.featureOrder) {
+        dnaHtml = res.dnaSummary.featureOrder.map((key, i) => {
+            const value = round2(res.dnaSummary.mean[i]);
+            return `<div class="dna-indicator-group"><span class="label">${key}</span><span class="value">${value}</span></div>`;
+        }).join('');
+    }
+
     return `
       <div class="analysis-card">
         <div class="analysis-card-header">
           <h4>${coinSymbol}</h4>
           <div class="kpi-container">
-  <div class="kpi-item"><span class="kpi-label">Başarılı Sinyal</span><span class="kpi-value">${Number(res.eventCount||0)}</span></div>
-  <div class="kpi-item"><span class="kpi-label">15Dk Ort.</span><span class="kpi-value ${avg15m>=0?'positive':'negative'}">${avg15m}%</span></div>
-  <div class="kpi-item"><span class="kpi-label">1S Ort.</span><span class="kpi-value ${avg1h>=0?'positive':'negative'}">${avg1h}%</span></div>
-  <div class="kpi-item"><span class="kpi-label">4S Ort.</span><span class="kpi-value ${avg4h>=0?'positive':'negative'}">${avg4h}%</span></div>
-  <div class="kpi-item"><span class="kpi-label">1G Ort.</span><span class="kpi-value ${avg1d>=0?'positive':'negative'}">${avg1d}%</span></div>
-</div>
+            <div class="kpi-item"><span class="kpi-label">Sinyal Sayısı</span><span class="kpi-value">${res.eventCount || 0}</span></div>
+            <div class="kpi-item"><span class="kpi-label">1S Ort. Getiri</span><span class="kpi-value ${avg1h >= 0 ? 'positive' : 'negative'}">${avg1h}%</span></div>
+            <div class="kpi-item"><span class="kpi-label">4S Ort. Getiri</span><span class="kpi-value ${avg4h >= 0 ? 'positive' : 'negative'}">${avg4h}%</span></div>
+            <div class="kpi-item"><span class="kpi-label">1G Ort. Getiri</span><span class="kpi-value ${avg1d >= 0 ? 'positive' : 'negative'}">${avg1d}%</span></div>
+          </div>
         </div>
-
         <div class="analysis-card-body">
           <section>
-            <h5 class="setting-subtitle">Bulunan Fırsat Detayları (İlk 5)</h5>
+            <h5 class="setting-subtitle">Bulunan Fırsat Detayları</h5>
             <div class="table-wrapper compact">
               <table>
-                <thead>
-                  <tr><th>Zaman</th><th>Sinyal Fiyatı</th><th>Hedef Fiyatı</th><th>15Dk %</th><th>1S %</th><th>4S %</th><th>1G %</th></tr>
-                </thead>
+                <thead><tr><th>Zaman/Fiyat</th><th>Hedef/Fiyat</th><th>15Dk %</th><th>1S %</th><th>4S %</th><th>1G %</th></tr></thead>
                 ${eventsHtml}
               </table>
             </div>
           </section>
-
           <section>
-            <h5 class="setting-subtitle">Parametreler</h5>
+            <h5 class="setting-subtitle">DNA Parametreleri</h5>
             <div class="pill-row">${paramsHtml}</div>
           </section>
-
           <section>
-            <h5 class="setting-subtitle">DNA Özeti (ilk 5)</h5>
-            ${dnaHtml}
+            <h5 class="setting-subtitle">DNA Özeti</h5>
+            <div class="dna-summary-grid">${dnaHtml}</div>
           </section>
         </div>
-
         <div class="analysis-card-footer">
           <button class="save-dna-btn" data-profile='${JSON.stringify(res.dnaProfile || {})}'>
-            DNA Profilini Kaydet
+            <i class="fas fa-save"></i> Bu DNA Profilini Kaydet
           </button>
         </div>
       </div>
