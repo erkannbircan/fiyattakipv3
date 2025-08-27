@@ -258,12 +258,29 @@ function setupAiPageActionListeners(parentElement) {
 function setupStrategyDiscoveryListeners(parentElement) {
   
     // --- YENİ: Ayar değişikliklerini dinleyen fonksiyon ---
-    const updateHintsOnTheFly = async () => {
+     const updateHintsOnTheFly = async () => {
         const timeframe = document.getElementById('signalAnalysisTimeframe')?.value;
         const days = parseInt(document.getElementById('signalAnalysisPeriod')?.value);
+        // Sadece 'auto' seçiliyken lookahead önerisini göstermek için
+        const fixedLookaheadPreset = document.getElementById('fixedLookaheadPreset')?.value;
+
         if (timeframe && days) {
             const smart = await computeSmartDiscoveryHints({ timeframe, days });
-            updateSmartBadges(smart);
+            // Lookahead önerisini sadece "Akıllı" seçeneği aktifse göstermek için koşul ekliyoruz
+            updateSmartBadges(smart); 
+            
+            // Eğer lookahead için 'Akıllı' seçilmişse ve öneri varsa, bunu input'a da yazalım (eğer akıllı checkbox işaretliyse)
+            const useSmartLookback = document.getElementById('useSmartLookback')?.checked;
+            if (useSmartLookback && smart?.lookback) {
+                document.getElementById('signalLookbackCandles').value = smart.lookback;
+            }
+            if (fixedLookaheadPreset === 'auto' && smart?.lookahead) {
+                // Burada bir input'a değer yazmadığımız için sadece göstereceğiz.
+            }
+
+        } else {
+            // Eğer gerekli parametreler yoksa önerileri temizle
+            updateSmartBadges(null);
         }
     };
 
@@ -521,10 +538,30 @@ async function computeSmartDiscoveryHints({ timeframe, days }) {
 }
 
 function updateSmartBadges(smart){
-  const lb = document.getElementById('smartLookbackText')  || document.getElementById('smartLookbackBadge');
-  const la = document.getElementById('smartLookaheadText') || document.getElementById('smartLookaheadBadge');
-  if (smart && lb) lb.textContent = `Öneri: ${smart.lookback} mum (ATR% ${Number(smart.atrPct ?? 0).toFixed(2)})`;
-  if (smart && la) la.textContent = `Öneri: ${smart.lookahead} mum`;
+  // DNA Mumu (Geçmiş) önerisini gösterme
+  const lookbackHintText = document.getElementById('lookbackHintText');
+  if (lookbackHintText) {
+    if (smart && smart.lookback) {
+      lookbackHintText.textContent = `(Öneri: ${smart.lookback} mum)`;
+      lookbackHintText.title = `ATR Volatilitesi: ${smart.atrPct}%`; // Tooltip ekleyelim
+    } else {
+      lookbackHintText.textContent = '';
+      lookbackHintText.title = '';
+    }
+  }
+
+  // Gelecek Penceresi (Hedef) önerisini gösterme
+  const lookaheadSelect = document.getElementById('fixedLookaheadPreset');
+  const autoOption = lookaheadSelect ? lookaheadSelect.querySelector('option[value="auto"]') : null;
+  const lookaheadHintText = document.getElementById('lookaheadHintText'); // Yeni span
+
+  if (autoOption && lookaheadHintText) {
+    if (smart && smart.lookahead && lookaheadSelect.value === 'auto') {
+      lookaheadHintText.textContent = `(Öneri: ${smart.lookahead} mum)`;
+    } else {
+      lookaheadHintText.textContent = '';
+    }
+  }
 }
 
 /* === window'a sabitleme (global export) === */
