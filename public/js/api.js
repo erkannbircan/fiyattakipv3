@@ -241,20 +241,23 @@ async function runSignalAnalysisPreview(params) {
   }
 }
 
-
-
 async function saveDnaProfile(profileData, button) {
     if (button) showLoading(button);
     
-    // Yeni ve basit Cloud Function'ı çağırıyoruz.
     const saveProfileFunc = state.firebase.functions.httpsCallable('saveDnaProfile');
     
     try {
         const result = await saveProfileFunc({ profile: profileData });
         if (result.data.success) {
             showNotification(`DNA profili (${profileData.name}) başarıyla kaydedildi!`, true);
-            // Kayıttan sonra listeyi yenile
-            fetchDnaProfiles('dnaProfilesContainerDiscovery');
+            
+            // --- ÇÖZÜM BURADA ---
+            // Önce o isimde bir kutu (container) var mı diye kontrol et.
+            const profileListContainer = document.getElementById('dnaProfilesContainerDiscovery');
+            if (profileListContainer) {
+                // Sadece kutu varsa yenileme fonksiyonunu çağır.
+                fetchDnaProfiles('dnaProfilesContainerDiscovery');
+            }
         } else {
             throw new Error(result.data.error || 'Profil kaydedilemedi.');
         }
