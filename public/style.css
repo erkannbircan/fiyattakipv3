@@ -1395,3 +1395,37 @@ span.smart-hint {
     margin-left: 5px;
     font-weight: normal;
 }
+/* === SONUÇLARDAKİ GİZLENEBİLİR DNA DETAYLARI === */
+.dna-details-container {
+    margin-top: 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-primary);
+}
+
+.dna-details-container summary {
+    padding: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-secondary);
+    list-style-position: inside;
+    transition: color 0.2s ease;
+    outline: none; /* Tıklama sonrası çerçeveyi kaldırır */
+}
+
+.dna-details-container summary:hover {
+    color: var(--text-primary);
+}
+
+.dna-details-container .details-content-wrapper {
+    padding: 20px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.dna-details-container[open] > summary {
+    color: var(--text-primary);
+}
