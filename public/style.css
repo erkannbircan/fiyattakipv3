@@ -1388,3 +1388,10 @@ input:checked + .slider:before { transform: translateX(24px); }
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 10px;
 }
+/* Akıllı öneri metinlerinin stili */
+span.smart-hint {
+    font-size: 0.8em; /* Daha küçük */
+    color: var(--accent-blue); /* Mavi renk */
+    margin-left: 5px;
+    font-weight: normal;
+}
