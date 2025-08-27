@@ -276,7 +276,7 @@ function setupStrategyDiscoveryListeners(parentElement) {
 
       // 3- Ayrı bir "yükleniyor" butonu yerine mevcut sonuç alanında animasyon gösteriyoruz
       const rc = document.getElementById('signalAnalysisResultContainer');
-      if (rc) rc.innerHTML = `<div class="loading" style="padding:12px; margin-top: 20px;">Analiz sonuçları hazırlanıyor...</div>`;
+      if (rc) rc.innerHTML = `<div class="spinner-container"><div class="spinner"></div><p>Analiz sonuçları hazırlanıyor...</p></div>`;
       document.getElementById('discoveryResultsPanel')?.scrollIntoView({ behavior:'smooth', block:'start' });
 
       try {
