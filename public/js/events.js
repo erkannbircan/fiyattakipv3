@@ -521,7 +521,7 @@ async function computeSmartDiscoveryHints({ timeframe, days }) {
         // Heuristik:
         // oynaklık ↑ → lookback ↓ ; oynaklık ↓ → lookback ↑
         // sınırlar: 2..12
-        let lookback = Math.round(clamp( (-0.7*atrPct + 10), 2, 12 ));
+        let lookback = Math.round(clamp( (-1.8 * atrPct + 9), 1, 9 )); // Min 1, Max 9
         // lookahead: düşük oynaklıkta daha uzun
         // sınırlar: 2..Math.ceil(1 gün)
         const maxOneDay = Math.ceil(1440 / tfToMinutes(timeframe));
