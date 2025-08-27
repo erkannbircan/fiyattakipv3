@@ -438,13 +438,15 @@ function saveChartState() {
 })();
 const clsPerf = v => (typeof v === 'number' ? (v >= 0 ? 'positive' : 'negative') : '');
 
-
 function renderSignalAnalysisPreview(data) {
   const resultContainer = document.getElementById('signalAnalysisResultContainer');
   if (!resultContainer) return;
 
+  // 3- Analiz yükleniyor... mesajını buton yerine bu alanda gösteriyoruz.
+  resultContainer.innerHTML = ''; // Önceki sonuçları temizle
+
   if (!data || Object.keys(data).length === 0) {
-    resultContainer.innerHTML = `<p class="placeholder-text">Analiz için sonuç bulunamadı.</p>`;
+    resultContainer.innerHTML = `<div class="placeholder-text">Analiz için sonuç bulunamadı.</div>`;
     return;
   }
 
@@ -460,7 +462,6 @@ function renderSignalAnalysisPreview(data) {
       return `<div class="analysis-card"><div class="analysis-card-header"><h4>${coinSymbol}</h4></div><div style="color:${color};padding:20px;">${msg}</div></div>`;
     }
 
-    const avg15m = round2(res.avgReturns?.['15m']);
     const avg1h  = round2(res.avgReturns?.['1h']);
     const avg4h  = round2(res.avgReturns?.['4h']);
     const avg1d  = round2(res.avgReturns?.['1d']);
@@ -470,12 +471,14 @@ function renderSignalAnalysisPreview(data) {
       .filter((v, i, a) => a.indexOf(v) === i)
       .map(p => `<span class="pill">${p}</span>`).join('') || '<span class="muted">Parametre seçilmedi</span>';
 
+    // 6- "Tüm fırsatları göster" mantığını düzeltiyoruz
     let eventsHtml = '<tbody><tr><td colspan="6" class="muted" style="text-align:center; padding: 20px;">Fırsat bulunamadı</td></tr></tbody>';
+    let footerHtml = '';
     if (Array.isArray(res.eventDetails) && res.eventDetails.length) {
       const all = res.eventDetails.slice().sort((a,b) => Number(b.timestamp) - Number(a.timestamp));
-      const top5 = all.slice(0, 5);
-
-      const row = (ev) => {
+      
+      const row = (ev, index) => {
+        const isHidden = index >= 5 ? 'hidden' : ''; // İlk 5'ten sonrasını gizle
         const when  = new Date(ev.timestamp).toLocaleString('tr-TR', App.trTimeFmt);
         const tgt   = ev.targetTime ? new Date(ev.targetTime).toLocaleString('tr-TR', App.trTimeFmt) : '—';
         const pB    = Number.isFinite(ev.priceBefore) ? `$${formatPrice(ev.priceBefore)}` : 'N/A';
@@ -484,7 +487,8 @@ function renderSignalAnalysisPreview(data) {
         const p1h   = (ev.perf && ev.perf['1h']  != null) ? `${ev.perf['1h'].toFixed(2)}%`  : '—';
         const p4h   = (ev.perf && ev.perf['4h']  != null) ? `${ev.perf['4h'].toFixed(2)}%`  : '—';
         const p1d   = (ev.perf && ev.perf['1d']  != null) ? `${ev.perf['1d'].toFixed(2)}%`  : '—';
-        return `<tr>
+        
+        return `<tr class="opportunity-row ${isHidden}" data-coin="${coinSymbol}">
           <td><div>${when}</div><div class="muted">${pB}</div></td>
           <td><div>${tgt}</div><div class="muted">${pA}</div></td>
           <td class="${App.clsPerf(ev.perf?.['15m'])}">${p15}</td>
@@ -493,18 +497,18 @@ function renderSignalAnalysisPreview(data) {
           <td class="${App.clsPerf(ev.perf?.['1d'])}">${p1d}</td>
         </tr>`;
       };
-      eventsHtml = `<tbody>${top5.map(row).join('')}</tbody>`;
-       if (all.length > 5) {
-        eventsHtml += `<tfoot>
-          <tr><td colspan="6" style="text-align:right">
-            <details>
-              <summary>Tüm fırsatları göster (${all.length})</summary>
-              <div class="table-wrapper compact" style="margin-top:8px; max-height: 300px; overflow-y: auto;">
-                <table><thead><tr><th>Zaman/Fiyat</th><th>Hedef/Fiyat</th><th>15Dk %</th><th>1S %</th><th>4S %</th><th>1G %</th></tr></thead>
-                <tbody>${all.map(row).join('')}</tbody></table>
-              </div>
-            </details>
-          </td></tr>
+      
+      eventsHtml = `<tbody>${all.map(row).join('')}</tbody>`;
+
+      if (all.length > 5) {
+        footerHtml = `<tfoot>
+          <tr>
+            <td colspan="6" style="text-align:center;">
+              <button class="show-all-opportunities-btn" data-coin="${coinSymbol}">
+                Tüm Fırsatları Göster (${all.length})
+              </button>
+            </td>
+          </tr>
         </tfoot>`;
       }
     }
@@ -521,12 +525,12 @@ function renderSignalAnalysisPreview(data) {
       <div class="analysis-card">
         <div class="analysis-card-header">
           <h4>${coinSymbol}</h4>
-          <div class="kpi-container">
+        </div>
+        <div class="kpi-container" style="padding: 0 20px 20px 20px;">
             <div class="kpi-item"><span class="kpi-label">Sinyal Sayısı</span><span class="kpi-value">${res.eventCount || 0}</span></div>
             <div class="kpi-item"><span class="kpi-label">1S Ort. Getiri</span><span class="kpi-value ${avg1h >= 0 ? 'positive' : 'negative'}">${avg1h}%</span></div>
             <div class="kpi-item"><span class="kpi-label">4S Ort. Getiri</span><span class="kpi-value ${avg4h >= 0 ? 'positive' : 'negative'}">${avg4h}%</span></div>
             <div class="kpi-item"><span class="kpi-label">1G Ort. Getiri</span><span class="kpi-value ${avg1d >= 0 ? 'positive' : 'negative'}">${avg1d}%</span></div>
-          </div>
         </div>
         <div class="analysis-card-body">
           <section>
@@ -535,6 +539,7 @@ function renderSignalAnalysisPreview(data) {
               <table>
                 <thead><tr><th>Zaman/Fiyat</th><th>Hedef/Fiyat</th><th>15Dk %</th><th>1S %</th><th>4S %</th><th>1G %</th></tr></thead>
                 ${eventsHtml}
+                ${footerHtml}
               </table>
             </div>
           </section>
@@ -558,7 +563,6 @@ function renderSignalAnalysisPreview(data) {
 
   resultContainer.innerHTML = html;
 }
-
 
 async function computePerEventMFEviaHighLow(symbol, timeframe, events) {
   const out = new Map();
