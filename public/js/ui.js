@@ -442,8 +442,7 @@ function renderSignalAnalysisPreview(data) {
   const resultContainer = document.getElementById('signalAnalysisResultContainer');
   if (!resultContainer) return;
 
-  // 3- Analiz yükleniyor... mesajını buton yerine bu alanda gösteriyoruz.
-  resultContainer.innerHTML = ''; // Önceki sonuçları temizle
+  resultContainer.innerHTML = ''; 
 
   if (!data || Object.keys(data).length === 0) {
     resultContainer.innerHTML = `<div class="placeholder-text">Analiz için sonuç bulunamadı.</div>`;
@@ -471,14 +470,13 @@ function renderSignalAnalysisPreview(data) {
       .filter((v, i, a) => a.indexOf(v) === i)
       .map(p => `<span class="pill">${p}</span>`).join('') || '<span class="muted">Parametre seçilmedi</span>';
 
-    // 6- "Tüm fırsatları göster" mantığını düzeltiyoruz
     let eventsHtml = '<tbody><tr><td colspan="6" class="muted" style="text-align:center; padding: 20px;">Fırsat bulunamadı</td></tr></tbody>';
     let footerHtml = '';
     if (Array.isArray(res.eventDetails) && res.eventDetails.length) {
       const all = res.eventDetails.slice().sort((a,b) => Number(b.timestamp) - Number(a.timestamp));
       
       const row = (ev, index) => {
-        const isHidden = index >= 5 ? 'hidden' : ''; // İlk 5'ten sonrasını gizle
+        const isHidden = index >= 5 ? 'hidden' : '';
         const when  = new Date(ev.timestamp).toLocaleString('tr-TR', App.trTimeFmt);
         const tgt   = ev.targetTime ? new Date(ev.targetTime).toLocaleString('tr-TR', App.trTimeFmt) : '—';
         const pB    = Number.isFinite(ev.priceBefore) ? `$${formatPrice(ev.priceBefore)}` : 'N/A';
@@ -543,14 +541,21 @@ function renderSignalAnalysisPreview(data) {
               </table>
             </div>
           </section>
-          <section>
-            <h5 class="setting-subtitle">DNA Parametreleri</h5>
-            <div class="pill-row">${paramsHtml}</div>
-          </section>
-          <section>
-            <h5 class="setting-subtitle">DNA Özeti</h5>
-            <div class="dna-summary-grid">${dnaHtml}</div>
-          </section>
+
+          <details class="dna-details-container">
+            <summary>DNA Parametreleri ve Özetini Göster/Gizle</summary>
+            <div class="details-content-wrapper">
+              <section>
+                <h5 class="setting-subtitle">DNA Parametreleri</h5>
+                <div class="pill-row">${paramsHtml}</div>
+              </section>
+              <section>
+                <h5 class="setting-subtitle">DNA Özeti</h5>
+                <div class="dna-summary-grid">${dnaHtml}</div>
+              </section>
+            </div>
+          </details>
+
         </div>
         <div class="analysis-card-footer">
           <button class="save-dna-btn" data-profile='${JSON.stringify(res.dnaProfile || {})}'>
