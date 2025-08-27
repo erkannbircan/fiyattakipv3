@@ -1246,3 +1246,70 @@ input:checked + .slider:before { transform: translateX(24px); }
     font-size: 1rem;
     font-weight: 600;
 }
+/* === STRATEJİ SAYFASI TASARIM REVİZYONU === */
+
+/* 4- Kaydırma sorununu çözmek için sticky pozisyonunu kaldırıyoruz. */
+.discovery-settings-panel {
+    position: static; /* 'sticky' yerine 'static' yaparak üstte sabit kalmasını engelliyoruz. */
+}
+
+/* 1- Form elemanlarının anlamsız genişlemesini engelliyoruz. */
+.form-grid-compact {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); /* Min genişlik vererek esnek olmasını sağlıyoruz. */
+}
+
+.form-field .inline {
+    flex-wrap: wrap; /* Küçük ekranlarda elemanların alt satıra inmesini sağlar. */
+}
+
+.form-field input[type="number"], .form-field select {
+    min-width: 120px; /* Minimum genişlik */
+    flex-grow: 1;     /* Esneyebilen alan */
+}
+
+/* 2- "Stratejiyi Analiz Et" butonunu küçültüyoruz. */
+.analysis-actions .primary-button {
+    width: auto; /* Otomatik genişlik, içeriğe göre ayarlanır. */
+    min-width: 220px; /* Çok küçülmesini engeller. */
+}
+
+/* 3- Butonun tıklanınca büyümesini engellemek için net ölçüler veriyoruz. */
+.primary-button .loading {
+    width: 20px;
+    height: 20px;
+    border-width: 3px;
+    margin: 0 auto; /* Buton içinde ortalanır. */
+}
+.primary-button:disabled {
+    min-height: 45px; /* Yükleme animasyonu gösterilirken butonun yüksekliğinin sabit kalmasını sağlar. */
+}
+
+
+/* 5- Sonuç tablosu hücrelerini hizalıyoruz. */
+.table-wrapper.compact table {
+    table-layout: fixed; /* Bu, sütunların sabit genişlikte kalmasını sağlar. */
+    width: 100%;
+}
+.table-wrapper.compact th, .table-wrapper.compact td {
+    text-align: center; /* Tüm hücreleri ortala */
+    padding: 12px 8px;
+}
+.table-wrapper.compact th:first-child, .table-wrapper.compact td:first-child {
+    text-align: left; /* İlk sütunu (Zaman/Fiyat) sola hizala */
+    width: 180px; /* İlk sütuna sabit bir genişlik ver */
+}
+.table-wrapper.compact th:nth-child(2), .table-wrapper.compact td:nth-child(2) {
+    text-align: left; /* İkinci sütunu (Hedef/Fiyat) da sola hizala */
+    width: 180px; /* İkinci sütuna da sabit bir genişlik ver */
+}
+
+/* 6- "Tüm Fırsatları Göster" için gizli satır stili */
+.opportunity-row.hidden {
+    display: none;
+}
+
+/* 7- Akıllı mum öneri metinlerinin görünümü */
+.muted.small-text {
+    color: var(--accent-blue);
+    font-weight: 500;
+}
