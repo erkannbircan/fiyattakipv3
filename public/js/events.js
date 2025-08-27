@@ -438,36 +438,40 @@ function setupBacktestPageEventListeners() {
 
     // Olayları sadece body'ye bir kere bağlıyoruz, bu daha verimli.
     document.body.addEventListener('click', async (e) => {
-        const backtestBtn = e.target.closest('.run-dna-backtest-btn');
-        const rerunBtn = e.target.closest('#rerunBacktestBtn');
-        const refreshBtn = e.target.closest('#refreshDnaProfilesBtn');
-        const toggleLink = e.target.closest('.toggle-details-link');
-        const deleteBtn   = e.target.closest('.delete-dna-btn');
+  const backtestBtn = e.target.closest('.run-dna-backtest-btn');
+  const rerunBtn    = e.target.closest('#rerunBacktestBtn');
+  const refreshBtn  = e.target.closest('#refreshDnaProfilesBtn');
+  const toggleLink  = e.target.closest('.toggle-details-link');
+  const deleteBtn   = e.target.closest('.delete-dna-btn');
 
-          if (deleteBtn) {
+  if (deleteBtn) {
     const pid = deleteBtn.dataset.profileId;
     const containerId = deleteBtn.dataset.containerId || 'dnaProfilesContainer';
     await deleteDnaProfile(pid, containerId);
+    return; // <-- kritik
   }
-        
-        if (backtestBtn) {
-            currentProfileId = backtestBtn.dataset.profileId;
-            runTest();
-        }
 
-        if (rerunBtn && currentProfileId) {
-            runTest();
-        }
+  if (backtestBtn) {
+    currentProfileId = backtestBtn.dataset.profileId;
+    runTest();
+    return;
+  }
 
-        if (refreshBtn) {
-            fetchDnaProfiles('dnaProfilesContainer');
-        }
+  if (rerunBtn && currentProfileId) {
+    runTest();
+    return;
+  }
 
-        if (toggleLink) {
-            e.preventDefault();
-            const detailsContent = toggleLink.parentElement.nextElementSibling;
-            if (detailsContent && detailsContent.classList.contains('dna-card-details-content')) {
-                detailsContent.classList.toggle('open');
+  if (refreshBtn) {
+    fetchDnaProfiles('dnaProfilesContainer');
+    return;
+  }
+
+  if (toggleLink) {
+    e.preventDefault();
+    const detailsContent = toggleLink.parentElement.nextElementSibling;
+    if (detailsContent && detailsContent.classList.contains('dna-card-details-content')) {
+      detailsContent.classList.toggle('open');
             }
         }
   
