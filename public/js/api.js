@@ -419,16 +419,109 @@ async function analyzeWithGemini(dataToAnalyze) {
     }
 }
 
-// === YENİ: Sunucu tabanlı gerçek önizleme ===
+// === GÜNCEL: Sunucu tabanlı gerçek önizleme (multi-coin -> single-coin map) ===
 async function runSignalAnalysisPreviewRemote(params) {
   try {
-    const func = state.firebase.functions.httpsCallable('findSignalDNA');
-    const result = await func(params);
-    renderSignalAnalysisPreview(result.data);
+    // UI parametrelerini al
+    const {
+      coins = [],
+      timeframe,
+      changePercent,
+      direction,
+      days: periodDays,
+      lookbackCandles,
+      lookaheadCandles = 0,
+      lookaheadMode = 'smart',
+      params: dnaParams = {}
+    } = params || {};
+
+    if (!Array.isArray(coins) || coins.length === 0) {
+      renderSignalAnalysisPreview({ info: { status:'info', message:'Analiz edilecek en az bir coin seçin.' } });
+      return;
+    }
+
+    // timeframe → dakika
+    const tfToMin = { '15m': 15, '1h': 60, '4h': 240, '1d': 1440 };
+    const timeframeMinutes = tfToMin[timeframe] || 60;
+
+    // successWindowMinutes hesabı (UI modlarına göre)
+    let successWindowMinutes = timeframeMinutes; // varsayılan: 1 mum
+    if (lookaheadMode === 'custom' && Number(lookaheadCandles) > 0) {
+      successWindowMinutes = timeframeMinutes * Number(lookaheadCandles);
+    } else if (lookaheadMode === '1h') {
+      successWindowMinutes = 60;
+    } else if (lookaheadMode === '4h') {
+      successWindowMinutes = 240;
+    } else if (lookaheadMode === '1d') {
+      successWindowMinutes = 1440;
+    }
+
+    // Feature sırası: seçili kutucuklardan üret
+    const featureOrder = [];
+    if (dnaParams.rsi)       featureOrder.push('rsi_avg','rsi_slope','rsi_final');
+    if (dnaParams.macd)      featureOrder.push('macd_hist_avg','macd_hist_slope','macd_hist_final');
+    if (dnaParams.adx)       featureOrder.push('adx_avg','adx_slope','adx_final');
+    if (dnaParams.volume)    featureOrder.push('volume_mult_avg','volume_mult_slope','volume_mult_final');
+    if (dnaParams.volatility)featureOrder.push('atr_pct_avg','atr_pct_slope','atr_pct_final','bb_width_avg','bb_width_slope','bb_width_final','rv_pct_avg','rv_pct_slope','rv_pct_final');
+    if (dnaParams.candle)    featureOrder.push('candle_body_pct','candle_upper_shadow_pct','candle_lower_shadow_pct','candle_bullish');
+    if (dnaParams.velocity||dnaParams.speed) featureOrder.push('rsi_velocity_pct','macd_hist_velocity_pct');
+
+    const call = state.firebase.functions.httpsCallable('findSignalDNA');
+
+    // Her coin için tek tek çağırıp UI’nin beklediği forma dönüştürelim
+    const out = {};
+    for (const coin of coins) {
+      try {
+        const payload = {
+          coin,
+          timeframe,
+          periodDays,
+          direction,
+          changePercent,
+          lookbackCandles,
+          successWindowMinutes,
+          featureOrder
+        };
+        const res = await call(payload);
+        const data = res.data; // { summary, events, profile }
+
+        // UI şekline çeviri
+        out[coin] = {
+          status: 'ok',
+          eventCount: data?.summary?.signalCount ?? 0,
+          avgReturns: data?.summary?.averageReturns || {}, // {'15m','1h','4h','1d'}
+          eventDetails: Array.isArray(data?.events)
+            ? data.events.map(e => ({
+                timestamp: e.details?.timestamp,
+                priceBefore: e.details?.priceBefore,
+                priceAfter:  e.details?.priceAfter,
+                targetTime:  e.details?.targetTime,
+                mfePct:      e.details?.mfePct,
+                perf:        e.details?.perf || {}
+              }))
+            : [],
+          dnaProfile: data?.profile || null,
+          dnaSummary: data?.profile
+            ? { featureOrder: data.profile.featureOrder || [], mean: data.profile.mean || [] }
+            : null
+        };
+
+      } catch (errOne) {
+        console.error(`runSignalAnalysisPreviewRemote/${coin} hata:`, errOne);
+        // Hata mesajını kullanıcıya Türkçe ve anlaşılır verelim
+        const msg = errOne?.message || 'Sunucu hatası';
+        out[coin] = { status: 'error', message: `Önizleme başarısız: ${msg}` };
+      }
+    }
+
+    // Sonuçları ekrana bas
+    renderSignalAnalysisPreview(out);
+
   } catch (err) {
-    console.error('runSignalAnalysisPreviewRemote hata:', err);
+    console.error('runSignalAnalysisPreviewRemote genel hata:', err);
     renderSignalAnalysisPreview({
       info: { status:'error', message: 'Sunucu önizleme başarısız. Lütfen ayarları kontrol edin.' }
     });
   }
 }
+
