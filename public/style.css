@@ -1429,3 +1429,28 @@ span.smart-hint {
 .dna-details-container[open] > summary {
     color: var(--text-primary);
 }
+/* ---- Confirm Modal Footer & Buttons ---- */
+.confirm-footer { 
+  display: flex; 
+  justify-content: flex-end; 
+  gap: 10px; 
+  margin-top: 8px; 
+}
+.confirm-btn { 
+  padding: 8px 14px; 
+  border-radius: 10px; 
+  border: 1px solid var(--border-color); 
+  background: var(--bg-tertiary); 
+  color: var(--text-primary); 
+  cursor: pointer; 
+}
+.confirm-btn:hover { filter: brightness(1.05); }
+.confirm-btn.primary { 
+  background: var(--accent-blue); 
+  border-color: var(--accent-blue); 
+  color: white; 
+}
+.confirm-btn.primary.danger { 
+  background: var(--accent-red); 
+  border-color: var(--accent-red); 
+}
