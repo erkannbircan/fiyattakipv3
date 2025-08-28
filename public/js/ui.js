@@ -903,3 +903,61 @@ function renderDnaBacktestResults(data, profileId) {
         behavior: 'smooth'
     });
 }
+// ---------- CONFIRM MODAL (tasarıma uygun) ----------
+if (!App.confirm) {
+  App.confirm = ({ 
+    title = 'Onay', 
+    message = '', 
+    confirmText = 'Tamam', 
+    cancelText = 'İptal',
+    confirmStyle = 'primary' // 'primary' | 'danger'
+  }) => new Promise((resolve) => {
+    // Overlay hazırla
+    let overlay = document.getElementById('modalOverlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'modalOverlay';
+      overlay.className = 'modal-overlay';
+      document.body.appendChild(overlay);
+    }
+
+    // Panel (modal)
+    const panel = document.createElement('div');
+    panel.className = 'panel';
+    panel.innerHTML = `
+      <div class="panel-header">
+        <h3>${title}</h3>
+        <div class="panel-controls">
+          <button class="panel-btn close-btn" aria-label="Kapat">✕</button>
+        </div>
+      </div>
+      <div class="panel-content" style="padding:16px;">
+        <p style="margin:0 0 12px 0; color: var(--text-secondary); white-space:pre-wrap;">${message}</p>
+        <div class="confirm-footer">
+          <button class="confirm-btn cancel">${cancelText}</button>
+          <button class="confirm-btn primary ${confirmStyle === 'danger' ? 'danger' : ''}">${confirmText}</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(panel);
+
+    // Aç
+    overlay.classList.add('show');
+    panel.classList.add('show');
+    document.body.classList.add('modal-open');
+
+    const cleanup = (val) => {
+      panel.classList.remove('show');
+      overlay.classList.remove('show');
+      document.body.classList.remove('modal-open');
+      setTimeout(() => panel.remove(), 200);
+      resolve(val);
+    };
+
+    panel.querySelector('.cancel')?.addEventListener('click', () => cleanup(false));
+    panel.querySelector('.close-btn')?.addEventListener('click', () => cleanup(false));
+    panel.querySelector('.primary')?.addEventListener('click', () => cleanup(true));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) cleanup(false); });
+  });
+}
+
