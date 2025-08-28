@@ -331,10 +331,15 @@ function fetchDnaProfiles(containerId) {
 
 
 async function deleteDnaProfile(profileId, containerIdToRefresh) {
-    if (!confirm(`"${profileId}" profilini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
-        return;
-    }
-    
+    const ok = await App.confirm({
+        title: 'Profili Sil',
+        message: `"${profileId}" profilini silmek istediğinizden emin misiniz?\nBu işlem geri alınamaz.`,
+        confirmText: 'Sil',
+        cancelText: 'Vazgeç',
+        confirmStyle: 'danger'
+    });
+    if (!ok) return;
+
     const deleteProfileFunc = state.firebase.functions.httpsCallable('manageDnaProfiles');
     
     try {
