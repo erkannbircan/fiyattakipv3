@@ -893,7 +893,7 @@ function renderDnaBacktestResults(data, profileId) {
             <tr class="${rowClass}">
                 <td>${new Date(trade.entryTime).toLocaleString('tr-TR')}</td>
                 <td>$${formatPrice(trade.entryPrice)}</td>
-                <td>${trade.score}</td>
+                <td>${trade.score}${Number.isFinite(trade.distance) ? ` <span class="muted">(${trade.distance.toFixed(2)})</span>` : ''}</td>
                 ${renderPerfCell(trade.performance['15m'])}
                 ${renderPerfCell(trade.performance['1h'])}
                 ${renderPerfCell(trade.performance['4h'])}
