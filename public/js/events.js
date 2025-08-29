@@ -375,11 +375,23 @@ function setupStrategyDiscoveryListeners(parentElement) {
             return;
         }
 
-        const saveBtn = target.closest('.save-dna-btn');
-        if (saveBtn) {
-          const profileData = JSON.parse(saveBtn.dataset.profile);
-          await saveDnaProfile(profileData, saveBtn);
-          return;
+       const saveBtn = target.closest('.save-dna-btn');
+if (saveBtn) {
+  const profileData = JSON.parse(saveBtn.dataset.profile || '{}');
+
+  // name yoksa burada üret (api.js yine kontrol ediyor ama iki tarafta da güvence)
+  if (profileData && !profileData.name) {
+    const ts  = Date.now();
+    const sym = profileData.coin || 'COIN';
+    const tf  = profileData.timeframe || 'TF';
+    const lb  = profileData.lookbackCandles ?? 'LB';
+    const dir = (profileData.direction === 'down' ? '-' : '+') + (profileData.changePercent ?? 0) + '%';
+    const sig = Array.isArray(profileData.featureOrder) ? profileData.featureOrder.join('').slice(0,12) : 'DNA';
+    profileData.name = `${sym}__${dir}__${tf}__${lb}LB__${sig}__${ts}`;
+  }
+
+  await saveDnaProfile(profileData, saveBtn);
+  return;
         }
     });
 
