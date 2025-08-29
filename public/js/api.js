@@ -242,32 +242,56 @@ async function runSignalAnalysisPreview(params) {
 }
 
 async function saveDnaProfile(profileData, button) {
-    if (button) showLoading(button);
-    
-    const saveProfileFunc = state.firebase.functions.httpsCallable('saveDnaProfile');
-    
-    try {
-        const result = await saveProfileFunc({ profile: profileData });
-        if (result.data.success) {
-            showNotification(`DNA profili (${profileData.name}) başarıyla kaydedildi!`, true);
-            
-            // --- ÇÖZÜM BURADA ---
-            // Önce o isimde bir kutu (container) var mı diye kontrol et.
-            const profileListContainer = document.getElementById('dnaProfilesContainerDiscovery');
-            if (profileListContainer) {
-                // Sadece kutu varsa yenileme fonksiyonunu çağır.
-                fetchDnaProfiles('dnaProfilesContainerDiscovery');
-            }
-        } else {
-            throw new Error(result.data.error || 'Profil kaydedilemedi.');
-        }
-    } catch (error) {
-        console.error("saveDnaProfile hatası:", error);
-        showNotification(`Profil kaydedilirken hata oluştu: ${error.message}`, false);
-    } finally {
-        if (button) hideLoading(button);
+  if (button) showLoading(button);
+
+  try {
+    if (!profileData || typeof profileData !== 'object') {
+      throw new Error('Kaydedilecek profil verisi bulunamadı.');
     }
+
+    // name boşsa güvenli bir ad üret (backend de üretebilir ama önden garanti edelim)
+    if (!profileData.name) {
+      const ts  = Date.now();
+      const sym = profileData.coin || 'COIN';
+      const tf  = profileData.timeframe || 'TF';
+      const lb  = profileData.lookbackCandles ?? 'LB';
+      const dir = (profileData.direction === 'down' ? '-' : '+') + (profileData.changePercent ?? 0) + '%';
+      const sig = Array.isArray(profileData.featureOrder) ? profileData.featureOrder.join('').slice(0,12) : 'DNA';
+      profileData.name = `${sym}__${dir}__${tf}__${lb}LB__${sig}__${ts}`;
+    }
+
+    // Zorunlu alanlar kontrolü – eksikse kullanıcıya anlaşılır mesaj
+    const must = ['coin','timeframe','lookbackCandles','featureOrder','mean','std'];
+    const missing = must.filter(k => profileData[k] == null || (Array.isArray(profileData[k]) && !profileData[k].length));
+    if (missing.length) {
+      throw new Error(`Profil alanları eksik: ${missing.join(', ')}`);
+    }
+    if (Array.isArray(profileData.featureOrder) &&
+        (profileData.featureOrder.length !== profileData.mean.length ||
+         profileData.featureOrder.length !== profileData.std.length)) {
+      throw new Error('featureOrder / mean / std uzunlukları eşleşmiyor.');
+    }
+
+    const fn = state.firebase.functions.httpsCallable('saveDnaProfile');
+    const result = await fn({ profile: profileData }); // uid’yi index.js ekliyor
+
+    if (result?.data?.success) {
+      showNotification(`DNA profili (${profileData.name}) başarıyla kaydedildi!`, true);
+      const profileListContainer = document.getElementById('dnaProfilesContainerDiscovery');
+      if (profileListContainer) fetchDnaProfiles('dnaProfilesContainerDiscovery');
+      return result.data.profileId;
+    } else {
+      throw new Error(result?.data?.error || 'Profil kaydedilemedi.');
+    }
+  } catch (error) {
+    console.error("saveDnaProfile hatası:", error);
+    showNotification(`Profil kaydedilirken hata oluştu: ${error.message}`, false);
+    throw error;
+  } finally {
+    if (button) hideLoading(button);
+  }
 }
+
 
 // *** DEĞİŞİKLİK: Fonksiyon artık bir containerId parametresi alıyor ***
 function fetchDnaProfiles(containerId) {
