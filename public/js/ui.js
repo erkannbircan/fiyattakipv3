@@ -461,9 +461,11 @@ function renderSignalAnalysisPreview(data) {
       return `<div class="analysis-card"><div class="analysis-card-header"><h4>${coinSymbol}</h4></div><div style="color:${color};padding:20px;">${msg}</div></div>`;
     }
 
-    const avg1h  = round2(res.avgReturns?.['1h']);
-    const avg4h  = round2(res.avgReturns?.['4h']);
-    const avg1d  = round2(res.avgReturns?.['1d']);
+// Backtest ile birebir kıyas için önce signal-based ortalama (varsa), yoksa eski alan.
+const avg1h  = round2((res.avgReturnsSignal || res.avgReturns)?.['1h']);
+const avg4h  = round2((res.avgReturnsSignal || res.avgReturns)?.['4h']);
+const avg1d  = round2((res.avgReturnsSignal || res.avgReturns)?.['1d']);
+
 
     const paramsHtml = res.dnaProfile?.featureOrder
       .map(f => f.split('_')[0].toUpperCase())
