@@ -485,47 +485,64 @@ const avg1d  = round2((res.avgReturnsSignal || res.avgReturns)?.['1d']);
       const row = (ev, index) => {
   const isHidden = index >= 5 ? 'hidden' : '';
 
-  // 1) Sinyal zamanı: her zaman MUMUN KAPANIŞ ANI (ms -> okunur)
-  const signalTime = ev.timestamp ? new Date(ev.timestamp).toLocaleString('tr-TR', App.trTimeFmt) : '—';
+  // 1) Sinyal zamanı (mum kapanışı)
+  const signalTime = ev.timestamp
+    ? new Date(ev.timestamp).toLocaleString('tr-TR', App.trTimeFmt)
+    : '—';
 
-  // 2) Hedef zamanı: mümkünse hedef muma ait AÇILIŞ→KAPANIŞ aralığını göster
+  // 2) Hedef mumu (Açılış → Kapanış) veya varsa tek hedef zamanı
   const tgtOpen  = ev.targetCandleOpen ? new Date(ev.targetCandleOpen).toLocaleString('tr-TR', App.trTimeFmt) : null;
   const tgtClose = ev.targetCandleClose ? new Date(ev.targetCandleClose).toLocaleString('tr-TR', App.trTimeFmt) : null;
   const targetTimeBlock = (tgtOpen || tgtClose)
-      ? `${tgtOpen || '—'} → ${tgtClose || '—'}`
-      : (ev.targetTime ? new Date(ev.targetTime).toLocaleString('tr-TR', App.trTimeFmt) : '—');
+    ? `${tgtOpen || '—'} → ${tgtClose || '—'}`
+    : (ev.targetTime ? new Date(ev.targetTime).toLocaleString('tr-TR', App.trTimeFmt) : '—');
 
-  // 3) Fiyat bilgileri
+  // 3) Fiyatlar
   const pB = Number.isFinite(ev.priceBefore) ? `$${formatPrice(ev.priceBefore)}` : 'N/A';
   const pA = Number.isFinite(ev.priceAfter)  ? `$${formatPrice(ev.priceAfter)}`  : 'N/A';
 
-  // 4) Performans yüzdeleri (15m/1h/4h/1d her biri KENDİ TF verisiyle hesaplandı)
+  // 4) Gerçekleşen performanslar
   const p15 = (ev.perf && ev.perf['15m'] != null) ? `${ev.perf['15m'].toFixed(2)}%` : '—';
-const p1h = (ev.perf && ev.perf['1h']  != null) ? `${ev.perf['1h'].toFixed(2)}%`  : '—';
-const p4h = (ev.perf && ev.perf['4h']  != null) ? `${ev.perf['4h'].toFixed(2)}%`  : '—';
-const p1d = (ev.perf && ev.perf['1d']  != null) ? `${ev.perf['1d'].toFixed(2)}%`  : '—';
+  const p1h = (ev.perf && ev.perf['1h']  != null) ? `${ev.perf['1h'].toFixed(2)}%`  : '—';
+  const p4h = (ev.perf && ev.perf['4h']  != null) ? `${ev.perf['4h'].toFixed(2)}%`  : '—';
+  const p1d = (ev.perf && ev.perf['1d']  != null) ? `${ev.perf['1d'].toFixed(2)}%`  : '—';
 
-// ... (üstte p15/p1h/p4h/p1d hesapları var)
-const e15 = (ev.expected && ev.expected['15m'] != null) ? ` <span class="muted">≈ ${ev.expected['15m'].toFixed(2)}%</span>` : '';
-const e1h = (ev.expected && ev.expected['1h']  != null) ? ` <span class="muted">≈ ${ev.expected['1h'].toFixed(2)}%</span>`  : '';
-const e4h = (ev.expected && ev.expected['4h']  != null) ? ` <span class="muted">≈ ${ev.expected['4h'].toFixed(2)}%</span>`  : '';
-const e1d = (ev.expected && ev.expected['1d']  != null) ? ` <span class="muted">≈ ${ev.expected['1d'].toFixed(2)}%</span>`  : '';
+  // 5) ≈ Beklenen (hem eski alan adı ev.expected hem yeni ev.expectedPct desteklenir), (n) etiketiyle
+  const exp = ev.expectedPct || ev.expected || {};
+  const n   = ev.expectedN || {};
+  const fmtExp = (tf) => {
+    const val = exp[tf];
+    if (val == null) return '';
+    const nVal = n[tf];
+    const warn = (typeof nVal === 'number' && nVal > 0 && nVal < 3)
+      ? ' <span class="warn">(n küçük)</span>'
+      : (typeof nVal === 'number' ? ` <span class="muted">(n=${nVal})</span>` : '');
+    return ` <span class="muted">≈ ${Number(val).toFixed(2)}%</span>${warn}`;
+  };
+  const e15 = fmtExp('15m');
+  const e1h = fmtExp('1h');
+  const e4h = fmtExp('4h');
+  const e1d = fmtExp('1d');
 
-// 5) Satır HTML
-return `<tr class="opportunity-row ${isHidden}" data-coin="${coinSymbol}">
-  <td>
-    <div>${signalTime}</div>
-    <div class="muted">Sinyal Fiyatı: ${pB}</div>
-  </td>
-  <td>
-    <div>${targetTimeBlock}</div>
-    <div class="muted">Hedef Fiyat: ${pA}</div>
-  </td>
-  <td class="${App.clsPerf(ev.perf?.['15m'])}">${p15}${e15}</td>
-  <td class="${App.clsPerf(ev.perf?.['1h'])}">${p1h}${e1h}</td>
-  <td class="${App.clsPerf(ev.perf?.['4h'])}">${p4h}${e4h}</td>
-  <td class="${App.clsPerf(ev.perf?.['1d'])}">${p1d}${e1d}</td>
-</tr>`;
+  const coinSymbol = ev.coin || ev.symbol || '-';
+
+  // 6) Satır HTML
+  return `<tr class="opportunity-row ${isHidden}" data-coin="${coinSymbol}">
+    <td>
+      <div>${signalTime}</div>
+      <div class="muted">Sinyal Fiyatı: ${pB}</div>
+    </td>
+    <td>
+      <div>${targetTimeBlock}</div>
+      <div class="muted">Hedef Fiyat: ${pA}</div>
+    </td>
+    <td class="${App.clsPerf(ev.perf?.['15m'])}">${p15}${e15}</td>
+    <td class="${App.clsPerf(ev.perf?.['1h'])}">${p1h}${e1h}</td>
+    <td class="${App.clsPerf(ev.perf?.['4h'])}">${p4h}${e4h}</td>
+    <td class="${App.clsPerf(ev.perf?.['1d'])}">${p1d}${e1d}</td>
+  </tr>`;
+};
+
 
 
       
