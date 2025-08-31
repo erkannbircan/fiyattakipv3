@@ -863,18 +863,27 @@ function renderDnaBacktestResults(data, profileId) {
         summary,
         debugMode
     } = data;
-    summaryContainer.innerHTML = `
-        <div class="kpi-container">
-            ${Object.entries(summary).map(([period, stats]) => `
-                <div class="kpi-item">
-                    <span class="kpi-label">${period} Sonrası Performans</span>
-                    <span class="kpi-value ${stats.avgMFE > 0 ? 'positive' : 'negative'}">${stats.avgMFE}%</span>
-                    <span class="kpi-label">Ort. MFE (${stats.tradeCount} işlem)</span>
-                    <span class="kpi-label" style="margin-top: 5px;">TP Oranı: <strong>${stats.hitTPRate}%</strong></span>
-                </div>
-            `).join('')}
-        </div>
-    `;
+    const periods = ['15m','1h','4h','1d']; // sadece geçerli KPI’lar
+summaryContainer.innerHTML = `
+  <div class="kpi-container">
+    ${periods.map((period) => {
+        const stats = summary[period] || { avgMFE:0, tradeCount:0, hitTPRate:0 };
+        return `
+          <div class="kpi-item">
+            <span class="kpi-label">${period} Sonrası Performans</span>
+            <span class="kpi-value ${stats.avgMFE > 0 ? 'positive' : 'negative'}">${stats.avgMFE}%</span>
+            <span class="kpi-label">Ort. MFE (${stats.tradeCount} işlem)</span>
+            <span class="kpi-label" style="margin-top: 5px;">TP Oranı: <strong>${stats.hitTPRate}%</strong></span>
+          </div>
+        `;
+    }).join('')}
+  </div>
+  ${summary.diagnose?.distance
+     ? `<div class="kpi-note muted" style="margin-top:8px">
+          <small>Diagnose (mesafe): min=${summary.diagnose.distance.min} / ort=${summary.diagnose.distance.avg} / max=${summary.diagnose.distance.max}</small>
+        </div>`
+     : '' }
+`;
     if (!trades || trades.length === 0) {
         const message = debugMode ?
             `Seçilen periyotta bu DNA profiline uyan hiçbir mum bulunamadı.` :
