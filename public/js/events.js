@@ -33,13 +33,11 @@ if (typeof window.applySettingsToUI !== 'function') {
     window.App?.log?.('applySettingsToUI (fallback): ayarlar şimdilik uygulanmadı');
   };
 }
-if (typeof window.renderPortfolioTabs !== 'function') {
-  window.renderPortfolioTabs = function () {
-    /* no-op */
-  };
-}
 if (typeof window.renderAllPortfolioTabs !== 'function') {
   window.renderAllPortfolioTabs = function () { /* no-op */ };
+}
+if (typeof window.createCoinManager !== 'function') {
+  window.createCoinManager = function () { /* no-op */ };
 }
 
 
