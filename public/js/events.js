@@ -7,6 +7,7 @@ window.App = window.App || {
   log: (...args) => console.log('[App]', ...args),
 };
 
+// --- Fallback: showLoading/hideLoading ui.js yüklenmeden çağrılırsa hata vermesin ---
 if (typeof window.showLoading !== 'function') {
   window.showLoading = function (button) {
     if (!button) return;
@@ -24,6 +25,15 @@ if (typeof window.hideLoading !== 'function') {
     button.disabled = false;
   };
 }
+
+// --- Fallback: applySettingsToUI tanımlı değilse çakılmasın ---
+if (typeof window.applySettingsToUI !== 'function') {
+  window.applySettingsToUI = function (settings) {
+    // Gerçek fonksiyon ui.js içinde olabilir; yüklenmediyse site çakılmasın
+    window.App?.log?.('applySettingsToUI (fallback): ayarlar şimdilik uygulanmadı');
+  };
+}
+
 
 function setupGlobalEventListeners() {
     document.body.addEventListener('click', async (e) => {
