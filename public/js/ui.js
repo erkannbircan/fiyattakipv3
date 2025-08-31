@@ -483,25 +483,45 @@ const avg1d  = round2((res.avgReturnsSignal || res.avgReturns)?.['1d']);
       const all = res.eventDetails.slice().sort((a,b) => Number(b.timestamp) - Number(a.timestamp));
       
       const row = (ev, index) => {
-        const isHidden = index >= 5 ? 'hidden' : '';
-        const when  = new Date(ev.timestamp).toLocaleString('tr-TR', App.trTimeFmt);
-        const tgt   = ev.targetTime ? new Date(ev.targetTime).toLocaleString('tr-TR', App.trTimeFmt) : '—';
-        const pB    = Number.isFinite(ev.priceBefore) ? `$${formatPrice(ev.priceBefore)}` : 'N/A';
-        const pA    = Number.isFinite(ev.priceAfter)  ? `$${formatPrice(ev.priceAfter)}`  : 'N/A';
-        const p15   = (ev.perf && ev.perf['15m'] != null) ? `${ev.perf['15m'].toFixed(2)}%` : '—';
-        const p1h   = (ev.perf && ev.perf['1h']  != null) ? `${ev.perf['1h'].toFixed(2)}%`  : '—';
-        const p4h   = (ev.perf && ev.perf['4h']  != null) ? `${ev.perf['4h'].toFixed(2)}%`  : '—';
-        const p1d   = (ev.perf && ev.perf['1d']  != null) ? `${ev.perf['1d'].toFixed(2)}%`  : '—';
-        
-        return `<tr class="opportunity-row ${isHidden}" data-coin="${coinSymbol}">
-          <td><div>${when}</div><div class="muted">${pB}</div></td>
-          <td><div>${tgt}</div><div class="muted">${pA}</div></td>
-          <td class="${App.clsPerf(ev.perf?.['15m'])}">${p15}</td>
-          <td class="${App.clsPerf(ev.perf?.['1h'])}">${p1h}</td>
-          <td class="${App.clsPerf(ev.perf?.['4h'])}">${p4h}</td>
-          <td class="${App.clsPerf(ev.perf?.['1d'])}">${p1d}</td>
-        </tr>`;
-      };
+  const isHidden = index >= 5 ? 'hidden' : '';
+
+  // 1) Sinyal zamanı: her zaman MUMUN KAPANIŞ ANI (ms -> okunur)
+  const signalTime = ev.timestamp ? new Date(ev.timestamp).toLocaleString('tr-TR', App.trTimeFmt) : '—';
+
+  // 2) Hedef zamanı: mümkünse hedef muma ait AÇILIŞ→KAPANIŞ aralığını göster
+  const tgtOpen  = ev.targetCandleOpen ? new Date(ev.targetCandleOpen).toLocaleString('tr-TR', App.trTimeFmt) : null;
+  const tgtClose = ev.targetCandleClose ? new Date(ev.targetCandleClose).toLocaleString('tr-TR', App.trTimeFmt) : null;
+  const targetTimeBlock = (tgtOpen || tgtClose)
+      ? `${tgtOpen || '—'} → ${tgtClose || '—'}`
+      : (ev.targetTime ? new Date(ev.targetTime).toLocaleString('tr-TR', App.trTimeFmt) : '—');
+
+  // 3) Fiyat bilgileri
+  const pB = Number.isFinite(ev.priceBefore) ? `$${formatPrice(ev.priceBefore)}` : 'N/A';
+  const pA = Number.isFinite(ev.priceAfter)  ? `$${formatPrice(ev.priceAfter)}`  : 'N/A';
+
+  // 4) Performans yüzdeleri (15m/1h/4h/1d her biri KENDİ TF verisiyle hesaplandı)
+  const p15 = (ev.perf && ev.perf['15m'] != null) ? `${ev.perf['15m'].toFixed(2)}%` : '—';
+  const p1h = (ev.perf && ev.perf['1h']  != null) ? `${ev.perf['1h'].toFixed(2)}%`  : '—';
+  const p4h = (ev.perf && ev.perf['4h']  != null) ? `${ev.perf['4h'].toFixed(2)}%`  : '—';
+  const p1d = (ev.perf && ev.perf['1d']  != null) ? `${ev.perf['1d'].toFixed(2)}%`  : '—';
+
+  // 5) Satır HTML
+  return `<tr class="opportunity-row ${isHidden}" data-coin="${coinSymbol}">
+    <td>
+      <div>${signalTime}</div>
+      <div class="muted">Sinyal Fiyatı: ${pB}</div>
+    </td>
+    <td>
+      <div>${targetTimeBlock}</div>
+      <div class="muted">Hedef Fiyat: ${pA}</div>
+    </td>
+    <td class="${App.clsPerf(ev.perf?.['15m'])}">${p15}</td>
+    <td class="${App.clsPerf(ev.perf?.['1h'])}">${p1h}</td>
+    <td class="${App.clsPerf(ev.perf?.['4h'])}">${p4h}</td>
+    <td class="${App.clsPerf(ev.perf?.['1d'])}">${p1d}</td>
+  </tr>`;
+};
+
       
       eventsHtml = `<tbody>${all.map(row).join('')}</tbody>`;
 
@@ -878,11 +898,18 @@ summaryContainer.innerHTML = `
         `;
     }).join('')}
   </div>
-  ${summary.diagnose?.distance
-     ? `<div class="kpi-note muted" style="margin-top:8px">
-          <small>Diagnose (mesafe): min=${summary.diagnose.distance.min} / ort=${summary.diagnose.distance.avg} / max=${summary.diagnose.distance.max}</small>
-        </div>`
-     : '' }
+ ${summary.diagnose?.distance
+   ? `<div class="kpi-note muted" style="margin-top:8px">
+        <small>
+          Skor mesafesi (küçük daha iyidir): 
+          min=${summary.diagnose.distance.min} / 
+          ort=${summary.diagnose.distance.avg} / 
+          max=${summary.diagnose.distance.max}.
+          Bu değer 0’a yaklaştıkça sinyal, profilinize daha çok benzer.
+        </small>
+      </div>`
+   : '' }
+
 `;
     if (!trades || trades.length === 0) {
         const message = debugMode ?
