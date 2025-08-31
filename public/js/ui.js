@@ -505,33 +505,28 @@ const p1h = (ev.perf && ev.perf['1h']  != null) ? `${ev.perf['1h'].toFixed(2)}%`
 const p4h = (ev.perf && ev.perf['4h']  != null) ? `${ev.perf['4h'].toFixed(2)}%`  : '—';
 const p1d = (ev.perf && ev.perf['1d']  != null) ? `${ev.perf['1d'].toFixed(2)}%`  : '—';
 
+// ... (üstte p15/p1h/p4h/p1d hesapları var)
 const e15 = (ev.expected && ev.expected['15m'] != null) ? ` <span class="muted">≈ ${ev.expected['15m'].toFixed(2)}%</span>` : '';
 const e1h = (ev.expected && ev.expected['1h']  != null) ? ` <span class="muted">≈ ${ev.expected['1h'].toFixed(2)}%</span>`  : '';
 const e4h = (ev.expected && ev.expected['4h']  != null) ? ` <span class="muted">≈ ${ev.expected['4h'].toFixed(2)}%</span>`  : '';
 const e1d = (ev.expected && ev.expected['1d']  != null) ? ` <span class="muted">≈ ${ev.expected['1d'].toFixed(2)}%</span>`  : '';
 
-<td class="${App.clsPerf(ev.perf?.['15m'])}">${p15}${e15}</td>
-<td class="${App.clsPerf(ev.perf?.['1h'])}">${p1h}${e1h}</td>
-<td class="${App.clsPerf(ev.perf?.['4h'])}">${p4h}${e4h}</td>
-<td class="${App.clsPerf(ev.perf?.['1d'])}">${p1d}${e1d}</td>
+// 5) Satır HTML
+return `<tr class="opportunity-row ${isHidden}" data-coin="${coinSymbol}">
+  <td>
+    <div>${signalTime}</div>
+    <div class="muted">Sinyal Fiyatı: ${pB}</div>
+  </td>
+  <td>
+    <div>${targetTimeBlock}</div>
+    <div class="muted">Hedef Fiyat: ${pA}</div>
+  </td>
+  <td class="${App.clsPerf(ev.perf?.['15m'])}">${p15}${e15}</td>
+  <td class="${App.clsPerf(ev.perf?.['1h'])}">${p1h}${e1h}</td>
+  <td class="${App.clsPerf(ev.perf?.['4h'])}">${p4h}${e4h}</td>
+  <td class="${App.clsPerf(ev.perf?.['1d'])}">${p1d}${e1d}</td>
+</tr>`;
 
-
-  // 5) Satır HTML
-  return `<tr class="opportunity-row ${isHidden}" data-coin="${coinSymbol}">
-    <td>
-      <div>${signalTime}</div>
-      <div class="muted">Sinyal Fiyatı: ${pB}</div>
-    </td>
-    <td>
-      <div>${targetTimeBlock}</div>
-      <div class="muted">Hedef Fiyat: ${pA}</div>
-    </td>
-    <td class="${App.clsPerf(ev.perf?.['15m'])}">${p15}</td>
-    <td class="${App.clsPerf(ev.perf?.['1h'])}">${p1h}</td>
-    <td class="${App.clsPerf(ev.perf?.['4h'])}">${p4h}</td>
-    <td class="${App.clsPerf(ev.perf?.['1d'])}">${p1d}</td>
-  </tr>`;
-};
 
       
       eventsHtml = `<tbody>${all.map(row).join('')}</tbody>`;
