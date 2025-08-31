@@ -950,11 +950,25 @@ summaryContainer.innerHTML = `
     document.querySelector('#dnaBacktestResultTable thead tr').innerHTML = headerHtml;
     tableBody.innerHTML = trades.map(trade => {
         const renderPerfCell = (perf) => {
-            if (perf === null) return `<td>Veri Yok</td>`;
-            const perfClass = perf.mfePct > 0.1 ? 'positive' : (perf.mfePct < -0.1 ? 'negative' : '');
-            const hitTPIcon = perf.hitTP ? ' <i class="fas fa-check-circle" style="color: var(--accent-green);"></i>' : '';
-            return `<td class="performance-cell ${perfClass}">${perf.mfePct.toFixed(2)}%${hitTPIcon}</td>`;
-        };
+  if (perf == null) return `<td>—</td>`;
+
+  // Hem "sayı" hem "nesne" desteği
+  let val, hit = false;
+  if (typeof perf === 'number') {
+    val = perf;
+  } else if (typeof perf === 'object') {
+    if (Number.isFinite(perf.mfePct)) val = perf.mfePct;
+    else if (Number.isFinite(perf.mfePctRaw)) val = perf.mfePctRaw;
+    else if (Number.isFinite(perf.value)) val = perf.value;
+    hit = !!perf.hitTP;
+  }
+
+  if (!Number.isFinite(val)) return `<td>—</td>`;
+  const perfClass = val > 0.1 ? 'positive' : (val < -0.1 ? 'negative' : '');
+  const hitTPIcon = hit ? ' <i class="fas fa-check-circle" style="color: var(--accent-green);"></i>' : '';
+  return `<td class="performance-cell ${perfClass}">${val.toFixed(2)}%${hitTPIcon}</td>`;
+};
+
         const rowClass = (debugMode && !trade.isSignal) ? 'debug-row' : '';
         return `
             <tr class="${rowClass}">
