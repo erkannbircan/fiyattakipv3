@@ -771,7 +771,10 @@ function renderDnaProfiles(profiles, containerId) {
                 <div class="dna-card-summary">
                     <div class="summary-item"><strong>Yön:</strong> ${directionText}</div>
                     <div class="summary-item"><strong>Hedef Değişim:</strong> %${profile.changePercent}</div>
-                    <div class="summary-item"><strong>Olay Sayısı:</strong> ${profile.count}</div>
+                    ${(() => {
+  const cnt = profile.count ?? profile.signalCount ?? profile.eventCount ?? profile?.summary?.eventCount;
+  return `<div class="summary-item"><strong>Olay Sayısı:</strong> ${Number.isFinite(cnt) ? cnt : '—'}</div>`;
+})()}
                     <div class="summary-item"><strong>Parametreler:</strong> <small>${activeParams}</small></div>
                 </div>
                 <div class="dna-card-details-toggle">
