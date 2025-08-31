@@ -501,11 +501,31 @@ const avg1d  = round2((res.avgReturnsSignal || res.avgReturns)?.['1d']);
   const pB = Number.isFinite(ev.priceBefore) ? `$${formatPrice(ev.priceBefore)}` : 'N/A';
   const pA = Number.isFinite(ev.priceAfter)  ? `$${formatPrice(ev.priceAfter)}`  : 'N/A';
 
-  // 4) Gerçekleşen performanslar
-  const p15 = (ev.perf && ev.perf['15m'] != null) ? `${ev.perf['15m'].toFixed(2)}%` : '—';
-  const p1h = (ev.perf && ev.perf['1h']  != null) ? `${ev.perf['1h'].toFixed(2)}%`  : '—';
-  const p4h = (ev.perf && ev.perf['4h']  != null) ? `${ev.perf['4h'].toFixed(2)}%`  : '—';
-  const p1d = (ev.perf && ev.perf['1d']  != null) ? `${ev.perf['1d'].toFixed(2)}%`  : '—';
+    // 4) Gerçekleşen performanslar (güvenli: sayı veya nesne)
+  const pickVal = (raw) => {
+    if (typeof raw === 'number') return raw;
+    if (raw && typeof raw === 'object') {
+      if (Number.isFinite(raw.mfePct)) return raw.mfePct;
+      if (Number.isFinite(raw.mfePctRaw)) return raw.mfePctRaw;
+      if (Number.isFinite(raw.value)) return raw.value;
+    }
+    return NaN;
+  };
+
+  const raw15 = ev.perf?.['15m'];
+  const raw1h = ev.perf?.['1h'];
+  const raw4h = ev.perf?.['4h'];
+  const raw1d = ev.perf?.['1d'];
+
+  const val15 = pickVal(raw15);
+  const val1h = pickVal(raw1h);
+  const val4h = pickVal(raw4h);
+  const val1d = pickVal(raw1d);
+
+  const p15 = Number.isFinite(val15) ? `${val15.toFixed(2)}%` : '—';
+  const p1h = Number.isFinite(val1h) ? `${val1h.toFixed(2)}%` : '—';
+  const p4h = Number.isFinite(val4h) ? `${val4h.toFixed(2)}%` : '—';
+  const p1d = Number.isFinite(val1d) ? `${val1d.toFixed(2)}%` : '—';
 
   // 5) ≈ Beklenen (hem eski alan adı ev.expected hem yeni ev.expectedPct desteklenir), (n) etiketiyle
   const exp = ev.expectedPct || ev.expected || {};
@@ -524,8 +544,6 @@ const avg1d  = round2((res.avgReturnsSignal || res.avgReturns)?.['1d']);
   const e4h = fmtExp('4h');
   const e1d = fmtExp('1d');
 
-  const coinSymbol = ev.coin || ev.symbol || '-';
-
   // 6) Satır HTML
   return `<tr class="opportunity-row ${isHidden}" data-coin="${coinSymbol}">
     <td>
@@ -536,11 +554,12 @@ const avg1d  = round2((res.avgReturnsSignal || res.avgReturns)?.['1d']);
       <div>${targetTimeBlock}</div>
       <div class="muted">Hedef Fiyat: ${pA}</div>
     </td>
-    <td class="${App.clsPerf(ev.perf?.['15m'])}">${p15}${e15}</td>
-    <td class="${App.clsPerf(ev.perf?.['1h'])}">${p1h}${e1h}</td>
-    <td class="${App.clsPerf(ev.perf?.['4h'])}">${p4h}${e4h}</td>
-    <td class="${App.clsPerf(ev.perf?.['1d'])}">${p1d}${e1d}</td>
+    <td class="${App.clsPerf(val15)}">${p15}${e15}</td>
+    <td class="${App.clsPerf(val1h)}">${p1h}${e1h}</td>
+    <td class="${App.clsPerf(val4h)}">${p4h}${e4h}</td>
+    <td class="${App.clsPerf(val1d)}">${p1d}${e1d}</td>
   </tr>`;
+
 };
 
 
