@@ -482,12 +482,29 @@ function setupBacktestPageEventListeners() {
     let currentProfileId = null; // Test edilen profili hafızada tutmak için
 
     // Olayları sadece body'ye bir kere bağlıyoruz, bu daha verimli.
+  
     document.body.addEventListener('click', async (e) => {
   const backtestBtn = e.target.closest('.run-dna-backtest-btn');
   const rerunBtn    = e.target.closest('#rerunBacktestBtn');
   const refreshBtn  = e.target.closest('#refreshDnaProfilesBtn');
   const toggleLink  = e.target.closest('.toggle-details-link');
   const deleteBtn   = e.target.closest('.delete-dna-btn');
+      if (typeof window.applySettingsToUI !== 'function') {
+  window.applySettingsToUI = function() { /* no-op */ };
+}
+
+if (typeof window.renderPortfolioTabs !== 'function') {
+  window.renderPortfolioTabs = function() { /* no-op */ };
+}
+
+// YENİ: app.js içinde çağrılan renderAllPortfolioTabs yoksa, tekli olanı çalıştır
+if (typeof window.renderAllPortfolioTabs !== 'function') {
+  window.renderAllPortfolioTabs = function() {
+    if (typeof window.renderPortfolioTabs === 'function') {
+      window.renderPortfolioTabs(); // en azından temel sekmeleri çiz
+    }
+  };
+}
 
   if (deleteBtn) {
     const pid = deleteBtn.dataset.profileId;
