@@ -7,6 +7,24 @@ window.App = window.App || {
   log: (...args) => console.log('[App]', ...args),
 };
 
+if (typeof window.showLoading !== 'function') {
+  window.showLoading = function (button) {
+    if (!button) return;
+    button.dataset.originalHtml = button.innerHTML;
+    button.innerHTML = '<div class="loading"></div>';
+    button.disabled = true;
+  };
+}
+if (typeof window.hideLoading !== 'function') {
+  window.hideLoading = function (button) {
+    if (!button) return;
+    if (button.dataset.originalHtml) {
+      button.innerHTML = button.dataset.originalHtml;
+    }
+    button.disabled = false;
+  };
+}
+
 function setupGlobalEventListeners() {
     document.body.addEventListener('click', async (e) => {
         if (e.target.closest('.close-btn') || e.target === document.getElementById('modalOverlay')) {
