@@ -33,6 +33,11 @@ if (typeof window.applySettingsToUI !== 'function') {
     window.App?.log?.('applySettingsToUI (fallback): ayarlar şimdilik uygulanmadı');
   };
 }
+if (typeof window.renderPortfolioTabs !== 'function') {
+  window.renderPortfolioTabs = function () {
+    /* no-op */
+  };
+}
 
 
 function setupGlobalEventListeners() {
