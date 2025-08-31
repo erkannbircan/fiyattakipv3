@@ -38,6 +38,9 @@ if (typeof window.renderPortfolioTabs !== 'function') {
     /* no-op */
   };
 }
+if (typeof window.renderAllPortfolioTabs !== 'function') {
+  window.renderAllPortfolioTabs = function () { /* no-op */ };
+}
 
 
 function setupGlobalEventListeners() {
