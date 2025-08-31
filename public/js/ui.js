@@ -501,9 +501,20 @@ const avg1d  = round2((res.avgReturnsSignal || res.avgReturns)?.['1d']);
 
   // 4) Performans yüzdeleri (15m/1h/4h/1d her biri KENDİ TF verisiyle hesaplandı)
   const p15 = (ev.perf && ev.perf['15m'] != null) ? `${ev.perf['15m'].toFixed(2)}%` : '—';
-  const p1h = (ev.perf && ev.perf['1h']  != null) ? `${ev.perf['1h'].toFixed(2)}%`  : '—';
-  const p4h = (ev.perf && ev.perf['4h']  != null) ? `${ev.perf['4h'].toFixed(2)}%`  : '—';
-  const p1d = (ev.perf && ev.perf['1d']  != null) ? `${ev.perf['1d'].toFixed(2)}%`  : '—';
+const p1h = (ev.perf && ev.perf['1h']  != null) ? `${ev.perf['1h'].toFixed(2)}%`  : '—';
+const p4h = (ev.perf && ev.perf['4h']  != null) ? `${ev.perf['4h'].toFixed(2)}%`  : '—';
+const p1d = (ev.perf && ev.perf['1d']  != null) ? `${ev.perf['1d'].toFixed(2)}%`  : '—';
+
+const e15 = (ev.expected && ev.expected['15m'] != null) ? ` <span class="muted">≈ ${ev.expected['15m'].toFixed(2)}%</span>` : '';
+const e1h = (ev.expected && ev.expected['1h']  != null) ? ` <span class="muted">≈ ${ev.expected['1h'].toFixed(2)}%</span>`  : '';
+const e4h = (ev.expected && ev.expected['4h']  != null) ? ` <span class="muted">≈ ${ev.expected['4h'].toFixed(2)}%</span>`  : '';
+const e1d = (ev.expected && ev.expected['1d']  != null) ? ` <span class="muted">≈ ${ev.expected['1d'].toFixed(2)}%</span>`  : '';
+
+<td class="${App.clsPerf(ev.perf?.['15m'])}">${p15}${e15}</td>
+<td class="${App.clsPerf(ev.perf?.['1h'])}">${p1h}${e1h}</td>
+<td class="${App.clsPerf(ev.perf?.['4h'])}">${p4h}${e4h}</td>
+<td class="${App.clsPerf(ev.perf?.['1d'])}">${p1d}${e1d}</td>
+
 
   // 5) Satır HTML
   return `<tr class="opportunity-row ${isHidden}" data-coin="${coinSymbol}">
