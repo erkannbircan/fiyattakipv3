@@ -195,27 +195,23 @@ function setupPanelEventListeners(parentElement) {
     }
 }
 
-function setupActionEventListeners(parentElement) {
-    parentElement.addEventListener('click', async (e) => {
+function setupActionEventListeners() {
+    // Check if the page is fully loaded before attaching listeners
+    if (document.readyState !== 'complete') {
+        window.addEventListener('load', setupActionEventListeners);
+        return;
+    }
+    const eventsTarget = document.getElementById('eventsTarget');
+    if (!eventsTarget) {
+        console.warn('eventsTarget elementi bulunamadi.');
+        return;
+    }
+    
+    eventsTarget.addEventListener('click', (e) => {
         const target = e.target;
-        const portfolioTab = target.closest('.portfolio-tab');
-        if (portfolioTab && !portfolioTab.classList.contains('active')) {
-            const containerId = portfolioTab.parentElement.id;
-            const portfolioName = portfolioTab.dataset.portfolioName;
-            document.querySelectorAll(`#${containerId} .portfolio-tab`).forEach(t => t.classList.remove('active'));
-            portfolioTab.classList.add('active');
-            if (containerId === 'portfolioTabs') await setActivePortfolio(portfolioName);
-            if (containerId === 'pivotPortfolioTabs') renderSupportResistance();
-            return;
-        }
-        if (target.closest('#newPortfolioBtn')) { showPortfolioModal('new'); return; }
-        if (target.closest('#renamePortfolioBtn')) { showPortfolioModal('rename'); return; }
-        if (target.closest('#deletePortfolioBtn')) { await handleDeletePortfolio(); return; }
-        if (target.closest('#refreshBtn')) { await fetchAllDataAndRender(); return; }
-        const assetCell = target.closest('.asset-cell');
-        if (assetCell) { showChart(assetCell.dataset.pair); return; }
-     /* ... setupActionEventListeners fonksiyonunun bir kısmı ... */
-      const clickablePct = target.closest('.clickable-pct');
+        
+        // --- Tablo Değişim Yüzdesi Tıklama Olayı (clickable-pct) ---
+        const clickablePct = target.closest('.clickable-pct');
         if (clickablePct) {
             const { col, pair } = clickablePct.dataset;
             const assetData = state.allCryptoData.find(c => c.pair === pair);
@@ -258,38 +254,75 @@ function setupActionEventListeners(parentElement) {
             }
             return;
         }
+
+        // --- Kripto Tablosu Başlık Sıralama Olayı (sortable) ---
         const sortableHeader = target.closest('#crypto-content th.sortable');
         if (sortableHeader) {
             const key = sortableHeader.dataset.sortKey;
-            if (state.currentSort.key !== key) { state.currentSort.key = key; state.currentSort.order = 'asc'; }
-            else { state.currentSort.order = state.currentSort.order === 'asc' ? 'desc' : 'default'; if (state.currentSort.order === 'default') state.currentSort.key = null; }
-            sortAndRenderTable(); return;
-        }
-/* ... fonksiyonun kalan kısmı ... */
-        const sortableHeader = target.closest('#crypto-content th.sortable');
-        if (sortableHeader) {
-            const key = sortableHeader.dataset.sortKey;
-            if (state.currentSort.key !== key) { state.currentSort.key = key; state.currentSort.order = 'asc'; }
-            else { state.currentSort.order = state.currentSort.order === 'asc' ? 'desc' : 'default'; if (state.currentSort.order === 'default') state.currentSort.key = null; }
-            sortAndRenderTable(); return;
-        }
-        const clickablePct = target.closest('.clickable-pct');
-        if (clickablePct) {
-            const { col, pair } = clickablePct.dataset;
-            const assetData = state.allCryptoData.find(c => c.pair === pair);
-            if (assetData && !assetData.error) {
-                const colData = assetData[`col${col}`];
-                if (colData && typeof colData.pct === 'number') {
-                    const periodName = state.settings.columns[col].name;
-                    const pctChange = colData.pct.toFixed(2);
-                    document.getElementById('detailPanelTitle').textContent = `${assetData.pair.replace('USDT', '')} - ${periodName} Değişim Detayı`;
-                    document.getElementById('detailPanelContent').innerHTML = translations[state.settings.lang].lowest_price_detail(periodName, formatPrice(colData.lowestPrice), colData.lowestDate, formatPrice(assetData.latestPrice), pctChange);
-                    showPanel('detailPanel');
+            if (state.currentSort.key !== key) {
+                state.currentSort.key = key;
+                state.currentSort.order = 'asc';
+            } else {
+                state.currentSort.order = state.currentSort.order === 'asc' ? 'desc' : 'default';
+                if (state.currentSort.order === 'default') {
+                    state.currentSort.key = null;
                 }
+            }
+            sortAndRenderTable();
+            return;
+        }
+        
+        // --- Portföy Tablosu Başlık Sıralama Olayı (sortable) ---
+        const portfolioSortableHeader = target.closest('#portfolio-content th.sortable');
+        if (portfolioSortableHeader) {
+            const key = portfolioSortableHeader.dataset.sortKey;
+            if (state.currentPortfolioSort.key !== key) {
+                state.currentPortfolioSort.key = key;
+                state.currentPortfolioSort.order = 'asc';
+            } else {
+                state.currentPortfolioSort.order = state.currentPortfolioSort.order === 'asc' ? 'desc' : 'default';
+                if (state.currentPortfolioSort.order === 'default') {
+                    state.currentPortfolioSort.key = null;
+                }
+            }
+            renderPortfolio();
+            return;
+        }
+
+        // --- Giriş Yap/Çıkış Yap Butonu Olayı (loginBtn) ---
+        const loginBtn = target.closest('#loginBtn');
+        if (loginBtn) {
+            e.preventDefault();
+            const action = loginBtn.dataset.action;
+            if (action === 'login') {
+                showPanel('loginPanel');
+            } else if (action === 'logout') {
+                auth.signOut();
             }
             return;
         }
-        if (target.closest('#logoutBtn')) { e.preventDefault(); state.firebase.auth.signOut(); return; }
+
+        // --- Portföy Görüntüleme Butonu (portfolioBtn) ---
+        const portfolioBtn = target.closest('#portfolioBtn');
+        if (portfolioBtn) {
+            showPanel('portfolioModal');
+            return;
+        }
+
+        // --- Alarm Ayarları Butonu (alarmsBtn) ---
+        const alarmsBtn = target.closest('#alarmsBtn');
+        if (alarmsBtn) {
+            showPanel('alarmSettingsPanel');
+            return;
+        }
+
+        // --- Geri Butonu (backBtn) ---
+        const backBtn = target.closest('.back-btn');
+        if (backBtn) {
+            const panelId = backBtn.dataset.targetPanel;
+            hidePanel(panelId);
+            return;
+        }
     });
 }
 
