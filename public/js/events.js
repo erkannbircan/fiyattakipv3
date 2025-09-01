@@ -679,45 +679,63 @@ function presetToCandles(preset, timeframe) {
 
 // Akıllı öneri: ATR% tabanlı, coin listesinden ilk geçerli coin ile hesap
 async function computeSmartDiscoveryHints({ timeframe, days }) {
-    try {
-        const samplePair = (state.discoveryCoins && state.discoveryCoins[0]) || 'BTCUSDT';
-        const limit = Math.min(500, Math.max(100, Math.ceil((days || 30) * (1440 / tfToMinutes(timeframe)) )));
-        const klines = await getKlines(samplePair, timeframe, limit);
-        if (!klines || klines.length < 30) return null;
+  try {
+    const samplePair = (state.discoveryCoins && state.discoveryCoins[0]) || 'BTCUSDT';
+    const limit = Math.min(500, Math.max(150, Math.ceil((days || 30) * (1440 / tfToMinutes(timeframe)))));
+    const klines = await getKlines(samplePair, timeframe, limit);
+    if (!klines || klines.length < 60) return null;
 
-        // ATR% ~ basit yaklaşım
-        const closes = klines.map(k => Number(k[4]));
-        let trs = [];
-        for (let i=1;i<klines.length;i++){
-            const high = Number(klines[i][2]);
-            const low  = Number(klines[i][3]);
-            const pc   = Number(klines[i-1][4]);
-            const tr = Math.max(high - low, Math.abs(high - pc), Math.abs(low - pc));
-            trs.push(tr);
-        }
-        const N = 14;
-        const atr = average(trs.slice(-N));
-        const lastC = closes[closes.length - 1] || 0;
-        const atrPct = lastC>0 ? (atr/lastC)*100 : 0;
-
-        // Heuristik:
-        // oynaklık ↑ → lookback ↓ ; oynaklık ↓ → lookback ↑
-        // sınırlar: 2..12
-        let lookback = Math.round(clamp( (-1.8 * atrPct + 9), 1, 9 )); // Min 1, Max 9
-        // lookahead: düşük oynaklıkta daha uzun
-        // sınırlar: 2..Math.ceil(1 gün)
-        const maxOneDay = Math.ceil(1440 / tfToMinutes(timeframe));
-        let lookahead = Math.round(clamp( (0.6* (10/Math.max(atrPct,0.5)) + 3), 2, maxOneDay ));
-
-        return { atrPct: Number(atrPct.toFixed(2)), lookback, lookahead, samplePair };
-    } catch(e){
-        console.warn('computeSmartDiscoveryHints hata:', e);
-        return null;
+    // 1) ATR% (oynaklık ölçüsü)
+    const closes = klines.map(k => Number(k[4]));
+    const trs = [];
+    for (let i=1;i<klines.length;i++){
+      const high = Number(klines[i][2]);
+      const low  = Number(klines[i][3]);
+      const pc   = Number(klines[i-1][4]);
+      const tr = Math.max(high - low, Math.abs(high - pc), Math.abs(low - pc));
+      trs.push(tr);
     }
+    const N = 14;
+    const atr = average(trs.slice(-N));
+    const lastC = closes[closes.length - 1] || 0;
+    const atrPct = lastC>0 ? (atr/lastC)*100 : 0;
 
-    function average(arr){ return arr.reduce((a,b)=>a+b,0)/Math.max(1,arr.length); }
-    function clamp(x,min,max){ return Math.max(min, Math.min(max, x)); }
+    // 2) Lookback (geçmiş mum) – oynaklığa göre
+    const lookback = Math.round(clamp((-1.8 * atrPct + 9), 1, 9));
+
+    // 3) Lookahead oto-seçimi – {8,10,12,14,16} mum adaylarını küçük bir “MFE ortalama” testiyle kıyasla
+    const candidates = [8, 10, 12, 14, 16];
+    const mfeAvg = (win) => {
+      let sum = 0, cnt = 0;
+      for (let i = 50; i < klines.length - (win + 1); i++) {
+        const entry = Number(klines[i][4]);
+        if (!Number.isFinite(entry) || entry <= 0) continue;
+        const slice = klines.slice(i + 1, i + 1 + win);
+        const highs = slice.map(k => Number(k[2]));
+        const lows  = slice.map(k => Number(k[3]));
+        const up = ((Math.max(...highs) - entry) / entry) * 100; // yön bağımsız "potansiyel yukarı"
+        if (Number.isFinite(up)) { sum += up; cnt++; }
+      }
+      return cnt ? (sum / cnt) : -Infinity;
+    };
+    let best = 12, bestVal = -Infinity;
+    for (const w of candidates) {
+      const v = mfeAvg(w);
+      if (v > bestVal) { bestVal = v; best = w; }
+    }
+    const maxOneDay = Math.ceil(1440 / tfToMinutes(timeframe));
+    const lookahead = clamp(best, 2, maxOneDay);
+
+    return { atrPct: Number(atrPct.toFixed(2)), lookback, lookahead, samplePair };
+  } catch (e) {
+    console.warn('computeSmartDiscoveryHints hata:', e);
+    return null;
+  }
+
+  function average(arr){ return arr.reduce((a,b)=>a+b,0)/Math.max(1,arr.length); }
+  function clamp(x,min,max){ return Math.max(min, Math.min(max, x)); }
 }
+
 
 function updateSmartBadges(smart){
   // DNA Mumu (Geçmiş) önerisini gösterme
