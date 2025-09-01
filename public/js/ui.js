@@ -755,78 +755,101 @@ function computeSimpleMFE(event, direction='up') {
 
 
 // ==== Sinyal Performansı: Beklenen vs Gerçekleşen ====
-window.renderAlarmReports = async function renderAlarmReports() {
+// ui.js içinde mevcut renderAlarmReports fonksiyonunun TAMAMINI bununla değiştir
+async function renderAlarmReports() {
   try {
-    const table = document.getElementById('signalReportsTable');
+    const table = document.getElementById('signal-performance-table');
     if (!table) return;
-    const tbodyId = 'signalReportsTableBody';
-    const old = document.getElementById(tbodyId);
-    if (old) old.remove();
+    table.innerHTML = '';
+
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+      <tr>
+        <th>Coin</th>
+        <th>Yön</th>
+        <th>Skor</th>
+
+        <th>15dk Beklenen</th>
+        <th>15dk Gerçekleşen</th>
+
+        <th>1S Beklenen</th>
+        <th>1S Gerçekleşen</th>
+
+        <th>4S Beklenen</th>
+        <th>4S Gerçekleşen</th>
+
+        <th>1G Beklenen</th>
+        <th>1G Gerçekleşen</th>
+
+        <th>Sinyal Zamanı</th>
+        <th>Profil</th>
+      </tr>`;
+    table.appendChild(thead);
+
     const tbody = document.createElement('tbody');
-    tbody.id = tbodyId;
 
-    const db = state.firebase?.db;
-    if (!db) return;
+    // --- VERİ KAYNAĞI (fallback sırayla) ---
+    const snap1 = await App.db.collection('alarm_reports').orderBy('createdAt', 'desc').limit(200).get().catch(() => null);
+    let records = snap1?.docs?.map(d => ({ id: d.id, ...d.data() })) || [];
 
-    // Koleksiyon adı projende "alarm_reports" ise onu, değilse "signalReports" fallback
-    let snap = await db.collection('alarm_reports').orderBy('createdAt', 'desc').limit(200).get().catch(() => null);
-    if (!snap || snap.empty) {
-      snap = await db.collection('signalReports').orderBy('createdAt', 'desc').limit(200).get().catch(() => null);
+    if (!records.length) {
+      const snap2 = await App.db.collection('signalReports').orderBy('createdAt', 'desc').limit(200).get().catch(() => null);
+      records = snap2?.docs?.map(d => ({ id: d.id, ...d.data() })) || records;
     }
-    if (!snap) return;
+    if (!records.length) {
+      const snap3 = await App.db.collection('signals').orderBy('createdAt', 'desc').limit(200).get().catch(() => null);
+      records = snap3?.docs?.map(d => ({ id: d.id, ...d.data() })) || [];
+    }
 
-    const now = Date.now();
+    const valOrDash = (val, _mins) =>
+      (typeof val === 'number' && isFinite(val)) ? `${val.toFixed(2)}%` : '—';
 
-    snap.forEach(doc => {
-      const r = doc.data() || {};
-      // Beklenenler: alan isimleri farklı ise (exp15/exp_15m/expectedPct15m) hepsine bak
-      const exp15 = r.exp15 ?? r.exp_15m ?? r.expectedPct15m ?? r.expectedPct?.['15m'] ?? null;
-      const exp1h = r.exp1h ?? r.exp_1h  ?? r.expectedPct1h  ?? r.expectedPct?.['1h']  ?? null;
-      const exp4h = r.exp4h ?? r.exp_4h  ?? r.expectedPct4h  ?? r.expectedPct?.['4h']  ?? null;
-      const exp1d = r.exp1d ?? r.exp_1d  ?? r.expectedPct1d  ?? r.expectedPct?.['1d']  ?? null;
+    records.forEach((r) => {
+      const coin = r.symbol || r.coin || r.pair || '-';
+      const dir  = r.direction || (r.profile?.direction) || 'up';
+      const ts   = r.timestamp || r.signalTime || r.createdAt?.toMillis?.() || null;
+      const score = Number.isFinite(r.score) ? r.score.toFixed(2) : (r.details?.score ?? '-');
 
-      // Gerçekleşenler: sinyalden bu yana geçen süreye göre hesapla (kapanış değil, anlık)
-      const dir = (r.direction || 'up');
-      const entry = Number(r.entryPrice || r.priceBefore || r.signalPrice || 0);
-      const nowPrice = Number(r.currentPrice || r.lastPrice || 0);
+      // Beklenen (izotonik) alanları: hem yeni (expectedPct/N) hem eski (expected) destekle
+      const exp   = r.expectedPct || r.expected || {};
+      const e15   = exp['15m']; const e1h = exp['1h']; const e4h = exp['4h']; const e1d = exp['1d'];
 
-      // performans: entry → now
-      let realized = null;
-      if (entry > 0 && nowPrice > 0) {
-        const pctUp = ((nowPrice - entry) / entry) * 100;
-        realized = (dir === 'down') ? -pctUp : pctUp;
-      }
+      // Gerçekleşen performans: hem yeni perf nesnesi hem düz alanlar
+      const perf  = r.perf || r.performance || {};
+      const p15   = typeof perf['15m'] === 'number' ? perf['15m']
+                   : (perf['15m'] && typeof perf['15m'] === 'object'
+                        ? (isFinite(perf['15m'].mfePctRaw) ? perf['15m'].mfePctRaw : perf['15m'].mfePct)
+                        : NaN);
+      const p1h   = typeof perf['1h'] === 'number' ? perf['1h']
+                   : (perf['1h'] && typeof perf['1h'] === 'object'
+                        ? (isFinite(perf['1h'].mfePctRaw) ? perf['1h'].mfePctRaw : perf['1h'].mfePct)
+                        : NaN);
+      const p4h   = typeof perf['4h'] === 'number' ? perf['4h']
+                   : (perf['4h'] && typeof perf['4h'] === 'object'
+                        ? (isFinite(perf['4h'].mfePctRaw) ? perf['4h'].mfePctRaw : perf['4h'].mfePct)
+                        : NaN);
+      const p1d   = typeof perf['1d'] === 'number' ? perf['1d']
+                   : (perf['1d'] && typeof perf['1d'] === 'object'
+                        ? (isFinite(perf['1d'].mfePctRaw) ? perf['1d'].mfePctRaw : perf['1d'].mfePct)
+                        : NaN);
 
-      // "henüz dolmadı" kontrolü: her ufuk için dakika farkı
-      const ts = Number(r.timestamp || r.createdAt?.toMillis?.() || r.createdAt || 0);
-      const minsPassed = ts ? Math.floor((now - ts) / 60000) : 0;
-
-      const valOrDash = (v, needMins) => {
-        if (minsPassed < needMins) return '—';
-        if (typeof v !== 'number' || !isFinite(v)) return 'N/A';
-        return `${v.toFixed(2)}%`;
-      };
-
-      // Her ufuk için realized şu anlık aynı (anlık fiyat) — istersen burada ayrı ayrı 15/60/240/1440 mum kapanışlarını fetch edip hesaplayabiliriz.
       const row = document.createElement('tr');
       row.innerHTML = `
-        <td>${(r.symbol || r.coin || '').replace('USDT','')}</td>
-        <td>${dir === 'up' ? 'Yukarı' : 'Aşağı'}</td>
-        <td>${entry ? entry.toFixed(4) : 'N/A'}</td>
-        <td>${nowPrice ? nowPrice.toFixed(4) : 'N/A'}</td>
-        <td>${(typeof r.score === 'number') ? r.score.toFixed(0) : (r.score?.toFixed?.(0) ?? 'N/A')}</td>
+        <td>${coin.replace('USDT','')}</td>
+        <td>${dir === 'up' ? 'Artış' : 'Düşüş'}</td>
+        <td>${score}</td>
 
-        <td>${(typeof exp15 === 'number') ? `${exp15.toFixed(2)}%` : '—'}</td>
-        <td class="${App.clsPerf(realized)}">${valOrDash(realized, 15)}</td>
+        <td>${(typeof e15 === 'number') ? `${e15.toFixed(2)}%` : '—'}</td>
+        <td class="${App.clsPerf(p15)}">${valOrDash(p15, 15)}</td>
 
-        <td>${(typeof exp1h === 'number') ? `${exp1h.toFixed(2)}%` : '—'}</td>
-        <td class="${App.clsPerf(realized)}">${valOrDash(realized, 60)}</td>
+        <td>${(typeof e1h === 'number') ? `${e1h.toFixed(2)}%` : '—'}</td>
+        <td class="${App.clsPerf(p1h)}">${valOrDash(p1h, 60)}</td>
 
-        <td>${(typeof exp4h === 'number') ? `${exp4h.toFixed(2)}%` : '—'}</td>
-        <td class="${App.clsPerf(realized)}">${valOrDash(realized, 240)}</td>
+        <td>${(typeof e4h === 'number') ? `${e4h.toFixed(2)}%` : '—'}</td>
+        <td class="${App.clsPerf(p4h)}">${valOrDash(p4h, 240)}</td>
 
-        <td>${(typeof exp1d === 'number') ? `${exp1d.toFixed(2)}%` : '—'}</td>
-        <td class="${App.clsPerf(realized)}">${valOrDash(realized, 1440)}</td>
+        <td>${(typeof e1d === 'number') ? `${e1d.toFixed(2)}%` : '—'}</td>
+        <td class="${App.clsPerf(p1d)}">${valOrDash(p1d, 1440)}</td>
 
         <td>${ts ? new Date(ts).toLocaleString('tr-TR', App.trTimeFmt) : 'N/A'}</td>
         <td>${r.profileName || r.profile?.name || '-'}</td>
@@ -838,7 +861,8 @@ window.renderAlarmReports = async function renderAlarmReports() {
   } catch (e) {
     console.error('renderAlarmReports hata:', e);
   }
-};
+}
+
 
 
 function renderIndicatorCards(type, data) {
