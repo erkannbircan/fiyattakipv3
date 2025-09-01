@@ -504,7 +504,7 @@ const params = {
   params: dnaParams,
   auto: !!useAutoDna
 };
-
+if (params.auto) { delete params.featureOrder; }
               
                 if (typeof runSignalAnalysisPreviewRemote === 'function') {
                     await runSignalAnalysisPreviewRemote(params);
