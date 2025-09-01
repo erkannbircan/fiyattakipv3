@@ -126,8 +126,8 @@ function applySettingsToUI() {
     }
     const liveScannerInterval = document.getElementById('liveScannerInterval');
     if (liveScannerInterval) liveScannerInterval.value = state.settings.liveScannerInterval;
-    const telegramPhoneInput = document.getElementById('telegramPhoneInput');
-    if (telegramPhoneInput) telegramPhoneInput.value = state.settings.telegramPhone || '';
+    const telegramChatIdInput = document.getElementById('telegramChatIdInput');
+    if (telegramChatIdInput) telegramChatIdInput.value = state.settings.telegramChatId || '';
     for (let i = 1; i <= 3; i++) {
         if (state.settings.columns && state.settings.columns[i]) {
             const colNameInput = document.getElementById(`col${i}_name_input`);
