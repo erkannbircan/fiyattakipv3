@@ -489,7 +489,7 @@ function setupStrategyDiscoveryListeners(parentElement) {
                     lookaheadFinalCandles = smart.lookahead;
                 }
 
-              onst useAutoDna = document.getElementById('useAutoDna')?.checked;
+              const useAutoDna = document.getElementById('useAutoDna')?.checked;
                 const params = {
                   coins: state.discoveryCoins,
                   timeframe, changePercent, direction, days,
