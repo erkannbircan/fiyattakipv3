@@ -379,12 +379,22 @@ function renderSupportResistance() {
 }
 
 function showChart(pair) {
-    document.getElementById('chartPanelTitle').textContent = pair.replace("USDT", "");
+    const chartPanelTitle = document.getElementById('chartPanelTitle');
     const container = document.getElementById('chartContainer');
+    
+    if (!chartPanelTitle || !container) {
+        console.error('Chart elements not found!');
+        return;
+    }
+
+    chartPanelTitle.textContent = pair.replace("USDT", "");
     container.innerHTML = '<div class="loading" style="margin: auto;"></div>';
     showPanel('chartPanel');
-    const savedStudies = state.settings.chartIndicators?.[pair] || [];
+    
+    const savedStudies = state.settings?.chartIndicators?.[pair] || [];
+    
     try {
+        // TradingView widget'ı oluştur
         state.tradingViewWidget = new TradingView.widget({
             symbol: `BINANCE:${pair}`,
             interval: "D",
@@ -401,30 +411,67 @@ function showChart(pair) {
             details: true,
             studies: savedStudies,
             disabled_features: ["use_localstorage_for_settings"],
+            saved_data: state.settings?.chartDrawings?.[pair] || {}, // Çizimleri de kaydet
+            loading_screen: { backgroundColor: "#1e222d" },
+            overrides: {
+                "mainSeriesProperties.showPriceLine": true,
+                "mainSeriesProperties.priceLineWidth": 2
+            },
+            studies_overrides: {
+                "volume.volume.color.0": "#ff6b6b",
+                "volume.volume.color.1": "#4ecdc4",
+                "volume.volume.transparency": 70,
+                "volume.volume ma.color": "#ffa726",
+                "volume.volume ma.transparency": 30,
+                "volume.volume ma.linewidth": 5
+            }
         });
+
+        // Widget hazır olduğunda çizimleri yükle
+        state.tradingViewWidget.onChartReady(function() {
+            console.log('TradingView chart ready for:', pair);
+            
+            // Kayıtlı çizimleri yükle
+            if (state.settings?.chartDrawings?.[pair]) {
+                state.tradingViewWidget.loadDrawings(state.settings.chartDrawings[pair]);
+            }
+            
+            // Çizim değişikliklerini dinle ve kaydet
+            state.tradingViewWidget.subscribe('onAutoSaveNeeded', function() {
+                saveChartState(pair);
+            });
+        });
+
     } catch (error) {
         console.error("TradingView widget hatası:", error);
-        container.innerHTML = `<p style="color:var(--accent-red); text-align:center;">Grafik yüklenemedi.</p>`;
+        container.innerHTML = `<p style="color:var(--accent-red); text-align:center; padding:20px;">Grafik yüklenemedi: ${error.message}</p>`;
     }
 }
 
-function saveChartState() {
+// Chart state kaydetme fonksiyonunu güncelle
+function saveChartState(pair) {
     if (state.tradingViewWidget && typeof state.tradingViewWidget.getStudiesList === 'function') {
-        const currentPair = document.getElementById('chartPanelTitle').textContent + 'USDT';
         const studiesList = state.tradingViewWidget.getStudiesList();
-        const updatePath = `settings.chartIndicators.${currentPair}`;
+        const drawings = state.tradingViewWidget.getDrawings ? state.tradingViewWidget.getDrawings() : [];
+        
+        const updateData = {
+            [`settings.chartIndicators.${pair}`]: studiesList,
+            [`settings.chartDrawings.${pair}`]: drawings
+        };
+
         if (state.userDocRef) {
-            state.userDocRef.update({
-                    [updatePath]: studiesList
-                })
+            state.userDocRef.update(updateData)
                 .then(() => {
-                    if (!state.settings.chartIndicators) {
-                        state.settings.chartIndicators = {};
-                    }
-                    state.settings.chartIndicators[currentPair] = studiesList;
+                    if (!state.settings.chartIndicators) state.settings.chartIndicators = {};
+                    if (!state.settings.chartDrawings) state.settings.chartDrawings = {};
+                    
+                    state.settings.chartIndicators[pair] = studiesList;
+                    state.settings.chartDrawings[pair] = drawings;
+                    
+                    console.log('Chart state saved for:', pair);
                 })
                 .catch(error => {
-                    console.error("Grafik indikatörleri kaydedilirken hata:", error);
+                    console.error("Grafik ayarları kaydedilirken hata:", error);
                 });
         }
     }
