@@ -47,6 +47,8 @@ function getDefaultSettings() {
         cryptoAnalysisInterval: '4h',
         cryptoAnalysisIndicators: { ema: true, rsi: true, macd: true, bollinger: true, volume: false, sma: false, stochRsi: false, atr: false, ichimoku: false, fibonacci: false },
         chartStates: {},
-        trackedReportIds: []
+        trackedReportIds: [],
+      chartIndicators: {}, // ← BU SATIRI EKLEYİN
+        chartDrawings: {}  
     };
 }
