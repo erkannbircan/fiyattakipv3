@@ -459,10 +459,13 @@ function setupStrategyDiscoveryListeners(parentElement) {
                 const useSmartLookback = document.getElementById('useSmartLookback')?.checked;
 
                 const dnaParams = {};
-                document.querySelectorAll('#signalDnaParamsGrid input[type="checkbox"]:checked')
-                  .forEach(cb => { dnaParams[cb.dataset.param] = true; });
+document.querySelectorAll('#signalDnaParamsGrid input[type="checkbox"]:checked')
+  .forEach(cb => { dnaParams[cb.dataset.param] = true; });
 
-                let lookbackCandles = parseInt(document.getElementById('signalLookbackCandles').value) || 9;
+const useAutoDna = document.getElementById('useAutoDna')?.checked;
+
+let lookbackCandles = parseInt(document.getElementById('signalLookbackCandles').value) || 9;
+
                 const lookaheadModeSelect = document.getElementById('fixedLookaheadPreset')?.value || 'auto';
                 const customLookaheadCandles = parseInt(document.getElementById('customLookaheadCandles')?.value) || 0;
                 
