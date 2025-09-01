@@ -214,6 +214,7 @@ function setupActionEventListeners(parentElement) {
         if (target.closest('#refreshBtn')) { await fetchAllDataAndRender(); return; }
         const assetCell = target.closest('.asset-cell');
         if (assetCell) { showChart(assetCell.dataset.pair); return; }
+     /* ... setupActionEventListeners fonksiyonunun bir kısmı ... */
       const clickablePct = target.closest('.clickable-pct');
         if (clickablePct) {
             const { col, pair } = clickablePct.dataset;
@@ -257,6 +258,14 @@ function setupActionEventListeners(parentElement) {
             }
             return;
         }
+        const sortableHeader = target.closest('#crypto-content th.sortable');
+        if (sortableHeader) {
+            const key = sortableHeader.dataset.sortKey;
+            if (state.currentSort.key !== key) { state.currentSort.key = key; state.currentSort.order = 'asc'; }
+            else { state.currentSort.order = state.currentSort.order === 'asc' ? 'desc' : 'default'; if (state.currentSort.order === 'default') state.currentSort.key = null; }
+            sortAndRenderTable(); return;
+        }
+/* ... fonksiyonun kalan kısmı ... */
         const sortableHeader = target.closest('#crypto-content th.sortable');
         if (sortableHeader) {
             const key = sortableHeader.dataset.sortKey;
