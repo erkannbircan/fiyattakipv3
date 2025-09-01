@@ -449,17 +449,20 @@ async function analyzeWithGemini(dataToAnalyze) {
 async function runSignalAnalysisPreviewRemote(params) {
   try {
     // UI parametrelerini al
-    const {
-      coins = [],
-      timeframe,
-      changePercent,
-      direction,
-      days: periodDays,
-      lookbackCandles,
-      lookaheadCandles = 0,
-      lookaheadMode = 'smart',
-      params: dnaParams = {}
-    } = params || {};
+  const {
+  coins = [],
+  timeframe,
+  changePercent,
+  direction,
+  days: periodDays,
+  lookbackCandles,
+  lookaheadCandles = 0,
+  lookaheadMode = 'smart',
+  params: dnaParams = {},
+  auto = false,                       // ← YENİ
+  successWindowMinutes: swm           // ← Olaydan da gelebiliyor
+} = params || {};
+
 
     if (!Array.isArray(coins) || coins.length === 0) {
       renderSignalAnalysisPreview({ info: { status:'info', message:'Analiz edilecek en az bir coin seçin.' } });
