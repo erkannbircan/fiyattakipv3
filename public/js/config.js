@@ -40,7 +40,7 @@ const translations = {
 function getDefaultSettings() {
     return {
         lang: 'tr', autoRefresh: false, refreshInterval: 300,
-        telegramPhone: '',
+        telegramChatId: '',
         columns: { 1: { name: '1G', days: 1, threshold: 2 }, 2: { name: '7G', days: 7, threshold: 5 }, 3: { name: '30G', days: 30, threshold: 10 } },
         colors: { high: '#26a69a', low: '#f59e0b' },
         cryptoPivotFilter: 'all',
