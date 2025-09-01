@@ -515,6 +515,9 @@ async function runSignalAnalysisPreviewRemote(params) {
           params: { ...dnaParams },  // YENİ: checkbox haritası (rsi, macd, adx, volume, volatility, candle, vb.)
           featureOrder
         };
+        if (!auto && Array.isArray(featureOrder)) {
+  payload.featureOrder = featureOrder;
+}
         const res = await call(payload);
         const data = res.data; // { summary, events, profile }
 
