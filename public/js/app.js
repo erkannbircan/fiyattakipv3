@@ -233,7 +233,7 @@ function saveSettings() {
         lang: document.getElementById('langSelect').value,
         autoRefresh: document.getElementById('autoRefreshToggle').checked,
         refreshInterval: interval,
-        telegramPhone: document.getElementById('telegramPhoneInput').value,
+        telegramChatId: document.getElementById('telegramChatIdInput').value,
         liveScannerInterval: scannerInterval, // YENİ
         columns: {
             1: { name: document.getElementById('col1_name_input').value, days: parseInt(document.getElementById('col1_days_input').value), threshold: parseFloat(document.getElementById('col1_threshold_input').value) },
