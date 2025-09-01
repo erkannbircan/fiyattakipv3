@@ -587,3 +587,5 @@ function updateAdminUI() {
     App.log('Tüm modüller yüklendi.');
   }
 })();
+window.App = window.App || { loaded:{} };
+window.App.loaded.EVT = true;
