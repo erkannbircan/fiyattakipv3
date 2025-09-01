@@ -179,7 +179,7 @@ function setupPanelEventListeners(parentElement) {
             }
         }
     });
-}
+
 
     const alarmSettingsPanel = document.getElementById('alarmSettingsPanel');
     if (alarmSettingsPanel) {
