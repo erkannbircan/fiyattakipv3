@@ -203,10 +203,12 @@ async function runSignalAnalysisPreview(params) {
           return dir === 'down' ? dn : up;
         };
 
-        const r1 = calc(60), r4 = calc(240), rD = calc(1440);
-        if (typeof r1 === 'number') { sums['1h'] += r1; counts['1h']++; }
-        if (typeof r4 === 'number') { sums['4h'] += r4; counts['4h']++; }
-        if (typeof rD === 'number') { sums['1d'] += rD; counts['1d']++; }
+                const r15 = calc(15), r1 = calc(60), r4 = calc(240), rD = calc(1440);
+        if (typeof r15 === 'number') { sums['15m'] += r15; counts['15m']++; }
+        if (typeof r1  === 'number') { sums['1h']  += r1;  counts['1h']++;  }
+        if (typeof r4  === 'number') { sums['4h']  += r4;  counts['4h']++;  }
+        if (typeof rD  === 'number') { sums['1d']  += rD;  counts['1d']++;  }
+
       }
 
       const avg = {
@@ -496,14 +498,18 @@ async function runSignalAnalysisPreviewRemote(params) {
     const out = {};
     for (const coin of coins) {
       try {
-        const payload = {
+               const payload = {
           coin,
           timeframe,
           periodDays,
           direction,
           changePercent,
           lookbackCandles,
-          successWindowMinutes,
+          successWindowMinutes,      // preset/smart/custom'tan türeyen dakika
+          lookaheadCandles,          // YENİ: sunucu normalizasyonu için
+          lookaheadMode,             // YENİ: log/teşhis
+          auto: !!auto,              // YENİ: Akıllı Mod seçimi
+          params: { ...dnaParams },  // YENİ: checkbox haritası (rsi, macd, adx, volume, volatility, candle, vb.)
           featureOrder
         };
         const res = await call(payload);
@@ -514,16 +520,21 @@ async function runSignalAnalysisPreviewRemote(params) {
           status: 'ok',
           eventCount: data?.summary?.signalCount ?? 0,
           avgReturns: data?.summary?.averageReturns || {}, // {'15m','1h','4h','1d'}
-          eventDetails: Array.isArray(data?.events)
-            ? data.events.map(e => ({
-                timestamp: e.details?.timestamp,
-                priceBefore: e.details?.priceBefore,
-                priceAfter:  e.details?.priceAfter,
-                targetTime:  e.details?.targetTime,
-                mfePct:      e.details?.mfePct,
-                perf:        e.details?.perf || {}
-              }))
-            : [],
+                     eventDetails: Array.isArray(data?.events)
+             ? data.events.map(e => ({
+                 timestamp:    e.details?.timestamp,
+                 priceBefore:  e.details?.priceBefore,
+                 priceAfter:   e.details?.priceAfter,
+                 targetTime:   e.details?.targetTime,
+                 mfePct:       e.details?.mfePct,
+                 perf:         e.details?.perf || {},
+                 score:        e.details?.score,                         // YENİ
+                 mtfConfirm:   !!(e.mtfConfirm || e.details?.mtfConfirm),// YENİ → UI'daki "MTF✓"
+                 expectedPct:  e.expectedPct || {},                      // YENİ → "≈ Beklenen"
+                 expectedN:    e.expectedN || {}                         // YENİ → "(n)"
+               }))
+             : [],
+
           dnaProfile: data?.profile || null,
           dnaSummary: data?.profile
             ? { featureOrder: data.profile.featureOrder || [], mean: data.profile.mean || [] }
