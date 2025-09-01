@@ -94,6 +94,31 @@
             <div class="update-time"><i class="far fa-clock"></i>&nbsp;<span data-lang="last_update">Son güncelleme</span>: <span id="updateTime"></span></div>
         </div>
     </div>
+    <div id="chartPanel" class="panel">
+    <div class="panel-header">
+        <h3 id="chartPanelTitle">Grafik</h3>
+        <div class="panel-controls">
+            <button class="panel-btn" onclick="saveChartState()">
+                <i class="fas fa-save"></i> Kaydet
+            </button>
+            <button class="panel-btn close-btn" onclick="closeAllPanels()">✕</button>
+        </div>
+    </div>
+    <div class="panel-content">
+        <div id="chartContainer" style="height: 600px; width: 100%;"></div>
+    </div>
+</div>
+
+<!-- Detail Panel -->
+<div id="detailPanel" class="panel">
+    <div class="panel-header">
+        <h3 id="detailPanelTitle">Detaylar</h3>
+        <button class="panel-btn close-btn" onclick="closeAllPanels()">✕</button>
+    </div>
+    <div class="panel-content">
+        <div id="detailPanelContent"></div>
+    </div>
+</div>
     
     <div id="settingsPanel" class="panel"> </div>
     <div id="detailPanel" class="panel"> </div>
