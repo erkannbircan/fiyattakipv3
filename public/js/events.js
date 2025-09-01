@@ -462,8 +462,8 @@ function setupStrategyDiscoveryListeners(parentElement) {
 document.querySelectorAll('#signalDnaParamsGrid input[type="checkbox"]:checked')
   .forEach(cb => { dnaParams[cb.dataset.param] = true; });
 
-const useAutoDna = document.getElementById('useAutoDna')?.checked;
               let useAutoDna = document.getElementById('useAutoDna')?.checked;
+              useAutoDna = document.getElementById('useAutoDna')?.checked;
 
 let lookbackCandles = parseInt(document.getElementById('signalLookbackCandles').value) || 9;
 
