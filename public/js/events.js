@@ -160,6 +160,26 @@ function setupPanelEventListeners(parentElement) {
             }
         }
     });
+  const settingsBtn = document.getElementById('settingsBtn');
+    if (settingsBtn && !settingsBtn.dataset.listenerAttached) {
+        settingsBtn.addEventListener('click', () => showPanel('settingsPanel'));
+        settingsBtn.dataset.listenerAttached = 'true';
+    }
+
+    parentElement.addEventListener('click', (e) => {
+        if (e.target.closest('#saveAlarmBtn')) saveAlarm();
+        if (e.target.closest('#savePortfolioBtn')) handlePortfolioSave();
+        
+        const collapsibleHeader = e.target.closest('.collapsible-header');
+        if (collapsibleHeader) {
+            const content = collapsibleHeader.nextElementSibling;
+            if(content) {
+                collapsibleHeader.classList.toggle('open');
+                content.classList.toggle('open');
+            }
+        }
+    });
+}
 
     const alarmSettingsPanel = document.getElementById('alarmSettingsPanel');
     if (alarmSettingsPanel) {
@@ -194,6 +214,49 @@ function setupActionEventListeners(parentElement) {
         if (target.closest('#refreshBtn')) { await fetchAllDataAndRender(); return; }
         const assetCell = target.closest('.asset-cell');
         if (assetCell) { showChart(assetCell.dataset.pair); return; }
+      const clickablePct = target.closest('.clickable-pct');
+        if (clickablePct) {
+            const { col, pair } = clickablePct.dataset;
+            const assetData = state.allCryptoData.find(c => c.pair === pair);
+            
+            const detailTitle = document.getElementById('detailPanelTitle');
+            const detailContent = document.getElementById('detailPanelContent');
+            
+            if (!detailTitle || !detailContent) {
+                console.error('Detail panel elements not found!');
+                return;
+            }
+
+            if (assetData && !assetData.error) {
+                const colData = assetData[`col${col}`];
+                if (colData && typeof colData.pct === 'number') {
+                    const periodName = state.settings.columns[col].name;
+                    const pctChange = colData.pct.toFixed(2);
+                    
+                    detailTitle.textContent = `${assetData.pair.replace('USDT', '')} - ${periodName} Değişim Detayı`;
+                    detailContent.innerHTML = `
+                        <div class="detail-item">
+                            <span>Değişim:</span>
+                            <span class="${colData.pct >= 0 ? 'positive' : 'negative'}">${pctChange}%</span>
+                        </div>
+                        <div class="detail-item">
+                            <span>Gün Sayısı:</span>
+                            <span>${state.settings.columns[col].days} gün</span>
+                        </div>
+                        <div class="detail-item">
+                            <span>Eşik Değeri:</span>
+                            <span>${state.settings.columns[col].threshold}%</span>
+                        </div>
+                        <div class="detail-item">
+                            <span>Hesaplanma Zamanı:</span>
+                            <span>${new Date().toLocaleString('tr-TR')}</span>
+                        </div>
+                    `;
+                    showPanel('detailPanel');
+                }
+            }
+            return;
+        }
         const sortableHeader = target.closest('#crypto-content th.sortable');
         if (sortableHeader) {
             const key = sortableHeader.dataset.sortKey;
