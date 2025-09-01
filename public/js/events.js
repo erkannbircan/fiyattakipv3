@@ -446,7 +446,8 @@ function setupStrategyDiscoveryListeners(parentElement) {
                 } else if (smart?.lookahead) {
                     lookaheadFinalCandles = smart.lookahead;
                 }
-                
+
+              onst useAutoDna = document.getElementById('useAutoDna')?.checked;
                 const params = {
                   coins: state.discoveryCoins,
                   timeframe, changePercent, direction, days,
@@ -454,6 +455,7 @@ function setupStrategyDiscoveryListeners(parentElement) {
                   lookaheadCandles: Number(lookaheadFinalCandles),
                   lookaheadMode: finalMode,
                   params: dnaParams,
+                  auto: !!useAutoDna,     
                 };
 
                 if (typeof runSignalAnalysisPreviewRemote === 'function') {
