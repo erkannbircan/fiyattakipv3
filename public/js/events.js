@@ -165,10 +165,6 @@ function setupPanelEventListeners(parentElement) {
         settingsBtn.addEventListener('click', () => showPanel('settingsPanel'));
         settingsBtn.dataset.listenerAttached = 'true';
     }
-
-    parentElement.addEventListener('click', (e) => {
-        if (e.target.closest('#saveAlarmBtn')) saveAlarm();
-        if (e.target.closest('#savePortfolioBtn')) handlePortfolioSave();
         
         const collapsibleHeader = e.target.closest('.collapsible-header');
         if (collapsibleHeader) {
