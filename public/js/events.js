@@ -146,50 +146,55 @@ function setupTabEventListeners(parentElement) {
 }
 
 function setupPanelEventListeners(parentElement) {
-    parentElement.addEventListener('click', (e) => {
-        if (e.target.closest('#settingsBtn')) showPanel('settingsPanel');
-        if (e.target.closest('#saveAlarmBtn')) saveAlarm();
-        if (e.target.closest('#savePortfolioBtn')) handlePortfolioSave();
-        
-        const collapsibleHeader = e.target.closest('.collapsible-header');
-        if (collapsibleHeader) {
-            const content = collapsibleHeader.nextElementSibling;
-            if(content) {
-                collapsibleHeader.classList.toggle('open');
-                content.classList.toggle('open');
-            }
-        }
-    });
+  // Tüm tıklamalar için TEK delegasyon dinleyicisi
+  parentElement.addEventListener('click', (e) => {
+    if (e.target.closest('#settingsBtn')) {
+      showPanel('settingsPanel');
+      return;
+    }
+    if (e.target.closest('#saveAlarmBtn')) {
+      saveAlarm();
+      return;
+    }
+    if (e.target.closest('#savePortfolioBtn')) {
+      handlePortfolioSave();
+      return;
+    }
+
+    // Açılır/Kapanır başlıklar
+    const collapsibleHeader = e.target.closest('.collapsible-header');
+    if (collapsibleHeader) {
+      const content = collapsibleHeader.nextElementSibling;
+      if (content) {
+        collapsibleHeader.classList.toggle('open');
+        content.classList.toggle('open');
+      }
+      return;
+    }
+  });
+
+  // Ayarlar butonuna ikincil (idempotent) dinleyici — iki kez eklenmesin
   const settingsBtn = document.getElementById('settingsBtn');
-    if (settingsBtn && !settingsBtn.dataset.listenerAttached) {
-        settingsBtn.addEventListener('click', () => showPanel('settingsPanel'));
-        settingsBtn.dataset.listenerAttached = 'true';
-    }
-        
-        const collapsibleHeader = e.target.closest('.collapsible-header');
-        if (collapsibleHeader) {
-            const content = collapsibleHeader.nextElementSibling;
-            if(content) {
-                collapsibleHeader.classList.toggle('open');
-                content.classList.toggle('open');
-            }
+  if (settingsBtn && !settingsBtn.dataset.listenerAttached) {
+    settingsBtn.addEventListener('click', () => showPanel('settingsPanel'));
+    settingsBtn.dataset.listenerAttached = 'true';
+  }
+
+  // Alarm panelindeki checkbox’lar: kutu kapatma/açma
+  const alarmSettingsPanel = document.getElementById('alarmSettingsPanel');
+  if (alarmSettingsPanel) {
+    alarmSettingsPanel.addEventListener('change', (e) => {
+      if (e.target.matches('[data-condition]')) {
+        const isChecked = e.target.checked;
+        const parentBox = e.target.closest('.alarm-condition-box');
+        if (parentBox) {
+          parentBox.dataset.disabled = String(!isChecked);
         }
+      }
     });
-
-
-    const alarmSettingsPanel = document.getElementById('alarmSettingsPanel');
-    if (alarmSettingsPanel) {
-        alarmSettingsPanel.addEventListener('change', (e) => {
-            if (e.target.matches('[data-condition]')) {
-                const isChecked = e.target.checked;
-                const parentBox = e.target.closest('.alarm-condition-box');
-                if (parentBox) {
-                    parentBox.dataset.disabled = String(!isChecked);
-                }
-            }
-        });
-    }
+  }
 }
+
 
 function setupActionEventListeners() {
     // Check if the page is fully loaded before attaching listeners
