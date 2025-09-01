@@ -158,9 +158,14 @@ async function initializeTrackerPage(userData) {
         await fetchAllDataAndRender();
         fetchAiDataAndRender();
         renderAlarmReports();
-
-        setupTrackerPageEventListeners(); // Eski genel olay dinleyicimiz
-        setupUpdateAnalysisButtonListener();
+if (typeof setupTrackerPageEventListeners === 'function') {
+  setupTrackerPageEventListeners(); // Eski genel olay dinleyicimiz
+} else {
+  console.warn('setupTrackerPageEventListeners henüz yüklenmedi');
+}
+if (typeof setupUpdateAnalysisButtonListener === 'function') {
+  setupUpdateAnalysisButtonListener();
+}
     }
 
     const toggle = document.getElementById('toggleAutoScanner');
