@@ -109,7 +109,11 @@ function initializeAuthListener() {
 
 function loadSettingsAndRole(userData) {
     const defaultSettings = getDefaultSettings();
-    state.settings = { ...defaultSettings, ...userData.settings };
+    state.settings = { 
+        ...defaultSettings, 
+        ...userData.settings,
+        chartIndicators: userData.settings?.chartIndicators || {} // ← BU SATIRI EKLEYİN
+    };
     state.settings.columns = { ...defaultSettings.columns, ...(userData.settings?.columns || {}) };
     state.settings.colors = { ...defaultSettings.colors, ...(userData.settings?.colors || {}) };
     state.settings.cryptoAnalysisIndicators = { ...defaultSettings.cryptoAnalysisIndicators, ...(userData.settings?.cryptoAnalysisIndicators || {}) };
