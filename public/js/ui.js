@@ -531,7 +531,7 @@ const avg1d  = round2((res.avgReturnsSignal || res.avgReturns)?.['1d']);
       
       const row = (ev, index) => {
   const isHidden = index >= 5 ? 'hidden' : '';
-          const mtfBadge = (ev.mtfConfirm || ev?.details?.mtfConfirm) ? ' <span class="pill pill-muted">MTF✓</span>' : '';
+          
 
 
   // 1) Sinyal zamanı (mum kapanışı)
@@ -595,12 +595,11 @@ const avg1d  = round2((res.avgReturnsSignal || res.avgReturns)?.['1d']);
 
   // 6) Satır HTML
     // 6) Satır HTML (+ MTF rozeti)
-  const mtfBadge = (ev.mtfConfirm || ev?.details?.mtfConfirm) ? ' <span class="pill">MTF✓</span>' : '';
-  return `<tr class="opportunity-row ${isHidden}" data-coin="${coinSymbol}">
-    <td>
-      <div>${signalTime}${mtfBadge}</div>
-      <div class="muted">Sinyal Fiyatı: ${pB}</div>
-    </td>
+ return `<tr class="opportunity-row ${isHidden}" data-coin="${coinSymbol}">
+  <td>
+    <div>${signalTime}${(ev.mtfConfirm || ev?.details?.mtfConfirm) ? ' <span class="pill">MTF✓</span>' : ''}</div>
+    <div class="muted">Sinyal Fiyatı: ${pB}</div>
+  </td>
     <td>
       <div>${targetTimeBlock}</div>
       <div class="muted">Hedef Fiyat: ${pA}</div>
