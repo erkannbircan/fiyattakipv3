@@ -490,17 +490,18 @@ function setupStrategyDiscoveryListeners(parentElement) {
                 }
 
               const useAutoDna = document.getElementById('useAutoDna')?.checked;
-              const successWindowMinutes = Number(lookaheadFinalCandles) * tfToMinutes(timeframe);
-              const params = {
-                coins: state.discoveryCoins,
-                timeframe, changePercent, direction, days,
-                lookbackCandles: Number(lookbackCandles),
-                lookaheadCandles: Number(lookaheadFinalCandles),
-                lookaheadMode: finalMode,
-                successWindowMinutes,
-                params: dnaParams,
-                auto: !!useAutoDna,
-              };
+const successWindowMinutes = Number(lookaheadFinalCandles) * tfToMinutes(timeframe);
+const params = {
+  coins: state.discoveryCoins,
+  timeframe, changePercent, direction, days,
+  lookbackCandles: Number(lookbackCandles),
+  lookaheadCandles: Number(lookaheadFinalCandles),
+  lookaheadMode: finalMode,
+  successWindowMinutes,
+  params: dnaParams,
+  auto: !!useAutoDna
+};
+
               
                 if (typeof runSignalAnalysisPreviewRemote === 'function') {
                     await runSignalAnalysisPreviewRemote(params);
