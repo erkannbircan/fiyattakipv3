@@ -754,66 +754,92 @@ function computeSimpleMFE(event, direction='up') {
 }
 
 
-async function renderAlarmReports() {
-    if (!state.userDocRef) return;
-    const tableBody = document.getElementById('alarmReportsTable');
-    if (!tableBody) return;
-    try {
-        const signalsSnapshot = await state.firebase.db.collection('signals')
-            .where('userId', '==', state.firebase.auth.currentUser.uid)
-            .orderBy('createdAt', 'desc')
-            .limit(50)
-            .get();
-        if (signalsSnapshot.empty) {
-            tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Henüz size özel bir sinyal üretilmedi.</td></tr>`;
-            return;
-        }
-        const reports = signalsSnapshot.docs.map(doc => doc.data());
-        const coinPairs = [...new Set(reports.map(r => r.coin))];
-        if (coinPairs.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;">Sinyallerde geçerli bir coin bulunamadı.</td></tr>`;
-            return;
-        }
-        const pricesData = await Promise.all(coinPairs.map(pair =>
-            axios.get(`https://api.binance.com/api/v3/ticker/price?symbol=${pair}`)
-            .then(res => res.data)
-            .catch(() => ({
-                symbol: pair,
-                price: null
-            }))
-        ));
-        const priceMap = new Map(pricesData.map(p => [p.symbol, parseFloat(p.price)]));
-        tableBody.innerHTML = '';
-        reports.forEach(report => {
-            const currentPrice = priceMap.get(report.coin);
-            let performancePct = 'N/A';
-            let perfClass = '';
-            if (currentPrice && report.priceAtSignal > 0) {
-                const change = ((currentPrice - report.priceAtSignal) / report.priceAtSignal) * 100;
-                performancePct = (report.direction === 'down' ? -change : change);
-                perfClass = performancePct > 0.1 ? 'positive' : (performancePct < -0.1 ? 'negative' : '');
-            }
-            const directionIcon = report.direction === 'up' ?
-                '<span class="positive">YÜKSELİŞ</span>' :
-                '<span class="negative">DÜŞÜŞ</span>';
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${report.coin.replace('USDT', '')}</td>
-                <td>${directionIcon}</td>
-                <td>$${formatPrice(report.priceAtSignal)}</td>
-                <td>$${currentPrice ? formatPrice(currentPrice) : 'N/A'}</td>
-                <td class="performance-cell ${perfClass}">${typeof performancePct === 'number' ? performancePct.toFixed(2) + '%' : 'N/A'}</td>
-                <td>${report.score}/100</td>
-              <td>${report.createdAt.toDate().toLocaleString('tr-TR', App.trTimeFmt)}</td>
-                <td>${report.profileId}</td>
-            `;
-            tableBody.appendChild(row);
-        });
-    } catch (error) {
-        console.error("Sinyal raporları çekilirken hata:", error);
-        tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color: var(--accent-red);">Raporlar yüklenirken bir hata oluştu. Lütfen konsolu kontrol edin.</td></tr>`;
+// ==== Sinyal Performansı: Beklenen vs Gerçekleşen ====
+window.renderAlarmReports = async function renderAlarmReports() {
+  try {
+    const table = document.getElementById('signalReportsTable');
+    if (!table) return;
+    const tbodyId = 'signalReportsTableBody';
+    const old = document.getElementById(tbodyId);
+    if (old) old.remove();
+    const tbody = document.createElement('tbody');
+    tbody.id = tbodyId;
+
+    const db = state.firebase?.db;
+    if (!db) return;
+
+    // Koleksiyon adı projende "alarm_reports" ise onu, değilse "signalReports" fallback
+    let snap = await db.collection('alarm_reports').orderBy('createdAt', 'desc').limit(200).get().catch(() => null);
+    if (!snap || snap.empty) {
+      snap = await db.collection('signalReports').orderBy('createdAt', 'desc').limit(200).get().catch(() => null);
     }
-}
+    if (!snap) return;
+
+    const now = Date.now();
+
+    snap.forEach(doc => {
+      const r = doc.data() || {};
+      // Beklenenler: alan isimleri farklı ise (exp15/exp_15m/expectedPct15m) hepsine bak
+      const exp15 = r.exp15 ?? r.exp_15m ?? r.expectedPct15m ?? r.expectedPct?.['15m'] ?? null;
+      const exp1h = r.exp1h ?? r.exp_1h  ?? r.expectedPct1h  ?? r.expectedPct?.['1h']  ?? null;
+      const exp4h = r.exp4h ?? r.exp_4h  ?? r.expectedPct4h  ?? r.expectedPct?.['4h']  ?? null;
+      const exp1d = r.exp1d ?? r.exp_1d  ?? r.expectedPct1d  ?? r.expectedPct?.['1d']  ?? null;
+
+      // Gerçekleşenler: sinyalden bu yana geçen süreye göre hesapla (kapanış değil, anlık)
+      const dir = (r.direction || 'up');
+      const entry = Number(r.entryPrice || r.priceBefore || r.signalPrice || 0);
+      const nowPrice = Number(r.currentPrice || r.lastPrice || 0);
+
+      // performans: entry → now
+      let realized = null;
+      if (entry > 0 && nowPrice > 0) {
+        const pctUp = ((nowPrice - entry) / entry) * 100;
+        realized = (dir === 'down') ? -pctUp : pctUp;
+      }
+
+      // "henüz dolmadı" kontrolü: her ufuk için dakika farkı
+      const ts = Number(r.timestamp || r.createdAt?.toMillis?.() || r.createdAt || 0);
+      const minsPassed = ts ? Math.floor((now - ts) / 60000) : 0;
+
+      const valOrDash = (v, needMins) => {
+        if (minsPassed < needMins) return '—';
+        if (typeof v !== 'number' || !isFinite(v)) return 'N/A';
+        return `${v.toFixed(2)}%`;
+      };
+
+      // Her ufuk için realized şu anlık aynı (anlık fiyat) — istersen burada ayrı ayrı 15/60/240/1440 mum kapanışlarını fetch edip hesaplayabiliriz.
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${(r.symbol || r.coin || '').replace('USDT','')}</td>
+        <td>${dir === 'up' ? 'Yukarı' : 'Aşağı'}</td>
+        <td>${entry ? entry.toFixed(4) : 'N/A'}</td>
+        <td>${nowPrice ? nowPrice.toFixed(4) : 'N/A'}</td>
+        <td>${(typeof r.score === 'number') ? r.score.toFixed(0) : (r.score?.toFixed?.(0) ?? 'N/A')}</td>
+
+        <td>${(typeof exp15 === 'number') ? `${exp15.toFixed(2)}%` : '—'}</td>
+        <td class="${App.clsPerf(realized)}">${valOrDash(realized, 15)}</td>
+
+        <td>${(typeof exp1h === 'number') ? `${exp1h.toFixed(2)}%` : '—'}</td>
+        <td class="${App.clsPerf(realized)}">${valOrDash(realized, 60)}</td>
+
+        <td>${(typeof exp4h === 'number') ? `${exp4h.toFixed(2)}%` : '—'}</td>
+        <td class="${App.clsPerf(realized)}">${valOrDash(realized, 240)}</td>
+
+        <td>${(typeof exp1d === 'number') ? `${exp1d.toFixed(2)}%` : '—'}</td>
+        <td class="${App.clsPerf(realized)}">${valOrDash(realized, 1440)}</td>
+
+        <td>${ts ? new Date(ts).toLocaleString('tr-TR', App.trTimeFmt) : 'N/A'}</td>
+        <td>${r.profileName || r.profile?.name || '-'}</td>
+      `;
+      tbody.appendChild(row);
+    });
+
+    table.appendChild(tbody);
+  } catch (e) {
+    console.error('renderAlarmReports hata:', e);
+  }
+};
+
 
 function renderIndicatorCards(type, data) {
     const container = document.getElementById('crypto-indicator-cards-container');
