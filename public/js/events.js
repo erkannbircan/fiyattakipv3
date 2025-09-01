@@ -778,13 +778,16 @@ function updateSmartBadges(smart){
       window.setupGlobalEventListeners = window.setupGlobalEventListeners || setupGlobalEventListeners;
     if (typeof setupAuthEventListeners === 'function')
       window.setupAuthEventListeners = window.setupAuthEventListeners || setupAuthEventListeners;
-    if (typeof setupTrackerPageEventListeners === 'function')
-      window.setupTrackerPageEventListeners = window.setupTrackerPageEventListeners || setupTrackerPageEventListeners;
-    if (typeof setupTabEventListeners === 'function')
-      window.setupTabEventListeners = window.setupTabEventListeners || setupTabEventListeners;
-    if (typeof setupPanelEventListeners === 'function')
-      window.setupPanelEventListeners = window.setupPanelEventListeners || setupPanelEventListeners;
-    if (typeof setupActionEventListeners === 'function')
+
+if (typeof setupTrackerPageEventListeners === 'function')
+  window.setupTrackerPageEventListeners = window.setupTrackerPageEventListeners || setupTrackerPageEventListeners;
+
+if (typeof setupTabEventListeners === 'function')
+  window.setupTabEventListeners = window.setupTabEventListeners || setupTabEventListeners;
+if (typeof setupPanelEventListeners === 'function')
+  window.setupPanelEventListeners = window.setupPanelEventListeners || setupPanelEventListeners;
+
+
       window.setupActionEventListeners = window.setupActionEventListeners || setupActionEventListeners;
     if (typeof setupReportEventListeners === 'function')
       window.setupReportEventListeners = window.setupReportEventListeners || setupReportEventListeners;
