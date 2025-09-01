@@ -9,14 +9,14 @@ window.App = window.App || {
 
 async function sendTestTelegramMessage() {
     const btn = document.getElementById('testAlarmBtn');
-    if (!state.settings.telegramPhone) {
+    if (!state.settings.telegramChatId) {
         showNotification("Lütfen Ayarlar'dan Telegram Chat ID'nizi kaydedin.", false);
         return;
     }
     showLoading(btn);
     try {
         const sendTestNotification = state.firebase.functions.httpsCallable('sendTestNotification');
-        await sendTestNotification({ chatId: state.settings.telegramPhone });
+        await sendTestNotification({ chatId: state.settings.telegramChatId });
         showNotification("Test bildirimi başarıyla gönderildi!", true);
     } catch (error) {
         console.error("Telegram test hatası:", error);
