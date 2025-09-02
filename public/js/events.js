@@ -216,6 +216,64 @@ function setupPanelEventListeners(parentElement) {
   }
 }
 
+// Sayfanın strateji keşfi alanındaki buton ve filtre dinleyicileri
+window.setupStrategyDiscoveryListeners = function setupStrategyDiscoveryListeners() {
+  const runBtn = document.getElementById('runSignalAnalysisBtn');
+  if (!runBtn) return;
+
+  runBtn.addEventListener('click', async () => {
+    showLoading(runBtn);
+    try {
+      // form değerleri
+      const coin = (document.getElementById('strategySymbol')?.value || '').trim();
+      const timeframe = (document.getElementById('strategyTimeframe')?.value || '1h').trim();
+      const periodDays = Number(document.getElementById('periodDays')?.value || 30);
+      const direction = (document.getElementById('direction')?.value || 'up').trim();
+      const changePercent = Number(document.getElementById('changePercent')?.value || 5);
+      const lookbackCandles = Number(document.getElementById('lookbackCandles')?.value || 6);
+      const successWindowMinutes = Number(document.getElementById('successWindowMinutes')?.value || 60);
+      const lookaheadCandles = Number(document.getElementById('lookaheadCandles')?.value || 16);
+      const lookaheadMode = (document.getElementById('lookaheadMode')?.value || 'smart').trim();
+      const auto = !!document.getElementById('useAutoDna')?.checked;
+
+      // checkbox → params
+      const grid = document.getElementById('signalDnaParamsGrid');
+      const dnaParams = { rsi:false, macd:false, adx:false, volume:false, volatility:false, candle:false, velocity:false };
+      if (grid) {
+        grid.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+          const key = cb.getAttribute('data-param');
+          if (key) dnaParams[key] = !!cb.checked;
+        });
+      }
+
+      // manuelde sıralama üret
+      let featureOrder = [];
+      if (!auto) {
+        const map = {
+          rsi: ['rsi_avg','rsi_slope','rsi_final','rsi_velocity_pct'],
+          macd: ['macd_hist_avg','macd_hist_slope','macd_hist_final','macd_hist_velocity_pct'],
+          adx: ['adx_avg','adx_slope','adx_final'],
+          volume: ['volume_mult_avg','volume_mult_slope','volume_mult_final'],
+          volatility: ['atr_pct_avg','atr_pct_slope','atr_pct_final','bb_width_avg','bb_width_slope','bb_width_final','rv_pct_avg','rv_pct_slope','rv_pct_final'],
+          candle: ['candle_body_pct','candle_upper_shadow_pct','candle_lower_shadow_pct','candle_bullish']
+        };
+        Object.keys(dnaParams).forEach(k => { if (dnaParams[k]) featureOrder.push(...(map[k]||[])); });
+      }
+
+      // API çağrısı
+      await runSignalAnalysisPreview({
+        coin, timeframe, periodDays, direction, changePercent, lookbackCandles,
+        successWindowMinutes, lookaheadCandles, lookaheadMode,
+        params: dnaParams, auto, ...(auto ? {} : { featureOrder })
+      });
+    } catch (err) {
+      console.error('Analiz başlatılamadı:', err);
+    } finally {
+      hideLoading(runBtn);
+    }
+  });
+};
+
 
 function setupActionEventListeners() {
     // Check if the page is fully loaded before attaching listeners
