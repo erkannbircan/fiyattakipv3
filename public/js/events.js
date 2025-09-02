@@ -42,17 +42,38 @@ if (typeof window.createCoinManager !== 'function') {
 
 
 function setupGlobalEventListeners() {
-    document.body.addEventListener('click', async (e) => {
-        if (e.target.closest('.close-btn') || e.target === document.getElementById('modalOverlay')) {
-            const chartPanel = document.getElementById('chartPanel');
-            if (chartPanel && chartPanel.classList.contains('show')) {
-                const widgetToSave = state.tradingViewWidget;
-                await saveChartState(widgetToSave);
-            }
-            closeAllPanels();
-        }
-    });
+  document.body.addEventListener('click', async (e) => {
+    // 1) Panel kapat
+    if (e.target.closest('.close-btn') || e.target === document.getElementById('modalOverlay')) {
+      const chartPanel = document.getElementById('chartPanel');
+      if (chartPanel && chartPanel.classList.contains('show')) {
+        const widgetToSave = state.tradingViewWidget;
+        await saveChartState(widgetToSave);
+      }
+      closeAllPanels();
+      return;
+    }
+
+    // 2) Ayarlar aç (dişli buton ya da data-open-panel="settingsPanel")
+    if (
+      e.target.closest('#settingsBtn') ||                       // varsa id
+      e.target.closest('.btn-settings') ||                      // varsa class
+      e.target.closest('[data-open-panel="settingsPanel"]')     // data-attribute destek
+    ) {
+      e.preventDefault();
+      showPanel('settingsPanel');
+      return;
+    }
+
+    // 3) Genel panel açıcı: data-open-panel="panelId"
+    const opener = e.target.closest('[data-open-panel]');
+    if (opener) {
+      const panelId = opener.getAttribute('data-open-panel');
+      if (panelId) showPanel(panelId);
+    }
+  });
 }
+
 
 function setupAuthEventListeners() {
     const loginBtn = document.getElementById('loginBtn');
