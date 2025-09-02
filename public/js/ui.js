@@ -816,7 +816,9 @@ function computeSimpleMFE(event, direction='up') {
 // ui.js içinde mevcut renderAlarmReports fonksiyonunun TAMAMINI bununla değiştir
 async function renderAlarmReports() {
   try {
-    const table = document.getElementById('signal-performance-table');
+    const table =
+  document.getElementById('signal-performance-table') ||
+  document.getElementById('signalReportsTable');
     if (!table) return;
     table.innerHTML = '';
 
