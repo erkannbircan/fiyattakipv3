@@ -157,6 +157,8 @@ function setupTabEventListeners(parentElement) {
     // Örnek: Eğer "tarama.html" sayfasındaysak ve ayar açıksa tarayıcıyı başlat.
     if (currentPage === 'tarama' || (currentPage === '' && window.location.pathname.endsWith('/tarama.html'))) {
         const toggle = document.getElementById('toggleAutoScanner');
+      if (currentPage === 'sinyal-performans') {
+  loadAlarmReports();
         if (toggle && toggle.checked) {
             toggleAutoScanner(true);
             console.log("Canlı tarayıcı sayfasına girildi, otomatik tarama başlatıldı.");
