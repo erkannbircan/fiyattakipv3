@@ -56,6 +56,64 @@ function closeAllPanels() {
     document.body.classList.remove('modal-open');
 }
 
+// --- Sinyal performansı: veriyi çek ve çiz ---
+async function loadAlarmReports() {
+  const tbody = document.getElementById('alarmReportsTbody');
+  if (!tbody || !state.firebase?.firestore) return;
+
+  const db = state.firebase.firestore;
+  let snap = await db.collection('alarm_reports').orderBy('createdAt','desc').limit(200).get().catch(()=>null);
+  if (!snap || snap.empty) {
+    snap = await db.collection('signalReports').orderBy('createdAt','desc').limit(200).get().catch(()=>null);
+  }
+  if (!snap) return;
+
+  const rows = [];
+  snap.forEach(doc => {
+    const d = doc.data() || {};
+    rows.push({
+      coin: d.coin || d.pair || '-',
+      dir: d.direction || '-',
+      entry: d.entryPrice || d.signalPrice || '-',
+      now: d.currentPrice || '-',
+      score: d.score ?? '-',
+      exp15m: d.expected_15m ?? d.expected15m ?? '-',
+      got15m: d.realized_15m ?? d.realized15m ?? '-',
+      exp1h: d.expected_1h ?? '-',
+      got1h: d.realized_1h ?? '-',
+      exp4h: d.expected_4h ?? '-',
+      got4h: d.realized_4h ?? '-',
+      exp1d: d.expected_1d ?? '-',
+      got1d: d.realized_1d ?? '-',
+      signalText: d.text || d.signal || ''
+    });
+  });
+
+  renderAlarmReports(rows);
+}
+
+function renderAlarmReports(rows) {
+  const tbody = document.getElementById('alarmReportsTbody');
+  if (!tbody) return;
+  tbody.innerHTML = (rows || []).map(r => `
+    <tr>
+      <td>${r.coin}</td>
+      <td>${r.dir}</td>
+      <td>${typeof r.entry==='number'? r.entry.toFixed(4):r.entry}</td>
+      <td>${typeof r.now==='number'? r.now.toFixed(4):r.now}</td>
+      <td>${r.score}</td>
+      <td>${fmtPct(r.exp15m)}</td><td>${fmtPct(r.got15m)}</td>
+      <td>${fmtPct(r.exp1h)}</td><td>${fmtPct(r.got1h)}</td>
+      <td>${fmtPct(r.exp4h)}</td><td>${fmtPct(r.got4h)}</td>
+      <td>${fmtPct(r.exp1d)}</td><td>${fmtPct(r.got1d)}</td>
+      <td>${r.signalText}</td>
+    </tr>
+  `).join('') || `<tr><td colspan="13">Kayıt bulunamadı.</td></tr>`;
+}
+
+function fmtPct(v){ return (typeof v==='number') ? `${v.toFixed(2)}%` : (v??''); }
+
+
 function showNotification(message, isSuccess = true) {
     const notification = document.getElementById("notification");
     notification.textContent = message;
