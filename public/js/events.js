@@ -183,6 +183,48 @@ function setupPanelEventListeners(parentElement) {
       handlePortfolioSave();
       return;
     }
+if (e.target.closest('#saveSettingsBtn')) {
+  saveSettingsToFirestore();  // aşağıdaki küçük yardımcıyı ekliyoruz
+  return;
+}
+function saveSettingsToFirestore() {
+  if (!state.firebase?.firestore || !state.currentUserId) return;
+  const db = state.firebase.firestore;
+  const uid = state.currentUserId;
+
+  const settings = {
+    lang: document.getElementById('langSelect')?.value || 'tr',
+    autoRefresh: !!document.getElementById('autoRefreshToggle')?.checked,
+    refreshInterval: Number(document.getElementById('refreshInterval')?.value || 300),
+    liveScannerInterval: Number(document.getElementById('liveScannerInterval')?.value || 5),
+    telegramChatId: document.getElementById('telegramChatIdInput')?.value || '',
+    columns: {
+      1: {
+        name: document.getElementById('col1_name_input')?.value || '10gün',
+        days: Number(document.getElementById('col1_days_input')?.value || 10),
+        threshold: Number(document.getElementById('col1_threshold_input')?.value || 5),
+      },
+      2: {
+        name: document.getElementById('col2_name_input')?.value || '60gün',
+        days: Number(document.getElementById('col2_days_input')?.value || 60),
+        threshold: Number(document.getElementById('col2_threshold_input')?.value || 20),
+      },
+      3: {
+        name: document.getElementById('col3_name_input')?.value || '365gün',
+        days: Number(document.getElementById('col3_days_input')?.value || 365),
+        threshold: Number(document.getElementById('col3_threshold_input')?.value || 50),
+      }
+    },
+    colors: {
+      high: document.getElementById('high_color_input')?.value || '#2bb0e9',
+      low:  document.getElementById('low_color_input')?.value  || '#ff5b0f'
+    }
+  };
+
+  db.collection('users').doc(uid).set({ settings }, { merge: true })
+    .then(() => { applySettingsToUI(); showPanel(''); closeAllPanels(); })
+    .catch(err => console.error('Ayar kaydet hata:', err));
+}
 
     // Açılır/Kapanır başlıklar
     const collapsibleHeader = e.target.closest('.collapsible-header');
