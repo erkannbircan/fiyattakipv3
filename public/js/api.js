@@ -111,137 +111,20 @@ function runBacktest(alarmId) {
 }
 
 // api.js — Strateji keşfi önizleme (istemci)
+// api.js — Strateji keşfi önizleme (SUNUCUYA DEVRET)
 async function runSignalAnalysisPreview(params) {
   try {
-    if (!params || !Array.isArray(params.coins) || params.coins.length === 0) {
-      renderSignalAnalysisPreview({ info: { status:'info', message:'Analiz edilecek en az bir coin seçin.' } });
-      return;
-    }
-
-    const tfMin = { '15m':15, '1h':60, '4h':240, '1d':1440 };
-    const tf = params.timeframe || '1h';
-    const change = Number(params.changePercent) || 5;
-    const dir = params.direction || 'up';
-    const days = Number(params.days) || 30;
-    const lb = Number(params.lookbackCandles)  || 3;
-
-    let la = Number(params.lookaheadCandles) || 0;
-    if (!la) {
-      const perDay = Math.max(1, Math.ceil(1440 / (tfMin[tf] || 60)));
-      la = Math.min(24, Math.floor(perDay / 3)); // akıllı varsayılan
-    }
-
-    const perDay = Math.max(1, Math.ceil(1440 / (tfMin[tf] || 60)));
-    const limit  = Math.min(1000, Math.max(200, days * perDay + lb + la + 20));
-
-    const out = {};
-    for (const coin of params.coins) {
-      const kl = await getKlines(coin, tf, limit);
-      if (!Array.isArray(kl) || kl.length < (lb + la + 5)) {
-        out[coin] = { status:'error', message:'Analiz için yeterli veri yok.' };
-        continue;
-      }
-
-      const H = i => Number(kl[i][2]);
-      const L = i => Number(kl[i][3]);
-      const C = i => Number(kl[i][4]);
-
-      const events = [];
-      const len = kl.length;
-      const cooldown = Math.max(la, 3);
-      let skipUntil = -1;
-
-      // sinyal i → (i+1..i+la) high/low penceresi
-      for (let i = lb; i < len - la - 1; i++) {
-        if (i < skipUntil) continue;
-        const entryLow  = L(i);
-        const entryHigh = H(i);
-
-        let maxH = -Infinity, minL = +Infinity;
-        for (let j = i + 1; j <= i + la; j++) {
-          const h = H(j), l = L(j);
-          if (h > maxH) maxH = h;
-          if (l < minL) minL = l;
-        }
-        const upPct = ((maxH - entryLow)  / entryLow)  * 100;
-        const dnPct = ((entryHigh - minL) / entryHigh) * 100;
-        const hit = (dir === 'up' && upPct >= change) || (dir === 'down' && dnPct >= change);
-
-        if (hit) {
-          events.push({ timestamp: Number(kl[i][0]), priceBefore: C(i) });
-          skipUntil = i + cooldown;
-        }
-      }
-
-      // 1s/4s/1g MFE ortalamaları
-      const candlesFor = mins => Math.ceil(mins / (tfMin[tf] || 60));
-      const horizons = { '15m':15, '1h':60, '4h':240, '1d':1440 };
-      const sums  = { '15m':0, '1h':0, '4h':0, '1d':0 };
-      const counts= { '15m':0, '1h':0, '4h':0, '1d':0 };
-
-
-      for (const ev of events) {
-        let i = kl.findIndex(k => Number(k[0]) === ev.timestamp);
-        if (i < 0) {
-          let best=null, bestD=Infinity;
-          kl.forEach((k,ii)=>{ const d=Math.abs(Number(k[0])-ev.timestamp); if(d<bestD){bestD=d;best=ii;} });
-          i = best ?? -1;
-        }
-        if (i < 0 || i >= len - 2) continue;
-
-        const entryLow  = L(i);
-        const entryHigh = H(i);
-
-        const calc = (mins) => {
-          const f = i + candlesFor(mins);
-          const slice = kl.slice(i+1, Math.min(f+1, len));
-          if (!slice.length) return null;
-          const maxH = Math.max(...slice.map(x=>Number(x[2])));
-          const minL = Math.min(...slice.map(x=>Number(x[3])));
-          const up = ((maxH - entryLow) / entryLow) * 100;
-          const dn = ((entryHigh - minL) / entryHigh) * 100;
-          return dir === 'down' ? dn : up;
-        };
-
-                const r15 = calc(15), r1 = calc(60), r4 = calc(240), rD = calc(1440);
-        if (typeof r15 === 'number') { sums['15m'] += r15; counts['15m']++; }
-        if (typeof r1  === 'number') { sums['1h']  += r1;  counts['1h']++;  }
-        if (typeof r4  === 'number') { sums['4h']  += r4;  counts['4h']++;  }
-        if (typeof rD  === 'number') { sums['1d']  += rD;  counts['1d']++;  }
-
-      }
-
-      const avg = {
-  '15m': counts['15m'] ? Number((sums['15m']/counts['15m']).toFixed(2)) : null,
-  '1h' : counts['1h']  ? Number((sums['1h'] /counts['1h']).toFixed(2))  : null,
-  '4h' : counts['4h']  ? Number((sums['4h'] /counts['4h']).toFixed(2))  : null,
-  '1d' : counts['1d']  ? Number((sums['1d'] /counts['1d']).toFixed(2))  : null
-};
-
-      const niceParam = key => ({rsi:'RSI', macd:'MACD', adx:'ADX', volume:'Hacim', volatility:'Volatilite', candle:'Mum Şekli', speed:'Hız'}[key] || key);
-      const selectedParams = Object.keys(params.params || {}).filter(k => params.params[k]).map(niceParam);
-      const dirTxt = (dir==='up' ? 'Yükseliş' : 'Düşüş');
-      const dnaFormat = `TF:${tf} | Yön:${dirTxt} | Değişim:${change}% | LB:${lb} | LA:${la} | Parametreler:${selectedParams.join(', ') || '-'}`;
-
-      out[coin] = {
-        status: 'ok',
-        eventDetails: events.slice(0, 500),
-        eventCount: events.length,
-        avgReturns: avg,
-        dnaFormat,
-        dnaProfile: {
-          name: `${coin} | ${dirTxt} ${change}% / ${tf} / LB:${lb} LA:${la}`,
-          params: params.params || {}
-        }
-      };
-    }
-
-    renderSignalAnalysisPreview(out);
+    const fn = state.firebase.functions.httpsCallable('findSignalDNA'); // backend
+    const { data } = await fn(params);
+    renderSignalAnalysisPreview(data);
   } catch (err) {
     console.error('runSignalAnalysisPreview hata:', err);
-    renderSignalAnalysisPreview({ info: { status:'error', message:'Analiz sırasında beklenmeyen bir hata oluştu.' } });
+    renderSignalAnalysisPreview({
+      info: { status: 'error', message: String(err?.message || err) }
+    });
   }
 }
+
 
 async function saveDnaProfile(profileData, button) {
   if (button) showLoading(button);
