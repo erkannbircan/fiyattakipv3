@@ -501,23 +501,22 @@ async function runSignalAnalysisPreviewRemote(params) {
     const out = {};
     for (const coin of coins) {
       try {
-               const payload = {
-          coin,
-          timeframe,
-          periodDays,
-          direction,
-          changePercent,
-          lookbackCandles,
-          successWindowMinutes,      // preset/smart/custom'tan türeyen dakika
-          lookaheadCandles,          // YENİ: sunucu normalizasyonu için
-          lookaheadMode,             // YENİ: log/teşhis
-          auto: !!auto,              // YENİ: Akıllı Mod seçimi
-          params: { ...dnaParams },  // YENİ: checkbox haritası (rsi, macd, adx, volume, volatility, candle, vb.)
-          featureOrder
-        };
-        if (!auto && Array.isArray(featureOrder)) {
+               // ... üst kısımda featureOrder hesaplanıyor
+const payload = {
+  coin, timeframe, periodDays, direction,
+  changePercent, lookbackCandles,
+  successWindowMinutes, lookaheadCandles, lookaheadMode,
+  params: dnaParams,
+  auto
+};
+
+// Akıllı mod kapalıysa manuel sırayı gönder
+if (!auto && Array.isArray(featureOrder)) {
   payload.featureOrder = featureOrder;
 }
+// Akıllı mod açıkken kesin güvence: varsa kaldır
+if (auto && 'featureOrder' in payload) delete payload.featureOrder;
+
         const res = await call(payload);
         const data = res.data; // { summary, events, profile }
 
