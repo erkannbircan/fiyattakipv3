@@ -44,17 +44,22 @@ function showPage(pageId) {
     }
 }
 
-function showPanel(panelId) {
-    document.getElementById(panelId)?.classList.add('show');
-    document.getElementById('modalOverlay').classList.add('show');
-    document.body.classList.add('modal-open');
+function showPanel(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('show');
+}
+
+function hidePanel(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('show');
 }
 
 function closeAllPanels() {
-    document.querySelectorAll('.panel.show').forEach(p => p.classList.remove('show'));
-    document.getElementById('modalOverlay').classList.remove('show');
-    document.body.classList.remove('modal-open');
+  document.querySelectorAll('.panel.show').forEach(p => p.classList.remove('show'));
 }
+
 
 // --- Sinyal performansı: veriyi çek ve çiz ---
 async function loadAlarmReports() {
