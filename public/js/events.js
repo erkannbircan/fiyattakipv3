@@ -167,6 +167,8 @@ function setupTabEventListeners(parentElement) {
         }
     }
 }
+}
+  
 
 function setupPanelEventListeners(parentElement) {
   // Tüm tıklamalar için TEK delegasyon dinleyicisi
