@@ -590,17 +590,18 @@ if (params.auto) { delete params.featureOrder; }
         }
 if (target.closest('#sendTelegramTestBtn')) {
   try {
-    const input = document.getElementById('telegramPhoneInput');
+    // ✅ Doğru input id'si
+    const input = document.getElementById('telegramChatIdInput');
     const chatId = (input?.value || '').trim();
     if (!chatId) {
-      alert('Lütfen Ayarlar panelindeki "Telegram Chat ID" alanına bir sayı girin.');
+      alert('Lütfen "Telegram Chat ID" alanına bir sayı girin.');
       return;
     }
-    // backend test endpoint’in varsa onu çağır; yoksa direkt bot API:
-    await axios.post(`https://api.telegram.org/bot${window.__TELEGRAM_TOKEN__ || ''}/sendMessage`, {
-      chat_id: chatId,
-      text: '✅ Telegram test: Merhaba!',
-    });
+
+    // ✅ Güvenli yol: Cloud Functions onCall
+    const callSendTest = state.firebase.functions.httpsCallable('sendTestNotification');
+    await callSendTest({ chatId, text: '✅ Telegram test: Merhaba!' });
+
     alert('Test mesajı gönderildi.');
   } catch (e) {
     console.error('Telegram test gönderilemedi:', e);
@@ -608,6 +609,7 @@ if (target.closest('#sendTelegramTestBtn')) {
   }
   return;
 }
+
 
 // Telegram test if'i ... (yukarıda)
 
