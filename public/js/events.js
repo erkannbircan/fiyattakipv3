@@ -608,6 +608,33 @@ if (target.closest('#sendTelegramTestBtn')) {
   }
   return;
 }
+
+// Telegram test if'i ... (yukarıda)
+
+// ▼▼ Ayarları Kaydet butonu ▼▼
+if (target.closest('#saveSettingsBtn')) {
+  try {
+    const lang = document.getElementById('langSelect')?.value || 'tr';
+    const autoRefresh = !!document.getElementById('autoRefreshToggle')?.checked;
+    const refreshInterval = Number(document.getElementById('refreshInterval')?.value || 30);
+    const telegramChatId = (document.getElementById('telegramPhoneInput')?.value || '').trim();
+
+    await saveUserSettings({
+      lang,
+      autoRefresh,
+      refreshInterval,
+      telegramChatId,
+    });
+    alert('Ayarlar kaydedildi.');
+  } catch (e) {
+    console.error('Ayarlar kaydedilemedi:', e);
+    alert('Ayarlar kaydedilemedi. Konsolu kontrol edin.');
+  }
+  return;
+}
+// ▲▲ Ayarları Kaydet butonu ▲▲
+
+      
        const saveBtn = target.closest('.save-dna-btn');
 if (saveBtn) {
   const profileData = JSON.parse(saveBtn.dataset.profile || '{}');
