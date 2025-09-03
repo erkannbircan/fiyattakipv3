@@ -67,20 +67,12 @@ async function loadAlarmReports() {
   if (!tbody || !state.firebase?.firestore) return;
 
   const db = state.firebase.firestore;
-  
-// Tek kaynak: 'signals'
-const snap = await db
-  .collection('signals')
-  .orderBy('createdAt', 'desc')
-  .limit(200)
-  .get();
+  const snap = await db.collection('signals').orderBy('createdAt','desc').limit(200).get();
 
-if (snap.empty) {
-  // Ekranı boş göstermek yerine nazik bir mesaj bas
-  renderEmptyAlarmTable();
-  return;
-}
-renderSignalsFromSnapshot(snap);
+  if (snap.empty) {
+    renderEmptyAlarmTable?.();
+    return;
+  }
 
   const rows = [];
   snap.forEach(doc => {
@@ -124,6 +116,7 @@ function renderAlarmReports(rows) {
     </tr>
   `).join('') || `<tr><td colspan="13">Kayıt bulunamadı.</td></tr>`;
 }
+
 
 function fmtPct(v){ return (typeof v==='number') ? `${v.toFixed(2)}%` : (v??''); }
 
