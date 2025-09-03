@@ -614,26 +614,46 @@ if (target.closest('#sendTelegramTestBtn')) {
 // Telegram test if'i ... (yukarıda)
 
 // ▼▼ Ayarları Kaydet butonu ▼▼
+// ▼▼ Ayarları Kaydet butonu ▼▼
 if (target.closest('#saveSettingsBtn')) {
   try {
     const lang = document.getElementById('langSelect')?.value || 'tr';
     const autoRefresh = !!document.getElementById('autoRefreshToggle')?.checked;
     const refreshInterval = Number(document.getElementById('refreshInterval')?.value || 30);
-    const telegramChatId = (document.getElementById('telegramPhoneInput')?.value || '').trim();
+    // ✅ Doğru input id'si
+    const telegramChatId = (document.getElementById('telegramChatIdInput')?.value || '').trim();
+    const liveScannerInterval = Number(document.getElementById('liveScannerInterval')?.value || 5);
 
-    await saveUserSettings({
+    // Firestore'a yaz
+    await state.userDocRef.update({
+      'settings.lang': lang,
+      'settings.autoRefresh': autoRefresh,
+      'settings.refreshInterval': refreshInterval,
+      'settings.telegramChatId': telegramChatId,
+      'settings.liveScannerInterval': liveScannerInterval
+    });
+
+    // Local state’i güncelle + UI'ye uygula
+    state.settings = {
+      ...state.settings,
       lang,
       autoRefresh,
       refreshInterval,
       telegramChatId,
-    });
+      liveScannerInterval
+    };
+    if (typeof applySettingsToUI === 'function') applySettingsToUI();
+
     alert('Ayarlar kaydedildi.');
+    hidePanel('settingsPanel');
   } catch (e) {
     console.error('Ayarlar kaydedilemedi:', e);
     alert('Ayarlar kaydedilemedi. Konsolu kontrol edin.');
   }
   return;
 }
+// ▲▲ Ayarları Kaydet butonu ▲▲
+
 // ▲▲ Ayarları Kaydet butonu ▲▲
 
       
