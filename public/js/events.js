@@ -588,7 +588,26 @@ if (params.auto) { delete params.featureOrder; }
             }
             return;
         }
-
+if (target.closest('#sendTelegramTestBtn')) {
+  try {
+    const input = document.getElementById('telegramPhoneInput');
+    const chatId = (input?.value || '').trim();
+    if (!chatId) {
+      alert('Lütfen Ayarlar panelindeki "Telegram Chat ID" alanına bir sayı girin.');
+      return;
+    }
+    // backend test endpoint’in varsa onu çağır; yoksa direkt bot API:
+    await axios.post(`https://api.telegram.org/bot${window.__TELEGRAM_TOKEN__ || ''}/sendMessage`, {
+      chat_id: chatId,
+      text: '✅ Telegram test: Merhaba!',
+    });
+    alert('Test mesajı gönderildi.');
+  } catch (e) {
+    console.error('Telegram test gönderilemedi:', e);
+    alert('Telegram test gönderimi başarısız. Konsolu kontrol edin.');
+  }
+  return;
+}
        const saveBtn = target.closest('.save-dna-btn');
 if (saveBtn) {
   const profileData = JSON.parse(saveBtn.dataset.profile || '{}');
