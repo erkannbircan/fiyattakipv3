@@ -154,9 +154,7 @@ function setupTabEventListeners(parentElement) {
     });
 
     // Sayfaya özel işlemleri burada kontrol edebiliriz.
-    // Örnek: Eğer "tarama.html" sayfasındaysak ve ayar açıksa tarayıcıyı başlat.
-   // Tarama sayfası özel davranışı
-if (currentPage === 'tarama' || (currentPage === '' && window.location.pathname.endsWith('/tarama.html'))) {
+if (currentPage === 'tarama' || window.location.pathname.endsWith('/tarama.html')) {
   const toggle = document.getElementById('toggleAutoScanner');
   if (toggle && toggle.checked) {
     toggleAutoScanner(true);
@@ -166,7 +164,7 @@ if (currentPage === 'tarama' || (currentPage === '' && window.location.pathname.
   }
 }
 
-// ✅ Sinyal-performans sayfası
+// 2) Sinyal-performans sayfası
 if (currentPage === 'sinyal-performans' || window.location.pathname.endsWith('/sinyal-performans.html')) {
   if (typeof loadAlarmReports === 'function') {
     loadAlarmReports();
