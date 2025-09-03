@@ -67,11 +67,20 @@ async function loadAlarmReports() {
   if (!tbody || !state.firebase?.firestore) return;
 
   const db = state.firebase.firestore;
-  let snap = await db.collection('alarm_reports').orderBy('createdAt','desc').limit(200).get().catch(()=>null);
-  if (!snap || snap.empty) {
-    snap = await db.collection('signalReports').orderBy('createdAt','desc').limit(200).get().catch(()=>null);
-  }
-  if (!snap) return;
+  
+// Tek kaynak: 'signals'
+const snap = await db
+  .collection('signals')
+  .orderBy('createdAt', 'desc')
+  .limit(200)
+  .get();
+
+if (snap.empty) {
+  // Ekranı boş göstermek yerine nazik bir mesaj bas
+  renderEmptyAlarmTable();
+  return;
+}
+renderSignalsFromSnapshot(snap);
 
   const rows = [];
   snap.forEach(doc => {
