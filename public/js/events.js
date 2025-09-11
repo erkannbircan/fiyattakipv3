@@ -177,8 +177,8 @@ if (currentPage === 'sinyal-performans' || window.location.pathname.endsWith('/s
             updateScannerStatusUI('stopped');
         }
     }
-}
-}
+
+
   
 
 function setupPanelEventListeners(parentElement) {
