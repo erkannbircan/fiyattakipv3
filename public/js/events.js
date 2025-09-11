@@ -170,17 +170,9 @@ if (currentPage === 'sinyal-performans' || window.location.pathname.endsWith('/s
     loadAlarmReports();
   }
 }
-        if (toggle && toggle.checked) {
-            toggleAutoScanner(true);
-            console.log("Canlı tarayıcı sayfasına girildi, otomatik tarama başlatıldı.");
-        } else {
-            updateScannerStatusUI('stopped');
-        }
-    }
-
-
+}
   
-
+       
 function setupPanelEventListeners(parentElement) {
   // Tüm tıklamalar için TEK delegasyon dinleyicisi
   parentElement.addEventListener('click', (e) => {
