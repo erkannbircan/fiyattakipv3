@@ -19,17 +19,20 @@ function initializeApp() {
     }
 
     try {
-        // Tekrar initialize denemelerinde hata atmaması için try/catch
-        if (!firebase.apps || !firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        state.firebase.auth = firebase.auth();
-        state.firebase.db = firebase.firestore();
-        state.firebase.functions = firebase.app().functions('europe-west1');
-    } catch (e) {
-        console.error('Firebase init hatası:', e);
-        return;
+    if (!firebase.apps || !firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
     }
+    state.firebase.auth = firebase.auth();
+    state.firebase.db = firebase.firestore();
+
+    // ✅ UI'nin beklediği kısa yol: alias ekle
+    state.firebase.firestore = state.firebase.db;
+
+    state.firebase.functions = firebase.app().functions('europe-west1');
+  } catch (e) {
+    console.error('Firebase init hatası:', e);
+    return;
+  }
 
     // Bu fonksiyonlar bazı sayfalarda/yük sıralarında henüz gelmemiş olabilir.
     if (typeof window.setupGlobalEventListeners === 'function') {
@@ -61,7 +64,8 @@ initializeAuthListener();
 function initializeAuthListener() {
     state.firebase.auth.onAuthStateChanged(async user => {
         if (user) {
-            state.userDocRef = state.firebase.db.collection('users').doc(user.uid);
+            state.user = user;
+      state.userDocRef = state.firebase.db.collection('users').doc(user.uid);
             try {
                 const doc = await state.userDocRef.get();
                 let userData = doc.data();
