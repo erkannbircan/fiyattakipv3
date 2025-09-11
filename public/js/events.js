@@ -360,18 +360,20 @@ function setupActionEventListeners() {
             return;
         }
 
-        // --- Giriş Yap/Çıkış Yap Butonu Olayı (loginBtn) ---
-        const loginBtn = target.closest('#loginBtn');
-        if (loginBtn) {
-            e.preventDefault();
-            const action = loginBtn.dataset.action;
-            if (action === 'login') {
-                showPanel('loginPanel');
-            } else if (action === 'logout') {
-                auth.signOut();
-            }
-            return;
-        }
+// --- Giriş Yap/Çıkış Yap Butonu (loginBtn) ---
+const loginBtn = target.closest('#loginBtn');
+if (loginBtn) {
+  e.preventDefault();
+  const action = loginBtn.dataset.action;
+  if (action === 'login') {
+    showPanel('loginPanel');
+  } else if (action === 'logout') {
+    // ✅ Doğru referans
+    state.firebase.auth.signOut();
+  }
+  return;
+}
+
 
         // --- Portföy Görüntüleme Butonu (portfolioBtn) ---
         const portfolioBtn = target.closest('#portfolioBtn');
