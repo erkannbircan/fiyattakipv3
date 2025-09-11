@@ -72,16 +72,24 @@ async function loadAlarmReports() {
       renderAlarmReports([]);
       return;
     }
+    if (!state.user?.uid) {
+      console.warn('[Signals] Kullanıcı oturumu yok; tablo boş.');
+      renderAlarmReports([]);
+      return;
+    }
+
     const db = state.firebase.firestore;
 
+    // ✅ KURAL UYUMU: sadece kendi kayıtların
     const snap = await db
       .collection('signals')
-      .orderBy('createdAt','desc')
+      .where('userId', '==', state.user.uid)
+      .orderBy('createdAt', 'desc')
       .limit(200)
       .get();
 
     if (snap.empty) {
-      console.info('[Signals] Koleksiyon boş veya erişilemedi: signals');
+      console.info('[Signals] Sorgu boş döndü.');
       renderAlarmReports([]);
       return;
     }
@@ -113,6 +121,7 @@ async function loadAlarmReports() {
     renderAlarmReports([]);
   }
 }
+
 
 
 function renderAlarmReports(rows) {
