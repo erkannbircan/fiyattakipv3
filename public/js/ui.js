@@ -64,44 +64,56 @@ function closeAllPanels() {
 // --- Sinyal performansı: veriyi çek ve çiz ---
 async function loadAlarmReports() {
   const tbody = document.getElementById('alarmReportsTbody');
-  if (!tbody || !state.firebase?.firestore) return;
+  if (!tbody) return;
 
-  const db = state.firebase.firestore;
+  try {
+    if (!state.firebase?.firestore) {
+      console.warn('[Signals] Firestore hazır değil (state.firebase.firestore yok).');
+      renderAlarmReports([]);
+      return;
+    }
+    const db = state.firebase.firestore;
 
-  const snap = await db
-    .collection('signals')
-    .orderBy('createdAt','desc')
-    .limit(200)
-    .get();
+    const snap = await db
+      .collection('signals')
+      .orderBy('createdAt','desc')
+      .limit(200)
+      .get();
 
-  if (snap.empty) {
-    renderAlarmReports([]);
-    return;
-  }
+    if (snap.empty) {
+      console.info('[Signals] Koleksiyon boş veya erişilemedi: signals');
+      renderAlarmReports([]);
+      return;
+    }
 
-  const rows = [];
-  snap.forEach(doc => {
-    const d = doc.data() || {};
-    rows.push({
-      coin: d.coin || d.pair || '-',
-      dir: d.direction || '-',
-      entry: d.entryPrice || d.signalPrice || '-',
-      now: d.currentPrice || '-',
-      score: d.score ?? '-',
-      exp15m: d.expected_15m ?? d.expected15m ?? '-',
-      got15m: d.realized_15m ?? d.realized15m ?? '-',
-      exp1h:  d.expected_1h ?? '-',
-      got1h:  d.realized_1h ?? '-',
-      exp4h:  d.expected_4h ?? '-',
-      got4h:  d.realized_4h ?? '-',
-      exp1d:  d.expected_1d ?? '-',
-      got1d:  d.realized_1d ?? '-',
-      signalText: d.text || d.signal || ''
+    const rows = [];
+    snap.forEach(doc => {
+      const d = doc.data() || {};
+      rows.push({
+        coin: d.coin || d.pair || '-',
+        dir: d.direction || '-',
+        entry: d.entryPrice || d.signalPrice || '-',
+        now: d.currentPrice || '-',
+        score: d.score ?? '-',
+        exp15m: d.expected_15m ?? d.expected15m ?? '-',
+        got15m: d.realized_15m ?? d.realized15m ?? '-',
+        exp1h:  d.expected_1h ?? '-',
+        got1h:  d.realized_1h ?? '-',
+        exp4h:  d.expected_4h ?? '-',
+        got4h:  d.realized_4h ?? '-',
+        exp1d:  d.expected_1d ?? '-',
+        got1d:  d.realized_1d ?? '-',
+        signalText: d.text || d.signal || ''
+      });
     });
-  });
 
-  renderAlarmReports(rows);
+    renderAlarmReports(rows);
+  } catch (err) {
+    console.error('[Signals] Yükleme hatası:', err);
+    renderAlarmReports([]);
+  }
 }
+
 
 function renderAlarmReports(rows) {
   const tbody = document.getElementById('alarmReportsTbody');
