@@ -233,66 +233,47 @@ function setupPanelEventListeners(parentElement) {
       handlePortfolioSave();
       return;
     }
-if (e.target.closest('#saveSettingsBtn')) {
-  saveSettingsToFirestore();
+// Ayarları kaydet (Telegram Chat ID dahil)
+if (e.target.closest('#saveSettingsBtn') || e.target.closest('[data-action="save-settings"]')) {
+  e.preventDefault();
+  try {
+    const db = state.firebase?.firestore || state.firebase?.db;
+    // Kullanıcı belgesi
+    const docRef = state.userDocRef
+      || (state.user?.uid ? db.collection('users').doc(state.user.uid) : null);
+
+    if (!docRef) throw new Error('Kullanıcı belgesi bulunamadı.');
+
+    // Formdan değerleri oku
+    const chatInput = document.getElementById('telegramChatIdInput');
+    const chatId = chatInput ? String(chatInput.value || '').trim() : '';
+
+    // Mevcut settings ile birleştir
+    const prev = state.settings || {};
+    const next = {
+      ...prev,
+      telegramChatId: chatId || null
+    };
+
+    await docRef.set({ settings: next }, { merge: true });
+
+    // Yerel state'i güncelle & UI'ya bas
+    state.settings = next;
+    if (typeof applySettingsToUI === 'function') {
+      applySettingsToUI(state.settings);
+    }
+    // küçük geri bildirim
+    if (chatInput) chatInput.classList.add('saved-ok');
+    setTimeout(() => chatInput && chatInput.classList.remove('saved-ok'), 800);
+
+    console.log('[Settings] Kaydedildi:', next);
+  } catch (err) {
+    console.error('[Settings] Kaydetme hatası:', err);
+    alert('Ayarlar kaydedilemedi: ' + (err?.message || err));
+  }
   return;
 }
 
-async function saveSettingsToFirestore() {
-  try {
-    const db = state.firebase?.firestore || state.firebase?.db;
-    if (!db) return;
-
-    // ✅ UID’i güvenli al: docRef > user.uid > currentUserId
-    const docRef = state.userDocRef 
-      || (state.user?.uid ? db.collection('users').doc(state.user.uid) : null)
-      || (state.currentUserId ? db.collection('users').doc(state.currentUserId) : null);
-
-    if (!docRef) {
-      console.warn('Kullanıcı belgesi bulunamadı; ayarlar kaydedilemedi.');
-      return;
-    }
-
-    const settings = {
-      lang: document.getElementById('langSelect')?.value || 'tr',
-      autoRefresh: !!document.getElementById('autoRefreshToggle')?.checked,
-      refreshInterval: Number(document.getElementById('refreshInterval')?.value || 300),
-      liveScannerInterval: Number(document.getElementById('liveScannerInterval')?.value || 5),
-      telegramChatId: document.getElementById('telegramChatIdInput')?.value || '',
-      columns: {
-        1: {
-          name: document.getElementById('col1_name_input')?.value || '10gün',
-          days: Number(document.getElementById('col1_days_input')?.value || 10),
-          threshold: Number(document.getElementById('col1_threshold_input')?.value || 5),
-        },
-        2: {
-          name: document.getElementById('col2_name_input')?.value || '60gün',
-          days: Number(document.getElementById('col2_days_input')?.value || 60),
-          threshold: Number(document.getElementById('col2_threshold_input')?.value || 20),
-        },
-        3: {
-          name: document.getElementById('col3_name_input')?.value || '365gün',
-          days: Number(document.getElementById('col3_days_input')?.value || 365),
-          threshold: Number(document.getElementById('col3_threshold_input')?.value || 50),
-        }
-      },
-      colors: {
-        high: document.getElementById('high_color_input')?.value || '#2bb0e9',
-        low:  document.getElementById('low_color_input')?.value  || '#ff5b0f'
-      }
-    };
-
-    await docRef.set({ settings }, { merge: true });
-
-    // ✅ state’i güncelle + UI’ya uygula
-    state.settings = { ...(state.settings || {}), ...settings };
-    applySettingsToUI(state.settings);
-    closeAllPanels();
-  } catch (err) {
-    console.error('Ayar kaydet hata:', err);
-    alert('Ayarlar kaydedilemedi. Konsolu kontrol edin.');
-  }
-}
 
 
     // Açılır/Kapanır başlıklar
