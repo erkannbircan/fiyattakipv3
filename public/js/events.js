@@ -360,16 +360,29 @@ function setupActionEventListeners() {
             return;
         }
 
-// --- Giriş Yap/Çıkış Yap Butonu (loginBtn) ---
+const logoutLink = target.closest('#logoutBtn');
+if (logoutLink) {
+  e.preventDefault();
+  try {
+    await state.firebase?.auth?.signOut();
+  } catch (err) {
+    console.error('Çıkış hatası:', err);
+    alert('Çıkış yapılamadı. Lütfen tekrar deneyin.');
+  }
+  return;
+}
+
+// 2) Eski loginBtn davranışı (hala varsa)
 const loginBtn = target.closest('#loginBtn');
 if (loginBtn) {
-  e.preventDefault();
   const action = loginBtn.dataset.action;
-  if (action === 'login') {
-    showPanel('loginPanel');
-  } else if (action === 'logout') {
-    // ✅ Doğru referans
-    state.firebase.auth.signOut();
+  if (action === 'logout') {
+    try {
+      await state.firebase?.auth?.signOut();
+    } catch (err) {
+      console.error('Çıkış hatası:', err);
+      alert('Çıkış yapılamadı. Lütfen tekrar deneyin.');
+    }
   }
   return;
 }
