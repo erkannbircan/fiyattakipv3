@@ -433,36 +433,44 @@ async function handleDeletePortfolio() {
 }
 
 // Fonksiyon artık parametre olarak bir 'widget' alıyor.
-async function saveChartState(widget) {
-    console.log("Kaydetme fonksiyonu (saveChartState) çağrıldı.");
-
-    if (!widget || typeof widget.getStudiesList !== 'function') {
-        console.warn("Kaydetme mümkün değil: Geçerli bir TradingView widget'ı sağlanmadı.");
-        return; // Fonksiyondan erken çık.
+// Tek tip imza: pair ile kaydet (ui.js ile aynı davranış)
+function saveChartState(pair) {
+  try {
+    if (!pair || !state.tradingViewWidget) {
+      console.warn("saveChartState: pair veya widget yok.");
+      return;
     }
 
-    const currentPair = document.getElementById('chartPanelTitle').textContent + 'USDT';
-    const studiesList = widget.getStudiesList();
-    const updatePath = `settings.chartIndicators.${currentPair}`;
-    
-    if (!state.userDocRef) {
-        console.error("Kaydetme başarısız: Kullanıcı oturumu (userDocRef) bulunamadı.");
-        return;
-    }
+    // TradingView'den çalışmalar ve çizimler
+    const studiesList = typeof state.tradingViewWidget.getStudiesList === 'function'
+      ? state.tradingViewWidget.getStudiesList()
+      : [];
+    const drawings = typeof state.tradingViewWidget.getDrawings === 'function'
+      ? state.tradingViewWidget.getDrawings()
+      : [];
 
-    try {
-        console.log(`Firebase'e kaydediliyor: ${currentPair}`, studiesList);
-        await state.userDocRef.update({ [updatePath]: studiesList });
-        
-        console.log("Firebase kaydı BAŞARILI.");
-        if (!state.settings.chartIndicators) {
-            state.settings.chartIndicators = {};
-        }
-        state.settings.chartIndicators[currentPair] = studiesList;
-    } catch (error) {
-        console.error("Firebase kaydı sırasında HATA oluştu!", error);
+    const updateData = {
+      [`settings.chartIndicators.${pair}`]: studiesList,
+      [`settings.chartDrawings.${pair}`]: drawings
+    };
+
+    if (state.userDocRef) {
+      state.userDocRef.update(updateData)
+        .then(() => {
+          // local state’i de güncelle
+          state.settings.chartIndicators = state.settings.chartIndicators || {};
+          state.settings.chartDrawings   = state.settings.chartDrawings   || {};
+          state.settings.chartIndicators[pair] = studiesList;
+          state.settings.chartDrawings[pair]   = drawings;
+          console.log('Chart state saved for:', pair);
+        })
+        .catch(err => console.error('Grafik ayarları kaydedilirken hata:', err));
     }
+  } catch (err) {
+    console.error('saveChartState genel hata:', err);
+  }
 }
+
 
 async function updateAnalysisSettings() {
     console.log("--- Analiz Ayarlarını Güncelleme Başladı ---");
