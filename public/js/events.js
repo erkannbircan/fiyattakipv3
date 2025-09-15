@@ -278,8 +278,8 @@ function setupActionEventListeners() {
         return;
     }
     
-    eventsTarget.addEventListener('click', (e) => {
-        const target = e.target;
+    eventsTarget.addEventListener('click', async (e) => {   // ✅ async eklendi
+  const target = e.target;
         
         // --- Tablo Değişim Yüzdesi Tıklama Olayı (clickable-pct) ---
         const clickablePct = target.closest('.clickable-pct');
