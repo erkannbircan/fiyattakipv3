@@ -81,51 +81,70 @@ async function loadAlarmReports() {
     const db = state.firebase.firestore || state.firebase.db;  // ✅ alias fallback
 
     // ✅ KURAL UYUMU: sadece kendi kayıtların
-    const snap = await db
+ // 1) TARİHÇE: signal_events (son 500)
+const eventsSnap = await db
+  .collection('signal_events')
+  .where('userId', '==', state.user.uid)
+  .orderBy('createdAt', 'desc')
+  .limit(500)
+  .get();
+
+// 2) ÖZET: signals (son 200)
+const signalsSnap = await db
   .collection('signals')
   .where('userId', '==', state.user.uid)
   .orderBy('createdAt', 'desc')
   .limit(200)
   .get();
 
-console.info('[Signals] uid=', state.user.uid, 'kayıt adedi=', snap.size); // ✅ debug
+console.info('[Signals] uid=', state.user.uid, 
+             'events=', eventsSnap.size, 'signals=', signalsSnap.size);
 
-if (snap.empty) {
-  console.info('[Signals] Sorgu boş döndü.');
-  renderAlarmReports([]);
-  return;
-}
+const rows = [];
 
-
-    const rows = [];
-    snap.forEach(doc => {
-      const d = doc.data() || {};
-      rows.push({
-  coin: d.coin || d.pair || '-',
-  dir: d.direction || '-',
-  // priceAtSignal da dene:
-  entry: d.entryPrice || d.signalPrice || d.priceAtSignal || '-',
-  // şimdi backend currentPrice yazacak; yine de yedekler dursun:
-  now: d.currentPrice || d.lastPrice || d.priceLatest || '-',
-  score: d.score ?? '-',
-  exp15m: d.expected_15m ?? d.expected15m ?? '-',
-  got15m: d.realized_15m ?? d.realized15m ?? '-',
-  exp1h:  d.expected_1h ?? '-',
-  got1h:  d.realized_1h ?? '-',
-  exp4h:  d.expected_4h ?? '-',
-  got4h:  d.realized_4h ?? '-',
-  exp1d:  d.expected_1d ?? '-',
-  got1d:  d.realized_1d ?? '-',
-  signalText: d.text || d.signal || ''
+// --- önce tarihçe (signal_events) ---
+eventsSnap.forEach(doc => {
+  const d = doc.data() || {};
+  rows.push({
+    coin: d.coin || d.pair || '-',
+    dir: d.direction || '-',
+    entry: d.entryPrice || d.signalPrice || d.priceAtSignal || '-',
+    now: d.currentPrice || d.lastPrice || d.priceLatest || '-',
+    score: d.score ?? '-',
+    exp15m: d.expected_15m ?? d.expected15m ?? '-',
+    got15m: d.realized_15m ?? d.realized15m ?? '-',
+    exp1h:  d.expected_1h ?? '-',
+    got1h:  d.realized_1h ?? '-',
+    exp4h:  d.expected_4h ?? '-',
+    got4h:  d.realized_4h ?? '-',
+    exp1d:  d.expected_1d ?? '-',
+    got1d:  d.realized_1d ?? '-',
+    signalText: d.text || d.signal || ''
+  });
 });
-    });
 
-    renderAlarmReports(rows);
-  } catch (err) {
-    console.error('[Signals] Yükleme hatası:', err);
-    renderAlarmReports([]);
-  }
-}
+// --- sonra özet (signals) ---
+signalsSnap.forEach(doc => {
+  const d = doc.data() || {};
+  rows.push({
+    coin: d.coin || d.pair || '-',
+    dir: d.direction || '-',
+    entry: d.entryPrice || d.signalPrice || d.priceAtSignal || '-',
+    now: d.currentPrice || d.lastPrice || d.priceLatest || '-',
+    score: d.score ?? '-',
+    exp15m: d.expected_15m ?? d.expected15m ?? '-',
+    got15m: d.realized_15m ?? d.realized15m ?? '-',
+    exp1h:  d.expected_1h ?? '-',
+    got1h:  d.realized_1h ?? '-',
+    exp4h:  d.expected_4h ?? '-',
+    got4h:  d.realized_4h ?? '-',
+    exp1d:  d.expected_1d ?? '-',
+    got1d:  d.realized_1d ?? '-',
+    signalText: d.text || d.signal || ''
+  });
+});
+
+renderAlarmReports(rows);
 
 
 
