@@ -146,6 +146,13 @@ signalsSnap.forEach(doc => {
 
 renderAlarmReports(rows);
 
+} catch (err) {
+  console.error('[Signals] Yükleme hatası:', err);
+  renderAlarmReports([]);
+}
+}
+
+
 
 
 function renderAlarmReports(rows) {
@@ -437,92 +444,60 @@ function updateAllTableRows(data) {
 }
 
 function renderSupportResistance() {
-  const container = document.getElementById('pivot-content');
-  if (!container) return;
-
-  // Sözlük / filtre bölümü (varsa güncelle, yoksa oluşturma)
-  const dictContainer = document.getElementById('pivot-dictionary-container')
-    || document.getElementById('indicatorDictionary')
-    || null;
-
-  // Filtre değerleri (varsayılanlar güvenli)
-  const dirSelect = document.getElementById('pivotDirectionFilter');
-  const onlyCross = document.getElementById('pivotOnlyCrossToggle');
-  const showS1S2  = document.getElementById('pivotShowS1S2');
-  const showR1R2  = document.getElementById('pivotShowR1R2');
-
-  const direction = (dirSelect && dirSelect.value) || 'all';   // all|up|down
-  const onlyCrossing = !!(onlyCross && onlyCross.checked);
-  const showS = !!(showS1S2 && showS1S2.checked);
-  const showR = !!(showR1R2 && showR1R2.checked);
-
-  // Kaynaktan veriyi oku (App.data.pivots varsa onu kullan)
-  const piv = (window.App && App.data && Array.isArray(App.data.pivots)) ? App.data.pivots : [];
-  // Hiç veri yoksa uyarı
-  if (!piv.length) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <p>Pivot verisi bulunamadı.</p>
-      </div>`;
-    return;
-  }
-
-  // Filtre uygula
-  const filtered = piv.filter(item => {
-    if (!item || item.error) return false;
-    if (direction !== 'all' && item.direction !== direction) return false;
-    if (onlyCrossing && !item.isCrossing) return false;
-    return true;
-  });
-
-  // Kartları üret
-  const html = filtered.map((asset) => {
-    const coin = (asset.pair || asset.symbol || '').replace('USDT','');
-    const p    = Number(asset.price);
-    const s1   = Number(asset.S1 ?? asset.s1);
-    const s2   = Number(asset.S2 ?? asset.s2);
-    const r1   = Number(asset.R1 ?? asset.r1);
-    const r2   = Number(asset.R2 ?? asset.r2);
-    const pivot= Number(asset.pivot ?? asset.P);
-
-    const fmt = (v) => (Number.isFinite(v) ? `$${formatPrice(v)}` : '—');
-
-    // Sadece seçilen alanları göster
-    const rows = [];
-    rows.push(`<div class="row"><span class="lbl">Pivot</span><span class="val">${fmt(pivot)}</span></div>`);
-    if (showS) {
-      rows.push(`<div class="row"><span class="lbl">S1</span><span class="val">${fmt(s1)}</span></div>`);
-      rows.push(`<div class="row"><span class="lbl">S2</span><span class="val">${fmt(s2)}</span></div>`);
-    }
-    if (showR) {
-      rows.push(`<div class="row"><span class="lbl">R1</span><span class="val">${fmt(r1)}</span></div>`);
-      rows.push(`<div class="row"><span class="lbl">R2</span><span class="val">${fmt(r2)}</span></div>`);
-    }
-
-    const dirBadge = asset.direction === 'up' ? '<span class="pill positive">up</span>'
-                     : asset.direction === 'down' ? '<span class="pill negative">down</span>'
-                     : '<span class="pill">flat</span>';
-
-    return `
-      <div class="pivot-card">
-        <div class="pivot-card-header">
-          <h4>${coin}</h4>
-          <div class="muted">${dirBadge}</div>
-        </div>
-        <div class="pivot-card-body">
-          <div class="row"><span class="lbl">Fiyat</span><span class="val">${fmt(p)}</span></div>
-          ${rows.join('')}
-        </div>
-      </div>`;
-  }).join('');
-
-  container.innerHTML = `
-    <div class="pivot-grid">
-      ${html || '<div class="muted" style="padding:16px;">Kayıt bulunamadı.</div>'}
-    </div>
-  `;
+    const container = document.getElementById('crypto-pivot-container');
+    if (!container) return;
+    container.innerHTML = '';
+    const dictContainer = document.getElementById('pivot-dictionary-container');
+    if (dictContainer) dictContainer.innerHTML = `
+        <div class="pivot-dictionary">
+            <p><span>P:</span> Pivot Noktası (Referans)</p>
+            <p><span>R1, R2:</span> Direnç Seviyeleri (Yükseliş Hedefleri)</p>
+            <p><span>S1, S2:</span> Destek Seviyeleri (Düşüş Durakları)</p>
+        </div>`;
+    const filter = state.settings.cryptoPivotFilter;
+    const pivotPortfolioName = document.querySelector('#pivotPortfolioTabs .portfolio-tab.active')?.dataset.portfolioName || state.activePortfolio;
+    const pivotCoinList = state.userPortfolios[pivotPortfolioName] || [];
+    const dataToRender = state.allCryptoData.filter(asset => pivotCoinList.includes(asset.pair) && !asset.error && asset.sr);
+    dataToRender.forEach(asset => {
+        if ((filter === 'above' && asset.latestPrice < asset.sr.pivot) || (filter === 'below' && asset.latestPrice > asset.sr.pivot)) return;
+        const {
+            s2,
+            s1,
+            pivot,
+            r1,
+            r2
+        } = asset.sr;
+        const min = s2,
+            max = r2;
+        if (max <= min) return;
+        const range = max - min;
+        const getPosition = (value) => Math.max(0, Math.min(100, ((value - min) / range) * 100));
+        let insight = '';
+        if (asset.latestPrice > r1) insight = `R1 direnci kırıldı, R2 hedefleniyor.`;
+        else if (asset.latestPrice > pivot) insight = `Pivot üzerinde, R1 direncine yaklaşıyor.`;
+        else if (asset.latestPrice < s1) insight = `S1 desteği kırıldı, S2 test edilebilir.`;
+        else if (asset.latestPrice < pivot) insight = `Pivot altında, S1 desteğine yaklaşıyor.`;
+        const card = document.createElement('div');
+        card.className = 'pivot-bar-card';
+        card.innerHTML = `
+            <div class="pivot-bar-header">
+                <span class="pair-name">${asset.pair.replace("USDT", "")} - Günlük Pivot</span>
+                <span class="insight">${insight}</span>
+            </div>
+            <div class="pivot-bar-container">
+                <div class="pivot-bar"></div>
+                <div class="current-price-indicator" style="left: ${getPosition(asset.latestPrice)}%;" data-price="$${formatPrice(asset.latestPrice)}"></div>
+            </div>
+            <div class="pivot-values">
+                <span>S2: ${formatPrice(s2)}</span>
+                <span>S1: ${formatPrice(s1)}</span>
+                <span style="font-weight:bold;">P: ${formatPrice(pivot)}</span>
+                <span>R1: ${formatPrice(r1)}</span>
+                <span>R2: ${formatPrice(r2)}</span>
+            </div>`;
+        container.appendChild(card);
+    });
 }
-
 
 function showChart(pair) {
     const chartPanelTitle = document.getElementById('chartPanelTitle');
@@ -1210,15 +1185,15 @@ if (!App.confirm) {
     panel.querySelector('.primary')?.addEventListener('click', () => cleanup(true));
     overlay.addEventListener('click', (e) => { if (e.target === overlay) cleanup(false); });
   });
-try {
-  if (typeof updateAllTableRows === 'function')
-    window.updateAllTableRows = window.updateAllTableRows || updateAllTableRows;
-  if (typeof renderSupportResistance === 'function')
-    window.renderSupportResistance = window.renderSupportResistance || renderSupportResistance;
-  if (typeof renderSignalAnalysisPreview === 'function')
-    window.renderSignalAnalysisPreview = window.renderSignalAnalysisPreview || renderSignalAnalysisPreview;
-} catch (e) {
-  console.warn('UI global export uyarısı:', e);
-}
 }
 
+
+
+// --- Güvenli global bağlama ---
+try {
+  if (typeof updateAllTableRows === 'function') window.updateAllTableRows = window.updateAllTableRows || updateAllTableRows;
+  if (typeof renderSupportResistance === 'function') window.renderSupportResistance = window.renderSupportResistance || renderSupportResistance;
+  if (typeof renderSignalAnalysisPreview === 'function') window.renderSignalAnalysisPreview = window.renderSignalAnalysisPreview || renderSignalAnalysisPreview;
+  if (typeof loadAlarmReports === 'function') window.loadAlarmReports = window.loadAlarmReports || loadAlarmReports;
+  if (typeof renderAlarmReports === 'function') window.renderAlarmReports = window.renderAlarmReports || renderAlarmReports;
+} catch (e) { console.warn('UI export warning:', e); }
