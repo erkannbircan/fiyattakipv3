@@ -39,6 +39,10 @@ if (typeof window.renderAllPortfolioTabs !== 'function') {
 if (typeof window.createCoinManager !== 'function') {
   window.createCoinManager = function () { /* no-op */ };
 }
+// --- Fallback: renderIndicatorFilters tanımlı değilse girişte çakılmasın ---
+if (typeof window.renderIndicatorFilters !== 'function') {
+  window.renderIndicatorFilters = function () { /* no-op */ };
+}
 
 
 function setupGlobalEventListeners() {
