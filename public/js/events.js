@@ -66,6 +66,7 @@ function setupGlobalEventListeners() {
 }
 
 
+
     // 2) Ayarlar aç (dişli buton ya da data-open-panel="settingsPanel")
     if (
       e.target.closest('#settingsBtn') ||                       // varsa id
