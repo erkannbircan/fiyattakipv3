@@ -98,21 +98,23 @@ async function loadAlarmReports() {
     snap.forEach(doc => {
       const d = doc.data() || {};
       rows.push({
-        coin: d.coin || d.pair || '-',
-        dir: d.direction || '-',
-        entry: d.entryPrice || d.signalPrice || '-',
-        now: d.currentPrice || '-',
-        score: d.score ?? '-',
-        exp15m: d.expected_15m ?? d.expected15m ?? '-',
-        got15m: d.realized_15m ?? d.realized15m ?? '-',
-        exp1h:  d.expected_1h ?? '-',
-        got1h:  d.realized_1h ?? '-',
-        exp4h:  d.expected_4h ?? '-',
-        got4h:  d.realized_4h ?? '-',
-        exp1d:  d.expected_1d ?? '-',
-        got1d:  d.realized_1d ?? '-',
-        signalText: d.text || d.signal || ''
-      });
+  coin: d.coin || d.pair || '-',
+  dir: d.direction || '-',
+  // priceAtSignal da dene:
+  entry: d.entryPrice || d.signalPrice || d.priceAtSignal || '-',
+  // şimdi backend currentPrice yazacak; yine de yedekler dursun:
+  now: d.currentPrice || d.lastPrice || d.priceLatest || '-',
+  score: d.score ?? '-',
+  exp15m: d.expected_15m ?? d.expected15m ?? '-',
+  got15m: d.realized_15m ?? d.realized15m ?? '-',
+  exp1h:  d.expected_1h ?? '-',
+  got1h:  d.realized_1h ?? '-',
+  exp4h:  d.expected_4h ?? '-',
+  got4h:  d.realized_4h ?? '-',
+  exp1d:  d.expected_1d ?? '-',
+  got1d:  d.realized_1d ?? '-',
+  signalText: d.text || d.signal || ''
+});
     });
 
     renderAlarmReports(rows);
