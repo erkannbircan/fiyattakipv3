@@ -1210,5 +1210,15 @@ if (!App.confirm) {
     panel.querySelector('.primary')?.addEventListener('click', () => cleanup(true));
     overlay.addEventListener('click', (e) => { if (e.target === overlay) cleanup(false); });
   });
+try {
+  if (typeof updateAllTableRows === 'function')
+    window.updateAllTableRows = window.updateAllTableRows || updateAllTableRows;
+  if (typeof renderSupportResistance === 'function')
+    window.renderSupportResistance = window.renderSupportResistance || renderSupportResistance;
+  if (typeof renderSignalAnalysisPreview === 'function')
+    window.renderSignalAnalysisPreview = window.renderSignalAnalysisPreview || renderSignalAnalysisPreview;
+} catch (e) {
+  console.warn('UI global export uyarısı:', e);
+}
 }
 
