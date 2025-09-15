@@ -43,20 +43,28 @@ if (typeof window.createCoinManager !== 'function') {
 if (typeof window.renderIndicatorFilters !== 'function') {
   window.renderIndicatorFilters = function () { /* no-op */ };
 }
-
+if (typeof window.renderDictionary !== 'function') {
+  window.renderDictionary = function () { /* no-op */ };
+}
 
 function setupGlobalEventListeners() {
   document.body.addEventListener('click', async (e) => {
     // 1) Panel kapat
     if (e.target.closest('.close-btn') || e.target === document.getElementById('modalOverlay')) {
-      const chartPanel = document.getElementById('chartPanel');
-      if (chartPanel && chartPanel.classList.contains('show')) {
-        const widgetToSave = state.tradingViewWidget;
-        await saveChartState(widgetToSave);
-      }
-      closeAllPanels();
-      return;
+  const chartPanel = document.getElementById('chartPanel');
+  if (chartPanel && chartPanel.classList.contains('show')) {
+    // Panel başlığından pariteyi al (örn. BTC → BTCUSDT)
+    const titleEl = document.getElementById('chartPanelTitle');
+    const pairFromTitle = titleEl?.textContent?.trim();
+    const pair = pairFromTitle ? `${pairFromTitle}USDT` : null;
+    if (pair) {
+      await saveChartState(pair);         // ✅ DOĞRU ARGÜMAN
     }
+  }
+  closeAllPanels();
+  return;
+}
+
 
     // 2) Ayarlar aç (dişli buton ya da data-open-panel="settingsPanel")
     if (
