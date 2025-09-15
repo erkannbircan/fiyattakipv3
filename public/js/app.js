@@ -89,6 +89,11 @@ function initializeAuthListener() {
                 }
 
                 showPage('tracker-page');
+              const path = window.location.pathname;
+if (typeof loadAlarmReports === 'function' &&
+    (path.endsWith('/sinyal-performans.html') || path.includes('sinyal-performans'))) {
+  loadAlarmReports();
+}
                 updateAdminUI();
 
             } catch (err) {
