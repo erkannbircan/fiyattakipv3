@@ -78,7 +78,7 @@ async function loadAlarmReports() {
       return;
     }
 
-    const db = state.firebase.firestore;
+    const db = state.firebase.firestore || state.firebase.db;  // ✅ alias fallback
 
     // ✅ KURAL UYUMU: sadece kendi kayıtların
     const snap = await db
