@@ -620,15 +620,7 @@ function renderSignalAnalysisPreview(data) {
       <div style="padding:16px;">Analiz önizleme geçici olarak sadeleştirildi.</div>
     </div>`;
 }
-  const resultContainer = document.getElementById('signalAnalysisResultContainer');
-  if (!resultContainer) return;
-
-  resultContainer.innerHTML = ''; 
-
-  if (!data || Object.keys(data).length === 0) {
-    resultContainer.innerHTML = `<div class="placeholder-text">Analiz için sonuç bulunamadı.</div>`;
-    return;
-  }
+ 
 
   const round2 = (n) => (typeof n === 'number' && isFinite(n)) ? n.toFixed(2) : 'N/A';
 
