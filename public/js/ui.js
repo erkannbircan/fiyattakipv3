@@ -82,17 +82,20 @@ async function loadAlarmReports() {
 
     // ✅ KURAL UYUMU: sadece kendi kayıtların
     const snap = await db
-      .collection('signals')
-      .where('userId', '==', state.user.uid)
-      .orderBy('createdAt', 'desc')
-      .limit(200)
-      .get();
+  .collection('signals')
+  .where('userId', '==', state.user.uid)
+  .orderBy('createdAt', 'desc')
+  .limit(200)
+  .get();
 
-    if (snap.empty) {
-      console.info('[Signals] Sorgu boş döndü.');
-      renderAlarmReports([]);
-      return;
-    }
+console.info('[Signals] uid=', state.user.uid, 'kayıt adedi=', snap.size); // ✅ debug
+
+if (snap.empty) {
+  console.info('[Signals] Sorgu boş döndü.');
+  renderAlarmReports([]);
+  return;
+}
+
 
     const rows = [];
     snap.forEach(doc => {
