@@ -41,10 +41,14 @@ if (typeof window.createCoinManager !== 'function') {
 }
 // --- Fallback: renderIndicatorFilters tanımlı değilse girişte çakılmasın ---
 if (typeof window.renderIndicatorFilters !== 'function') {
-  window.renderIndicatorFilters = function () { /* no-op */ };
+  window.renderIndicatorFilters = function() { /* no-op */ };
 }
 if (typeof window.renderDictionary !== 'function') {
-  window.renderDictionary = function () { /* no-op */ };
+  window.renderDictionary = function() { /* no-op */ };
+}
+if (typeof window.updateAllTableRows !== 'function') {
+  // UI yüklenmeden bir çağrı gelirse uygulama düşmesin
+  window.updateAllTableRows = function() {};
 }
 
 function setupGlobalEventListeners() {
