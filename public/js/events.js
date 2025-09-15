@@ -1,3 +1,10 @@
+
+// --- Failsafe guards (ensure functions exist even if ui.js loads later)
+window.updateAllTableRows     = window.updateAllTableRows     || function(){};
+window.renderDictionary       = window.renderDictionary       || function(){};
+window.renderIndicatorFilters = window.renderIndicatorFilters || function(){};
+window.renderSupportResistance= window.renderSupportResistance|| function(){};
+
 // ---- GLOBAL ÇATI (her JS dosyasının en üstüne koy) ----
 window.App = window.App || {
   // sürüm bilgisi bu tur için (elle güncelle)
