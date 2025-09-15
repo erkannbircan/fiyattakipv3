@@ -607,6 +607,21 @@ const clsPerf = v => (typeof v === 'number' ? (v >= 0 ? 'positive' : 'negative')
 function renderSignalAnalysisPreview(data) {
   const resultContainer = document.getElementById('signalAnalysisResultContainer');
   if (!resultContainer) return;
+  if (!data || !Object.keys(data).length) {
+    resultContainer.innerHTML = `<div class="placeholder-text">Analiz için sonuç bulunamadı.</div>`;
+    return;
+  }
+  // basit özet
+  const firstKey = Object.keys(data)[0];
+  const coin = firstKey.replace('USDT','');
+  resultContainer.innerHTML = `
+    <div class="analysis-card">
+      <div class="analysis-card-header"><h4>${coin}</h4></div>
+      <div style="padding:16px;">Analiz önizleme geçici olarak sadeleştirildi.</div>
+    </div>`;
+}
+  const resultContainer = document.getElementById('signalAnalysisResultContainer');
+  if (!resultContainer) return;
 
   resultContainer.innerHTML = ''; 
 
