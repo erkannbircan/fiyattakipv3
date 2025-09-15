@@ -607,135 +607,138 @@ const clsPerf = v => (typeof v === 'number' ? (v >= 0 ? 'positive' : 'negative')
 function renderSignalAnalysisPreview(data) {
   const resultContainer = document.getElementById('signalAnalysisResultContainer');
   if (!resultContainer) return;
-  if (!data || !Object.keys(data).length) {
+
+  // kutuyu temizle
+  resultContainer.innerHTML = '';
+
+  // boş veri koruması
+  if (!data || Object.keys(data).length === 0) {
     resultContainer.innerHTML = `<div class="placeholder-text">Analiz için sonuç bulunamadı.</div>`;
     return;
   }
-  // basit özet
-  const firstKey = Object.keys(data)[0];
-  const coin = firstKey.replace('USDT','');
-  resultContainer.innerHTML = `
-    <div class="analysis-card">
-      <div class="analysis-card-header"><h4>${coin}</h4></div>
-      <div style="padding:16px;">Analiz önizleme geçici olarak sadeleştirildi.</div>
-    </div>`;
-}
- 
 
+  // yardımcılar
   const round2 = (n) => (typeof n === 'number' && isFinite(n)) ? n.toFixed(2) : 'N/A';
+  const formatPrice = (v) =>
+    (typeof v === 'number'
+      ? (v >= 1 ? v.toFixed(2) : v.toPrecision(6))
+      : 'N/A');
 
+  // tüm coinler için kartları üret
   const html = Object.keys(data).map((coin) => {
     const res = data[coin];
     const coinSymbol = coin.replace('USDT','');
 
+    // hata/info durumlarını kart halinde göster
     if (!res || res.status === 'error' || res.status === 'info') {
       const msg = (res && res.message) ? res.message : 'Sonuç yok.';
       const color = (res && res.status === 'error') ? 'var(--accent-red)' : 'var(--text-secondary)';
-      return `<div class="analysis-card"><div class="analysis-card-header"><h4>${coinSymbol}</h4></div><div style="color:${color};padding:20px;">${msg}</div></div>`;
+      return `<div class="analysis-card">
+        <div class="analysis-card-header"><h4>${coinSymbol}</h4></div>
+        <div style="color:${color};padding:20px;">${msg}</div>
+      </div>`;
     }
 
-// Backtest ile birebir kıyas için önce signal-based ortalama (varsa), yoksa eski alan.
-const avg1h  = round2((res.avgReturnsSignal || res.avgReturns)?.['1h']);
-const avg4h  = round2((res.avgReturnsSignal || res.avgReturns)?.['4h']);
-const avg1d  = round2((res.avgReturnsSignal || res.avgReturns)?.['1d']);
+    // ortalama getiriler (signal-based varsa onu kullan)
+    const avg1h =  round2((res.avgReturnsSignal || res.avgReturns)?.['1h']);
+    const avg4h =  round2((res.avgReturnsSignal || res.avgReturns)?.['4h']);
+    const avg1d =  round2((res.avgReturnsSignal || res.avgReturns)?.['1d']);
 
-
+    // DNA parametreleri
     const paramsHtml = res.dnaProfile?.featureOrder
-      .map(f => f.split('_')[0].toUpperCase())
-      .filter((v, i, a) => a.indexOf(v) === i)
-      .map(p => `<span class="pill">${p}</span>`).join('') || '<span class="muted">Parametre seçilmedi</span>';
+      ?.map(f => f.split('_')[0].toUpperCase())
+      ?.filter((v, i, a) => a.indexOf(v) === i)
+      ?.map(p => `<span class="pill">${p}</span>`).join('')
+      || '<span class="muted">Parametre seçilmedi</span>';
 
+    // fırsat satırları
     let eventsHtml = '<tbody><tr><td colspan="6" class="muted" style="text-align:center; padding: 20px;">Fırsat bulunamadı</td></tr></tbody>';
     let footerHtml = '';
+
     if (Array.isArray(res.eventDetails) && res.eventDetails.length) {
       const all = res.eventDetails.slice().sort((a,b) => Number(b.timestamp) - Number(a.timestamp));
-      
+
+      // tablo satırı şablonu
       const row = (ev, index) => {
-  const isHidden = index >= 5 ? 'hidden' : '';
-          
+        const isHidden = index >= 5 ? 'hidden' : '';
 
+        // 1) sinyal zamanı
+        const signalTime = ev.timestamp
+          ? new Date(ev.timestamp).toLocaleString('tr-TR', App.trTimeFmt)
+          : '—';
 
-  // 1) Sinyal zamanı (mum kapanışı)
-  const signalTime = ev.timestamp
-    ? new Date(ev.timestamp).toLocaleString('tr-TR', App.trTimeFmt)
-    : '—';
+        // 2) hedef mumu
+        const tgtOpen  = ev.targetCandleOpen ? new Date(ev.targetCandleOpen).toLocaleString('tr-TR', App.trTimeFmt) : null;
+        const tgtClose = ev.targetCandleClose ? new Date(ev.targetCandleClose).toLocaleString('tr-TR', App.trTimeFmt) : null;
+        const targetTimeBlock = (tgtOpen || tgtClose)
+          ? `${tgtOpen || '—'} → ${tgtClose || '—'}`
+          : (ev.targetTime ? new Date(ev.targetTime).toLocaleString('tr-TR', App.trTimeFmt) : '—');
 
-  // 2) Hedef mumu (Açılış → Kapanış) veya varsa tek hedef zamanı
-  const tgtOpen  = ev.targetCandleOpen ? new Date(ev.targetCandleOpen).toLocaleString('tr-TR', App.trTimeFmt) : null;
-  const tgtClose = ev.targetCandleClose ? new Date(ev.targetCandleClose).toLocaleString('tr-TR', App.trTimeFmt) : null;
-  const targetTimeBlock = (tgtOpen || tgtClose)
-    ? `${tgtOpen || '—'} → ${tgtClose || '—'}`
-    : (ev.targetTime ? new Date(ev.targetTime).toLocaleString('tr-TR', App.trTimeFmt) : '—');
+        // 3) fiyatlar
+        const pB = Number.isFinite(ev.priceBefore) ? `$${formatPrice(ev.priceBefore)}` : 'N/A';
+        const pA = Number.isFinite(ev.priceAfter)  ? `$${formatPrice(ev.priceAfter)}`  : 'N/A';
 
-  // 3) Fiyatlar
-  const pB = Number.isFinite(ev.priceBefore) ? `$${formatPrice(ev.priceBefore)}` : 'N/A';
-  const pA = Number.isFinite(ev.priceAfter)  ? `$${formatPrice(ev.priceAfter)}`  : 'N/A';
+        // 4) gerçekleşen performanslar için sağlam seçim
+        const pickVal = (raw) => {
+          if (typeof raw === 'number') return raw;
+          if (raw && typeof raw === 'object') {
+            if (Number.isFinite(raw.mfePct)) return raw.mfePct;
+            if (Number.isFinite(raw.mfePctRaw)) return raw.mfePctRaw;
+            if (Number.isFinite(raw.value)) return raw.value;
+          }
+          return NaN;
+        };
 
-    // 4) Gerçekleşen performanslar (güvenli: sayı veya nesne)
-  const pickVal = (raw) => {
-    if (typeof raw === 'number') return raw;
-    if (raw && typeof raw === 'object') {
-      if (Number.isFinite(raw.mfePct)) return raw.mfePct;
-      if (Number.isFinite(raw.mfePctRaw)) return raw.mfePctRaw;
-      if (Number.isFinite(raw.value)) return raw.value;
-    }
-    return NaN;
-  };
+        const raw15 = ev.perf?.['15m'];
+        const raw1h = ev.perf?.['1h'];
+        const raw4h = ev.perf?.['4h'];
+        const raw1d = ev.perf?.['1d'];
 
-  const raw15 = ev.perf?.['15m'];
-  const raw1h = ev.perf?.['1h'];
-  const raw4h = ev.perf?.['4h'];
-  const raw1d = ev.perf?.['1d'];
+        const val15 = pickVal(raw15);
+        const val1h = pickVal(raw1h);
+        const val4h = pickVal(raw4h);
+        const val1d = pickVal(raw1d);
 
-  const val15 = pickVal(raw15);
-  const val1h = pickVal(raw1h);
-  const val4h = pickVal(raw4h);
-  const val1d = pickVal(raw1d);
+        const p15 = Number.isFinite(val15) ? `${val15.toFixed(2)}%` : '—';
+        const p1h = Number.isFinite(val1h) ? `${val1h.toFixed(2)}%` : '—';
+        const p4h = Number.isFinite(val4h) ? `${val4h.toFixed(2)}%` : '—';
+        const p1d = Number.isFinite(val1d) ? `${val1d.toFixed(2)}%` : '—';
 
-  const p15 = Number.isFinite(val15) ? `${val15.toFixed(2)}%` : '—';
-  const p1h = Number.isFinite(val1h) ? `${val1h.toFixed(2)}%` : '—';
-  const p4h = Number.isFinite(val4h) ? `${val4h.toFixed(2)}%` : '—';
-  const p1d = Number.isFinite(val1d) ? `${val1d.toFixed(2)}%` : '—';
+        // 5) ≈ Beklenen + (n)
+        const exp = ev.expectedPct || ev.expected || {};
+        const n   = ev.expectedN || {};
+        const fmtExp = (tf) => {
+          const val = exp[tf];
+          if (val == null) return '';
+          const nVal = n[tf];
+          const warn = (typeof nVal === 'number' && nVal > 0 && nVal < 3)
+            ? ' <span class="warn">(n küçük)</span>'
+            : (typeof nVal === 'number' ? ` <span class="muted">(n=${nVal})</span>` : '');
+          return ` <span class="muted">≈ ${Number(val).toFixed(2)}%</span>${warn}`;
+        };
 
-  // 5) ≈ Beklenen (hem eski alan adı ev.expected hem yeni ev.expectedPct desteklenir), (n) etiketiyle
-  const exp = ev.expectedPct || ev.expected || {};
-  const n   = ev.expectedN || {};
-  const fmtExp = (tf) => {
-    const val = exp[tf];
-    if (val == null) return '';
-    const nVal = n[tf];
-    const warn = (typeof nVal === 'number' && nVal > 0 && nVal < 3)
-      ? ' <span class="warn">(n küçük)</span>'
-      : (typeof nVal === 'number' ? ` <span class="muted">(n=${nVal})</span>` : '');
-    return ` <span class="muted">≈ ${Number(val).toFixed(2)}%</span>${warn}`;
-  };
-  const e15 = fmtExp('15m');
-  const e1h = fmtExp('1h');
-  const e4h = fmtExp('4h');
-  const e1d = fmtExp('1d');
+        const e15 = fmtExp('15m');
+        const e1h = fmtExp('1h');
+        const e4h = fmtExp('4h');
+        const e1d = fmtExp('1d');
 
-  // 6) Satır HTML
-    // 6) Satır HTML (+ MTF rozeti)
- return `<tr class="opportunity-row ${isHidden}" data-coin="${coinSymbol}">
-  <td>
-    <div>${signalTime}${(ev.mtfConfirm || ev?.details?.mtfConfirm) ? ' <span class="pill">MTF✓</span>' : ''}</div>
-    <div class="muted">Sinyal Fiyatı: ${pB}</div>
-  </td>
-    <td>
-      <div>${targetTimeBlock}</div>
-      <div class="muted">Hedef Fiyat: ${pA}</div>
-    </td>
-    <td class="${App.clsPerf(val15)}">${p15}${e15}</td>
-    <td class="${App.clsPerf(val1h)}">${p1h}${e1h}</td>
-    <td class="${App.clsPerf(val4h)}">${p4h}${e4h}</td>
-    <td class="${App.clsPerf(val1d)}">${p1d}${e1d}</td>
-  </tr>`;
+        // 6) satır
+        return `<tr class="opportunity-row ${isHidden}" data-coin="${coinSymbol}">
+          <td>
+            <div>${signalTime}${(ev.mtfConfirm || ev?.details?.mtfConfirm) ? ' <span class="pill">MTF✓</span>' : ''}</div>
+            <div class="muted">Sinyal Fiyatı: ${pB}</div>
+          </td>
+          <td>
+            <div>${targetTimeBlock}</div>
+            <div class="muted">Hedef Fiyat: ${pA}</div>
+          </td>
+          <td class="${App.clsPerf(val15)}">${p15}${e15}</td>
+          <td class="${App.clsPerf(val1h)}">${p1h}${e1h}</td>
+          <td class="${App.clsPerf(val4h)}">${p4h}${e4h}</td>
+          <td class="${App.clsPerf(val1d)}">${p1d}${e1d}</td>
+        </tr>`;
+      };
 
-};
-
-
-
-      
       eventsHtml = `<tbody>${all.map(row).join('')}</tbody>`;
 
       if (all.length > 5) {
@@ -751,31 +754,35 @@ const avg1d  = round2((res.avgReturnsSignal || res.avgReturns)?.['1d']);
       }
     }
 
+    // DNA özeti
     let dnaHtml = '<div class="muted">DNA özeti oluşturulamadı.</div>';
     if (res.dnaSummary && res.dnaSummary.featureOrder) {
-        dnaHtml = res.dnaSummary.featureOrder.map((key, i) => {
-            const value = round2(res.dnaSummary.mean[i]);
-            return `<div class="dna-indicator-group"><span class="label">${key}</span><span class="value">${value}</span></div>`;
-        }).join('');
+      dnaHtml = res.dnaSummary.featureOrder.map((key, i) => {
+        const value = round2(res.dnaSummary.mean[i]);
+        return `<div class="dna-indicator-group"><span class="label">${key}</span><span class="value">${value}</span></div>`;
+      }).join('');
     }
 
+    // kart şablonu
     return `
       <div class="analysis-card">
-        <div class="analysis-card-header">
-          <h4>${coinSymbol}</h4>
-        </div>
+        <div class="analysis-card-header"><h4>${coinSymbol}</h4></div>
+
         <div class="kpi-container" style="padding: 0 20px 20px 20px;">
-            <div class="kpi-item"><span class="kpi-label">Sinyal Sayısı</span><span class="kpi-value">${res.eventCount || 0}</span></div>
-            <div class="kpi-item"><span class="kpi-label">1S Ort. Getiri</span><span class="kpi-value ${avg1h >= 0 ? 'positive' : 'negative'}">${avg1h}%</span></div>
-            <div class="kpi-item"><span class="kpi-label">4S Ort. Getiri</span><span class="kpi-value ${avg4h >= 0 ? 'positive' : 'negative'}">${avg4h}%</span></div>
-            <div class="kpi-item"><span class="kpi-label">1G Ort. Getiri</span><span class="kpi-value ${avg1d >= 0 ? 'positive' : 'negative'}">${avg1d}%</span></div>
+          <div class="kpi-item"><span class="kpi-label">Sinyal Sayısı</span><span class="kpi-value">${res.eventCount || 0}</span></div>
+          <div class="kpi-item"><span class="kpi-label">1S Ort. Getiri</span><span class="kpi-value ${avg1h >= 0 ? 'positive' : 'negative'}">${avg1h}%</span></div>
+          <div class="kpi-item"><span class="kpi-label">4S Ort. Getiri</span><span class="kpi-value ${avg4h >= 0 ? 'positive' : 'negative'}">${avg4h}%</span></div>
+          <div class="kpi-item"><span class="kpi-label">1G Ort. Getiri</span><span class="kpi-value ${avg1d >= 0 ? 'positive' : 'negative'}">${avg1d}%</span></div>
         </div>
+
         <div class="analysis-card-body">
           <section>
             <h5 class="setting-subtitle">Bulunan Fırsat Detayları</h5>
             <div class="table-wrapper compact">
               <table>
-                <thead><tr><th>Zaman/Fiyat</th><th>Hedef/Fiyat</th><th>15Dk %</th><th>1S %</th><th>4S %</th><th>1G %</th></tr></thead>
+                <thead>
+                  <tr><th>Zaman/Fiyat</th><th>Hedef/Fiyat</th><th>15Dk %</th><th>1S %</th><th>4S %</th><th>1G %</th></tr>
+                </thead>
                 ${eventsHtml}
                 ${footerHtml}
               </table>
@@ -795,19 +802,19 @@ const avg1d  = round2((res.avgReturnsSignal || res.avgReturns)?.['1d']);
               </section>
             </div>
           </details>
-
         </div>
+
         <div class="analysis-card-footer">
           <button class="save-dna-btn" data-profile='${JSON.stringify(res.dnaProfile || {})}'>
             <i class="fas fa-save"></i> Bu DNA Profilini Kaydet
           </button>
         </div>
-      </div>
-    `;
+      </div>`;
   }).join('');
 
   resultContainer.innerHTML = html;
 }
+
 
 async function computePerEventMFEviaHighLow(symbol, timeframe, events) {
   const out = new Map();
