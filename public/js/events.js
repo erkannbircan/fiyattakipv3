@@ -921,17 +921,3 @@ if (typeof setupPanelEventListeners === 'function')
     console.warn('Global export hatası:', e);
   }
 })();
-
-// Güvenli sarmalayıcı (opsiyonel). Delegasyon zaten çalışıyor.
-window.setupStrategyDiscoveryListeners = function () {
-  // Şu an gerek yok; tüm tıklamalar parent delegasyonunda yakalanıyor.
-  // Bunu boş bırakıyoruz ki "undefined" hatası olmasın.
-};
-
-// DOM hazır olduğunda (gerekirse)
-document.addEventListener('DOMContentLoaded', () => {
-  if (typeof window.setupStrategyDiscoveryListeners === 'function') {
-    window.setupStrategyDiscoveryListeners();
-  }
-});
-
