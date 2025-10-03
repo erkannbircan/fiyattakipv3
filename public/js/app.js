@@ -11,7 +11,10 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeApp();
 });
 
+// app.js dosyasının yaklaşık 11. satırı
+
 function initializeApp() {
+    console.log('Adım 1: initializeApp fonksiyonu başladı.'); // <-- BU SATIRI EKLE
     // Firebase güvenlik kontrolü
     if (typeof firebase === 'undefined' || !firebase.initializeApp) {
         console.error('Firebase SDK yüklenmedi ya da sırası yanlış. Lütfen <script src="firebase-*.js"> etiketlerini kontrol et.');
@@ -61,9 +64,14 @@ initializeAuthListener();
 
 
 
+// app.js dosyasının yaklaşık 68. satırı
+
 function initializeAuthListener() {
+    console.log('Adım 2: initializeAuthListener fonksiyonu başladı.'); // <-- BU SATIRI EKLE
     state.firebase.auth.onAuthStateChanged(async user => {
+        console.log('Adım 3: Auth durumu değişti, kontrol ediliyor...'); // <-- BU SATIRI EKLE
         if (user) {
+            console.log('Sonuç: Kullanıcı GİRİŞ YAPMIŞ durumda.'); // <-- BU SATIRI EKLE
             state.user = user;
       state.userDocRef = state.firebase.db.collection('users').doc(user.uid);
             try {
@@ -108,6 +116,7 @@ function initializeAuthListener() {
                 state.firebase.auth.signOut();
             }
         } else {
+           console.log('Sonuç: Kullanıcı GİRİŞ YAPMAMIŞ durumda. Login sayfası gösterilecek.'); // <-- BU SATIRI EKLE
             showPage('login-page');
             state.pageInitialized = false;
             state.userDocRef = null;
