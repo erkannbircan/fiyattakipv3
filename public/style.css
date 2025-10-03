@@ -219,3 +219,64 @@ span.smart-hint { font-size: 0.8em; color: var(--accent-blue); margin-left: 5px;
     .panel-header { padding: 12px 15px !important; }
     .panel-content { padding: 15px !important; }
 }
+/* === STRATEJİ SAYFASI FORM DÜZENİ İÇİN DÜZELTME === */
+
+.strategy-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* İki eşit sütun */
+    gap: 15px 25px; /* Dikey ve yatay boşluklar */
+    align-items: end;
+}
+
+.form-group-span-all {
+    grid-column: 1 / -1; /* Başlıkların her iki sütunu da kaplamasını sağlar */
+}
+
+.form-field .inline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-field .inline input,
+.form-field .inline select {
+    width: auto;
+    flex-grow: 1; /* Esneyerek boşlukları doldurur */
+}
+
+.form-field label {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.form-field .check-inline {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.filters-grid.compact {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.filters-grid.compact .filter-item {
+    padding: 8px;
+    font-size: 0.85rem;
+}
+
+.analysis-actions {
+    display: flex;
+    justify-content: flex-start; /* Butonu sola yaslar */
+}
+
+.analysis-actions .primary-button {
+    flex-grow: 0; /* Butonun gereksiz yere büyümesini engeller */
+    width: auto;
+    min-width: 220px;
+    padding: 12px 24px; /* Daha kibar bir boyut */
+}
