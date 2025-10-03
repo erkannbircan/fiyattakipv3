@@ -213,10 +213,6 @@ function setupPanelEventListeners(parentElement) {
   return;
 }
 
-    if (e.target.closest('#saveAlarmBtn')) {
-      saveAlarm();
-      return;
-    }
     if (e.target.closest('#savePortfolioBtn')) {
       handlePortfolioSave();
       return;
@@ -427,14 +423,7 @@ if (loginBtn) {
             showPanel('portfolioModal');
             return;
         }
-
-        // --- Alarm Ayarları Butonu (alarmsBtn) ---
-        const alarmsBtn = target.closest('#alarmsBtn');
-        if (alarmsBtn) {
-            showPanel('alarmSettingsPanel');
-            return;
-        }
-
+      
         // --- Geri Butonu (backBtn) ---
         const backBtn = target.closest('.back-btn');
         if (backBtn) {
@@ -923,14 +912,10 @@ if (typeof setupPanelEventListeners === 'function')
     if (typeof setupCoinManagerEventListeners === 'function')
       window.setupCoinManagerEventListeners = window.setupCoinManagerEventListeners || setupCoinManagerEventListeners;
     if (typeof setupAiPageActionListeners === 'function')
-      window.setupAiPageActionListeners = window.setupAiPageActionListeners || setupAiPageActionListeners;
-    if (typeof setupStrategyDiscoveryListeners === 'function')
       window.setupStrategyDiscoveryListeners = window.setupStrategyDiscoveryListeners || setupStrategyDiscoveryListeners;
     if (typeof setupSaveSettingsButtonListener === 'function')
       window.setupSaveSettingsButtonListener = window.setupSaveSettingsButtonListener || setupSaveSettingsButtonListener;
     if (typeof setupUpdateAnalysisButtonListener === 'function')
-      window.setupUpdateAnalysisButtonListener = window.setupUpdateAnalysisButtonListener || setupUpdateAnalysisButtonListener;
-    if (typeof setupBacktestPageEventListeners === 'function')
       window.setupBacktestPageEventListeners = window.setupBacktestPageEventListeners || setupBacktestPageEventListeners;
   } catch (e) {
     console.warn('Global export hatası:', e);
