@@ -315,7 +315,6 @@ async function handleAddCoin(listName) {
 
     let assetList;
     if (listName === 'crypto') assetList = state.userPortfolios[state.activePortfolio] || [];
-    else if (listName === 'ai') assetList = state.cryptoAiPairs || [];
     else if (listName === 'discovery') assetList = state.discoveryCoins || [];
     else if (listName === 'alarm') assetList = state.tempAlarmCoins || [];
     else return;
@@ -348,7 +347,6 @@ async function handleAddCoin(listName) {
         updateCoinList(listName, assetList);
         await saveCoinListToFirestore(listName);
         if (listName === 'crypto') await fetchAllDataAndRender();
-        if (listName === 'ai') await fetchAiDataAndRender();
     }
     input.value = '';
 }
@@ -356,7 +354,6 @@ async function handleAddCoin(listName) {
 async function handleRemoveCoin(listName, pair) {
     let assetList;
     if (listName === 'crypto') assetList = state.userPortfolios[state.activePortfolio];
-    else if (listName === 'ai') assetList = state.cryptoAiPairs;
     else if (listName === 'discovery') assetList = state.discoveryCoins;
     else if (listName === 'alarm') assetList = state.tempAlarmCoins;
     else return;
@@ -364,21 +361,18 @@ async function handleRemoveCoin(listName, pair) {
     const updatedList = (assetList || []).filter(p => p !== pair);
 
     if (listName === 'crypto') state.userPortfolios[state.activePortfolio] = updatedList;
-    else if (listName === 'ai') state.cryptoAiPairs = updatedList;
     else if (listName === 'discovery') state.discoveryCoins = updatedList;
     else if (listName === 'alarm') state.tempAlarmCoins = updatedList;
 
     updateCoinList(listName, updatedList);
     await saveCoinListToFirestore(listName);
     if (listName === 'crypto') await fetchAllDataAndRender();
-    if (listName === 'ai') await fetchAiDataAndRender();
 }
 
 async function saveCoinListToFirestore(listName) {
     if (!state.userDocRef) return;
     try {
         if (listName === 'crypto') await state.userDocRef.update({ portfolios: state.userPortfolios });
-        else if (listName === 'ai') await state.userDocRef.update({ coins_ai: state.cryptoAiPairs });
         else if (listName === 'discovery') await state.userDocRef.update({ coins_discovery: state.discoveryCoins });
     } catch (error) {
         console.error(`Error saving ${listName} list:`, error);
