@@ -80,11 +80,10 @@ function initializeAuthListener() {
                 let userData = doc.data();
                 if (!doc.exists) {
                     userData = {
-                        email: user.email,
+                         email: user.email,
                         role: 'new_user',
                         portfolios: { "Varsayılan": ["BTCUSDT", "ETHUSDT", "SOLUSDT"] },
                         activePortfolio: "Varsayılan",
-                        coins_ai: ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
                         coins_discovery: ["BTCUSDT", "ETHUSDT"],
                         settings: getDefaultSettings(),
                         alarms: []
@@ -140,9 +139,6 @@ function loadSettingsAndRole(userData) {
     state.settings.colors = { ...defaultSettings.colors, ...(userData.settings?.colors || {}) };
     state.settings.cryptoAnalysisIndicators = { ...defaultSettings.cryptoAnalysisIndicators, ...(userData.settings?.cryptoAnalysisIndicators || {}) };
     state.trackedReports = userData.settings?.trackedReportIds || [];
-    // YENİ: Canlı tarayıcı ayarlarını yükle
-    state.settings.liveScannerInterval = userData.settings?.liveScannerInterval || 5; // Varsayılan 5 dakika
-
     state.settings.chartStates_v2 = userData.settings?.chartStates_v2 || {};
     state.currentUserRole = userData.role;
     const limits = { admin: { coin: Infinity }, qualified: { coin: 50 }, new_user: { coin: 15 } };
@@ -156,7 +152,6 @@ async function initializeTrackerPage(userData) {
     // Ortak ayarları ve verileri yükle
     state.userPortfolios = userData.portfolios || { "Varsayılan": ["BTCUSDT", "ETHUSDT", "SOLUSDT"] };
     state.activePortfolio = userData.activePortfolio || Object.keys(state.userPortfolios)[0];
-    state.cryptoAiPairs = userData.coins_ai || ["BTCUSDT", "ETHUSDT", "SOLUSDT"];
     state.discoveryCoins = userData.coins_discovery || ["BTCUSDT", "ETHUSDT"];
 
     // Sayfaya özel fonksiyonları çağırmadan önce global UI ayarlarını yap
@@ -178,7 +173,6 @@ async function initializeTrackerPage(userData) {
         renderDictionary();
         
         await fetchAllDataAndRender();
-        fetchAiDataAndRender();
         renderAlarmReports();
 if (typeof setupTrackerPageEventListeners === 'function') {
   setupTrackerPageEventListeners(); // Eski genel olay dinleyicimiz
@@ -208,14 +202,6 @@ async function fetchAllDataAndRender() {
     if (updateTimeEl) updateTimeEl.textContent = new Date().toLocaleString(state.settings.lang);
 }
 
-async function fetchAiDataAndRender() {
-    const container = document.getElementById('crypto-indicator-cards-container');
-    if (!container) return;
-    container.innerHTML = '<div class="loading" style="margin: 20px auto; display:block;"></div>';
-    const promises = (state.cryptoAiPairs || []).map(pair => fetchCryptoData(pair, true));
-    const aiData = await Promise.all(promises);
-    renderIndicatorCards('crypto', aiData);
-}
 
 function sortAndRenderTable() {
     const { key, order } = state.currentSort;
@@ -245,18 +231,11 @@ function saveSettings() {
     const minInterval = { admin: 10, qualified: 120, new_user: 300 }[state.currentUserRole] || 300;
     if (interval < minInterval) interval = minInterval;
     
-    // YENİ: Canlı tarayıcı ayarını oku ve doğrula
-    let scannerInterval = parseInt(document.getElementById('liveScannerInterval').value);
-    if (isNaN(scannerInterval) || scannerInterval < 5) {
-        scannerInterval = 5; // Minimum 5 dakika
-    }
-
     const settingsToUpdate = {
         lang: document.getElementById('langSelect').value,
         autoRefresh: document.getElementById('autoRefreshToggle').checked,
         refreshInterval: interval,
         telegramChatId: document.getElementById('telegramChatIdInput').value,
-        liveScannerInterval: scannerInterval, // YENİ
         columns: {
             1: { name: document.getElementById('col1_name_input').value, days: parseInt(document.getElementById('col1_days_input').value), threshold: parseFloat(document.getElementById('col1_threshold_input').value) },
             2: { name: document.getElementById('col2_name_input').value, days: parseInt(document.getElementById('col2_days_input').value), threshold: parseFloat(document.getElementById('col2_threshold_input').value) },
@@ -571,11 +550,6 @@ function updateAdminUI() {
     const analyzeBtn = document.getElementById('analyzeAllCryptoBtn');
     if (analyzeBtn) {
         analyzeBtn.style.display = isAdmin ? 'flex' : 'none';
-    }
-
-    const scannerTab = document.getElementById('live-scanner-tab');
-    if (scannerTab) {
-        scannerTab.style.display = isAdmin ? 'block' : 'none';
     }
 
     const discoveryTab = document.getElementById('strategy-discovery-tab');
