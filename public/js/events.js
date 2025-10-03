@@ -197,9 +197,11 @@ if (currentPage === 'sinyal-performans' || window.location.pathname.endsWith('/s
 }
   
        
+// events.js dosyasının yaklaşık 203. satırı civarında
+
 function setupPanelEventListeners(parentElement) {
   // Tüm tıklamalar için TEK delegasyon dinleyicisi
-  parentElement.addEventListener('click', (e) => {
+  parentElement.addEventListener('click', async (e) => { // <-- DEĞİŞİKLİK BURADA
     if (e.target.closest('#settingsBtn')) {
   (async () => {
     try {
