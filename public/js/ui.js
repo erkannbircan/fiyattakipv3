@@ -245,8 +245,6 @@ function applySettingsToUI() {
         refreshInterval.value = state.settings.refreshInterval;
         refreshInterval.min = { admin: 10, qualified: 120, new_user: 300 }[state.currentUserRole] || 300;
     }
-    const liveScannerInterval = document.getElementById('liveScannerInterval');
-    if (liveScannerInterval) liveScannerInterval.value = state.settings.liveScannerInterval;
     const telegramChatIdInput = document.getElementById('telegramChatIdInput');
     if (telegramChatIdInput) telegramChatIdInput.value = state.settings.telegramChatId || '';
     for (let i = 1; i <= 3; i++) {
@@ -289,39 +287,10 @@ function applySettingsToUI() {
     }
 }
 
-function updateScannerStatusUI(status) {
-    const statusTextEl = document.getElementById('scannerStatusText');
-    const lastScanTimeEl = document.getElementById('lastScanTime');
-    const toggle = document.getElementById('toggleAutoScanner');
-    if (!statusTextEl || !lastScanTimeEl || !toggle) return;
-    switch (status) {
-        case 'running':
-            statusTextEl.textContent = 'ÇALIŞIYOR...';
-            statusTextEl.className = 'status-running';
-            break;
-        case 'stopped':
-            statusTextEl.textContent = 'DURDURULDU';
-            statusTextEl.className = 'status-stopped';
-            toggle.checked = false;
-            break;
-        case 'idle':
-        default:
-            statusTextEl.textContent = 'BEKLEMEDE';
-            statusTextEl.className = 'status-running';
-            lastScanTimeEl.textContent = new Date().toLocaleTimeString('tr-TR', {
-                timeZone: 'Europe/Istanbul'
-            });
-            toggle.checked = true;
-            break;
-    }
-}
-
 function updateAdminUI() {
     const isAdmin = state.currentUserRole === 'admin';
     const analyzeBtn = document.getElementById('analyzeAllCryptoBtn');
     if (analyzeBtn) analyzeBtn.style.display = isAdmin ? 'flex' : 'none';
-    const alarmsTab = document.getElementById('alarms-tab');
-    if (alarmsTab) alarmsTab.style.display = isAdmin ? 'block' : 'none';
     const discoveryTab = document.getElementById('strategy-discovery-tab');
     if (discoveryTab) discoveryTab.style.display = isAdmin ? 'block' : 'none';
     const reportsTab = document.getElementById('alarm-reports-tab');
@@ -361,7 +330,6 @@ function updateCoinList(listName, newCoinList) {
 
 function renderAllPortfolioTabs() {
     renderPortfolioTabs('portfolioTabs');
-    renderPortfolioTabs('pivotPortfolioTabs');
 }
 
 function renderPortfolioTabs(containerId) {
@@ -440,62 +408,6 @@ function updateAllTableRows(data) {
         rowHTML += `<td><button class="action-btn remove-btn" data-list-name="crypto" data-pair="${result.pair}"><i class="fas fa-times"></i></button></td>`;
         row.innerHTML = rowHTML;
         tableBody.appendChild(row);
-    });
-}
-
-function renderSupportResistance() {
-    const container = document.getElementById('crypto-pivot-container');
-    if (!container) return;
-    container.innerHTML = '';
-    const dictContainer = document.getElementById('pivot-dictionary-container');
-    if (dictContainer) dictContainer.innerHTML = `
-        <div class="pivot-dictionary">
-            <p><span>P:</span> Pivot Noktası (Referans)</p>
-            <p><span>R1, R2:</span> Direnç Seviyeleri (Yükseliş Hedefleri)</p>
-            <p><span>S1, S2:</span> Destek Seviyeleri (Düşüş Durakları)</p>
-        </div>`;
-    const filter = state.settings.cryptoPivotFilter;
-    const pivotPortfolioName = document.querySelector('#pivotPortfolioTabs .portfolio-tab.active')?.dataset.portfolioName || state.activePortfolio;
-    const pivotCoinList = state.userPortfolios[pivotPortfolioName] || [];
-    const dataToRender = state.allCryptoData.filter(asset => pivotCoinList.includes(asset.pair) && !asset.error && asset.sr);
-    dataToRender.forEach(asset => {
-        if ((filter === 'above' && asset.latestPrice < asset.sr.pivot) || (filter === 'below' && asset.latestPrice > asset.sr.pivot)) return;
-        const {
-            s2,
-            s1,
-            pivot,
-            r1,
-            r2
-        } = asset.sr;
-        const min = s2,
-            max = r2;
-        if (max <= min) return;
-        const range = max - min;
-        const getPosition = (value) => Math.max(0, Math.min(100, ((value - min) / range) * 100));
-        let insight = '';
-        if (asset.latestPrice > r1) insight = `R1 direnci kırıldı, R2 hedefleniyor.`;
-        else if (asset.latestPrice > pivot) insight = `Pivot üzerinde, R1 direncine yaklaşıyor.`;
-        else if (asset.latestPrice < s1) insight = `S1 desteği kırıldı, S2 test edilebilir.`;
-        else if (asset.latestPrice < pivot) insight = `Pivot altında, S1 desteğine yaklaşıyor.`;
-        const card = document.createElement('div');
-        card.className = 'pivot-bar-card';
-        card.innerHTML = `
-            <div class="pivot-bar-header">
-                <span class="pair-name">${asset.pair.replace("USDT", "")} - Günlük Pivot</span>
-                <span class="insight">${insight}</span>
-            </div>
-            <div class="pivot-bar-container">
-                <div class="pivot-bar"></div>
-                <div class="current-price-indicator" style="left: ${getPosition(asset.latestPrice)}%;" data-price="$${formatPrice(asset.latestPrice)}"></div>
-            </div>
-            <div class="pivot-values">
-                <span>S2: ${formatPrice(s2)}</span>
-                <span>S1: ${formatPrice(s1)}</span>
-                <span style="font-weight:bold;">P: ${formatPrice(pivot)}</span>
-                <span>R1: ${formatPrice(r1)}</span>
-                <span>R2: ${formatPrice(r2)}</span>
-            </div>`;
-        container.appendChild(card);
     });
 }
 
@@ -888,40 +800,6 @@ function computeSimpleMFE(event, direction='up') {
   return direction === 'down' ? -p : p;
 }
 
-
-function renderIndicatorCards(type, data) {
-    const container = document.getElementById('crypto-indicator-cards-container');
-    if (!container) return;
-    container.innerHTML = '';
-    if (!data || data.length === 0) {
-        container.innerHTML = `<p style="text-align:center; color: var(--text-secondary);">Analiz edilecek coin bulunmuyor.</p>`;
-        return;
-    }
-    data.forEach(asset => {
-        const card = document.createElement('div');
-        card.className = 'indicator-card';
-        if (asset.error) {
-            card.innerHTML = `<h4>${asset.pair.replace("USDT", "")}</h4><p style="color:var(--accent-red)">Veri yüklenemedi.</p>`;
-            container.appendChild(card);
-            return;
-        }
-        card.innerHTML = `
-            <div class="indicator-card-header">
-                <h4>${asset.pair.replace("USDT", "")}</h4>
-                <span>$${formatPrice(asset.latestPrice)}</span>
-            </div>
-            <p style="color: var(--text-secondary); font-size: 0.9rem;">Detaylı AI Analizi sonuçları bu alanda gösterilebilir.</p>
-             <div class="indicator-details-grid">
-                ${state.settings.cryptoAnalysisIndicators.rsi ? ` <div class="indicator-item"><span class="label">RSI (14)</span><span class="value">${asset.indicators?.rsi?.toFixed(2) ?? 'N/A'}</span></div>` : ''}
-                ${state.settings.cryptoAnalysisIndicators.macd ? ` <div class="indicator-item"><span class="label">MACD Hist.</span><span class="value ${asset.indicators?.macd?.histogram > 0 ? 'value-positive' : 'value-negative'}">${asset.indicators?.macd?.histogram?.toFixed(5) ?? 'N/A'}</span></div>` : ''}
-                ${state.settings.cryptoAnalysisIndicators.ema ? ` <div class="indicator-item"><span class="label">EMA (50)</span><span class="value">$${formatPrice(asset.indicators?.ema)}</span></div>` : ''}
-                ${state.settings.cryptoAnalysisIndicators.volume ? ` <div class="indicator-item"><span class="label">Hacim (24s)</span><span class="value">$${formatVolume(asset.indicators?.volume)}</span></div>` : ''}
-            </div>
-        `;
-        container.appendChild(card);
-    });
-}
-
 function renderIndicatorFilters() {}
 
 function renderDictionary() {}
@@ -988,50 +866,6 @@ function renderDnaProfiles(profiles, containerId) {
     });
     container.innerHTML = '';
     container.appendChild(gridContainer);
-}
-
-function renderScannerResults(groupedMatches) {
-    const container = document.getElementById('scannerResultsTable');
-    if (!container) return;
-    if (!groupedMatches || Object.keys(groupedMatches).length === 0) {
-        container.innerHTML = `<div class="scanner-no-results">Aktif profillerinize uyan bir eşleşme anlık olarak bulunamadı. Piyasa koşulları değiştikçe tarama devam ediyor...</div>`;
-        return;
-    }
-    let html = '';
-    for (const coin in groupedMatches) {
-        const data = groupedMatches[coin];
-        const coinSymbol = coin.replace('USDT', '');
-        const allMatches = data.matches;
-        if (allMatches.length === 0) continue;
-        const matchesHtml = allMatches.map(match => `
-            <div class="scanner-profile-match">
-                <div class="profile-info">
-                    <span class="profile-name">${match.profileName}</span>
-                    <span class="profile-timeframe">${match.timeframe}</span>
-                </div>
-                <div class="profile-score-container">
-                    <div class="score-bar" style="width: ${match.score}%;"></div>
-                    <span class="score-text">${match.score}</span>
-                </div>
-            </div>
-        `).join('');
-        html += `
-            <div class="scanner-coin-card">
-                <div class="scanner-card-header">
-                    <h4>${coinSymbol}</h4>
-                    <span style="font-size: 1rem; font-weight: 600;">$${formatPrice(data.price)}</span>
-                </div>
-                <div class="scanner-card-body">
-                    ${matchesHtml}
-                </div>
-            </div>
-        `;
-    }
-    if (html === '') {
-        container.innerHTML = `<div class="scanner-no-results">Taranacak aktif profil bulunamadı veya veri alınamadı.</div>`;
-        return;
-    }
-    container.innerHTML = `<div class="scanner-results-grid">${html}</div>`;
 }
 
 function renderDnaBacktestResults(data, profileId) {
