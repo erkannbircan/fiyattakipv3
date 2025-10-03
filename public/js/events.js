@@ -155,9 +155,6 @@ function setupTrackerPageEventListeners() {
     setupCoinManagerEventListeners(trackerPageEl);
     setupReportEventListeners(trackerPageEl);
     setupStrategyDiscoveryListeners(trackerPageEl);
-    setupAiPageActionListeners(trackerPageEl);
-    setupPivotPageActionListeners(trackerPageEl);
-    setupScannerEventListeners(trackerPageEl);
 }
 
 // Bu fonksiyon artık sayfalar arası geçişle ilgili değil,
@@ -176,17 +173,6 @@ function setupTabEventListeners(parentElement) {
             link.classList.add('active');
         }
     });
-
-    // Sayfaya özel işlemleri burada kontrol edebiliriz.
-if (currentPage === 'tarama' || window.location.pathname.endsWith('/tarama.html')) {
-  const toggle = document.getElementById('toggleAutoScanner');
-  if (toggle && toggle.checked) {
-    toggleAutoScanner(true);
-    console.log("Canlı tarayıcı sayfasına girildi, otomatik tarama başlatıldı.");
-  } else {
-    updateScannerStatusUI('stopped');
-  }
-}
 
 // 2) Sinyal-performans sayfası
 if (currentPage === 'sinyal-performans' || window.location.pathname.endsWith('/sinyal-performans.html')) {
@@ -497,36 +483,6 @@ function setupCoinManagerEventListeners(parentElement) {
     });
 }
 
-function setupAiPageActionListeners(parentElement) {
-    parentElement.addEventListener('click', async (e) => {
-        const target = e.target;
-        const filterButton = target.closest('#strategyPresetFilters button, #cryptoIntervalFilters button');
-        if (filterButton && !filterButton.classList.contains('active')) {
-            const parent = filterButton.parentElement;
-            parent.querySelector('.active')?.classList.remove('active');
-            filterButton.classList.add('active');
-            return;
-        }
-        if (target.closest('#updateCryptoAnalysisBtn')) {
-            await updateAnalysisSettings();
-            return;
-        }
-
-        // --- YENİ EKLENEN BLOK ---
-        if (target.closest('#analyzeAllCryptoBtn')) {
-            // Analiz edilecek veriyi state'den alıyoruz (sadece ilk 5 tanesi, çok uzun sürmemesi için)
-            const dataForAnalysis = state.allCryptoData.slice(0, 5);
-            if (dataForAnalysis.length > 0) {
-                await analyzeWithGemini(dataForAnalysis);
-            } else {
-                showNotification("Analiz edilecek veri bulunamadı.", false);
-            }
-            return;
-        }
-        // --- BİTİŞ ---
-    });
-}
-
 function setupStrategyDiscoveryListeners(parentElement) {
   
     // --- YENİ: Ayar değişikliklerini dinleyen fonksiyon ---
@@ -744,33 +700,6 @@ if (saveBtn) {
 
   // Sayfa ilk yüklendiğinde akıllı önerileri hesapla ve göster
   updateHintsOnTheFly();
-}
-
-
-function setupPivotPageActionListeners(parentElement) {
-    parentElement.addEventListener('click', async (e) => {
-        const target = e.target;
-        const pivotFilterBtn = target.closest('#cryptoPivotFilters button');
-        if (pivotFilterBtn && !pivotFilterBtn.classList.contains('active')) {
-            state.settings.cryptoPivotFilter = pivotFilterBtn.dataset.filter;
-            await state.userDocRef.update({ 'settings.cryptoPivotFilter': state.settings.cryptoPivotFilter });
-            document.querySelector('#cryptoPivotFilters button.active')?.classList.remove('active');
-            pivotFilterBtn.classList.add('active');
-            renderSupportResistance();
-            return;
-        }
-    });
-}
-
-function setupScannerEventListeners(parentElement) {
-    const scannerContent = document.getElementById('live-scanner-content');
-    if (scannerContent) {
-        scannerContent.addEventListener('change', (e) => {
-            if (e.target.matches('#toggleAutoScanner')) {
-                toggleAutoScanner(e.target.checked);
-            }
-        });
-    }
 }
 
 function setupSaveSettingsButtonListener() {
@@ -997,10 +926,6 @@ if (typeof setupPanelEventListeners === 'function')
       window.setupAiPageActionListeners = window.setupAiPageActionListeners || setupAiPageActionListeners;
     if (typeof setupStrategyDiscoveryListeners === 'function')
       window.setupStrategyDiscoveryListeners = window.setupStrategyDiscoveryListeners || setupStrategyDiscoveryListeners;
-    if (typeof setupPivotPageActionListeners === 'function')
-      window.setupPivotPageActionListeners = window.setupPivotPageActionListeners || setupPivotPageActionListeners;
-    if (typeof setupScannerEventListeners === 'function')
-      window.setupScannerEventListeners = window.setupScannerEventListeners || setupScannerEventListeners;
     if (typeof setupSaveSettingsButtonListener === 'function')
       window.setupSaveSettingsButtonListener = window.setupSaveSettingsButtonListener || setupSaveSettingsButtonListener;
     if (typeof setupUpdateAnalysisButtonListener === 'function')
