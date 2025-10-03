@@ -16,15 +16,6 @@ const firebaseConfig = {
     appId: "1:440839843277:web:2c9c15e4a103e8b2f2e884"
 };
 
-const STRATEGY_PRESETS = {
-    momentum: { name: '⚡ Momentum', indicators: { rsi: true, stochRsi: true, macd: true, volume: true, sma: false, ema: false, ichimoku: false, bollinger: false, atr: false, fibonacci: false } },
-    trend: { name: '📈 Trend', indicators: { ema: true, sma: true, ichimoku: true, macd: true, adx: true, rsi: false, stochRsi: false, bollinger: false, volume: false, atr: false, fibonacci: false } },
-    volatility: { name: '🌊 Volatilite', indicators: { bollinger: true, atr: true, volume: true, rsi: false, stochRsi: false, macd: false, sma: false, ema: false, ichimoku: false, fibonacci: false } },
-    all: { name: '⭐ Kapsamlı', indicators: { rsi: true, macd: true, ema: true, bollinger: true, fibonacci: true, ichimoku: true, volume: true, stochRsi: true, sma: true, atr: true } },
-};
-
-const AVAILABLE_INDICATORS = { ema: "EMA", sma: "SMA", rsi: "RSI", macd: "MACD", bollinger: "Bollinger Bantları", stochRsi: "Stochastic RSI", volume: "Hacim (24s)", atr: "ATR", ichimoku: "Ichimoku Cloud", fibonacci: "Fibonacci" };
-
 const translations = {
     tr: {
         login_prompt: "Devam etmek için giriş yapın veya yeni hesap oluşturun.", email: "E-posta", password: "Şifre", login: "Giriş Yap", signup: "Kayıt Ol", logout: "Çıkış Yap", app_title: "Fiyat Takipçisi", add: "Ekle", refresh: "Yenile", settings: "Ayarlar", coin: "Coin", price: "Fiyat", delete: "Sil", last_update: "Son güncelleme", general_settings: "Genel Ayarlar", language: "Dil", auto_refresh: "Otomatik Yenileme (Liste/Rapor)", refresh_interval: "Yenileme Aralığı (sn)", column_settings: "Kolon Ayarları", color_settings: "Renk Ayarları", high_positive_color: "Yüksek Pozitif Renk", low_positive_color: "Düşük Pozitif Renk", save_settings: "Ayarları Kaydet", saved: "Kaydedildi!", settings_saved: "Ayarlar başarıyla kaydedildi.", analysis_updated: "Analiz başarıyla güncellendi.", limit_exceeded: "Limit aşıldı!",
@@ -43,12 +34,10 @@ function getDefaultSettings() {
         telegramChatId: '',
         columns: { 1: { name: '1G', days: 1, threshold: 2 }, 2: { name: '7G', days: 7, threshold: 5 }, 3: { name: '30G', days: 30, threshold: 10 } },
         colors: { high: '#26a69a', low: '#f59e0b' },
-        cryptoPivotFilter: 'all',
-        cryptoAnalysisInterval: '4h',
-        cryptoAnalysisIndicators: { ema: true, rsi: true, macd: true, bollinger: true, volume: false, sma: false, stochRsi: false, atr: false, ichimoku: false, fibonacci: false },
         chartStates: {},
         trackedReportIds: [],
-      chartIndicators: {}, // ← BU SATIRI EKLEYİN
+      chartIndicators: {},
         chartDrawings: {}  
     };
 }
+
