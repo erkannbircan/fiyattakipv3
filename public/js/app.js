@@ -69,11 +69,12 @@ initializeAuthListener();
 function initializeAuthListener() {
     console.log('Adım 2: initializeAuthListener fonksiyonu başladı.'); // <-- BU SATIRI EKLE
     state.firebase.auth.onAuthStateChanged(async user => {
-        console.log('Adım 3: Auth durumu değişti, kontrol ediliyor...'); // <-- BU SATIRI EKLE
+        // console.log('Adım 3: Auth durumu değişti, kontrol ediliyor...'); // <-- Silebilirsin
         if (user) {
-            console.log('Sonuç: Kullanıcı GİRİŞ YAPMIŞ durumda.'); // <-- BU SATIRI EKLE
+            // console.log('Sonuç: Kullanıcı GİRİŞ YAPMIŞ durumda.'); // <-- Silebilirsin
+            showPage('tracker-page'); // <-- PERDEYİ AÇAN KOMUT BU!
             state.user = user;
-      state.userDocRef = state.firebase.db.collection('users').doc(user.uid);
+            state.userDocRef = state.firebase.db.collection('users').doc(user.uid);
             try {
                 const doc = await state.userDocRef.get();
                 let userData = doc.data();
