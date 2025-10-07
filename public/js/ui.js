@@ -345,7 +345,8 @@ function renderPortfolioTabs(containerId) {
         const tab = document.createElement('div');
         tab.className = 'portfolio-tab';
         tab.textContent = name;
-        tab.dataset.portfolioName = name;
+        // DÜZELTME: 'dataset.portfolioName' yerine 'dataset.name' kullanarak events.js ile uyumlu hale getirildi.
+        tab.dataset.name = name; 
         if (name === state.activePortfolio) {
             tab.classList.add('active');
         }
@@ -448,7 +449,7 @@ function showChart(pair) {
             details: true,
             studies: savedStudies,
             disabled_features: ["use_localstorage_for_settings"],
-            saved_data: state.settings?.chartDrawings?.[pair] || {}, // Çizimleri de kaydet
+            saved_data: state.settings?.chartDrawings?.[pair] || {},
             loading_screen: { backgroundColor: "#1e222d" },
             overrides: {
                 "mainSeriesProperties.showPriceLine": true,
