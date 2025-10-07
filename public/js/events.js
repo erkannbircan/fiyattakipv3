@@ -11,7 +11,6 @@ if (typeof window.renderDictionary !== 'function') { window.renderDictionary = f
 if (typeof window.renderIndicatorFilters !== 'function') { window.renderIndicatorFilters = function() { /* no-op */ }; }
 if (typeof window.renderSupportResistance !== 'function') { window.renderSupportResistance = function() {}; }
 
-
 // ===================================================================================
 // BÖLÜM 1: GİRİŞ SAYFASI İÇİN OLAY DİNLEYİCİLERİ
 // ===================================================================================
@@ -80,38 +79,36 @@ function initializeEventListeners() {
  * Her sayfada bulunan ortak elementleri (header, paneller vb.) dinler.
  */
 function setupSharedEventListeners() {
-    // Panel ve Modal Yönetimi (Ayarlar, Kapatma Butonları)
     document.body.addEventListener('click', (e) => {
-        if (e.target.closest('#settingsBtn')) togglePanel('settingsPanel');
-        if (e.target.closest('.panel .close-btn') || e.target.id === 'modalOverlay') closeAllPanels();
-    });
+        // Panel ve Modal Yönetimi
+        if (e.target.closest('#settingsBtn')) {
+            // 'ui.js' dosyasındaki togglePanel fonksiyonunu çağırır
+            if (typeof togglePanel === 'function') togglePanel('settingsPanel');
+        }
+        if (e.target.closest('.panel .close-btn') || e.target.id === 'modalOverlay') {
+            if (typeof closeAllPanels === 'function') closeAllPanels();
+        }
 
-    // Ayarlar Paneli İçindeki Butonlar
-    const settingsPanel = document.getElementById('settingsPanel');
-    if (settingsPanel) {
-        settingsPanel.querySelector('#saveSettingsBtn')?.addEventListener('click', saveSettings);
-        settingsPanel.querySelector('#sendTelegramTestBtn')?.addEventListener('click', sendTestTelegramMessage);
-    }
-    
-    // Oturum İşlemleri
-    document.getElementById('logoutBtn')?.addEventListener('click', () => state.firebase?.auth?.signOut());
-    
-    // Portföy / Liste Yönetimi
-    document.body.addEventListener('click', (e) => {
-        if (e.target.closest('#newPortfolioBtn')) showPortfolioModal('new');
-        if (e.target.closest('#renamePortfolioBtn')) showPortfolioModal('rename');
-        if (e.target.closest('#deletePortfolioBtn')) handleDeletePortfolio();
-    });
-    document.getElementById('savePortfolioBtn')?.addEventListener('click', handlePortfolioSave);
-    
-    // Portföy sekmeleri
-    document.getElementById('portfolioTabs')?.addEventListener('click', (e) => {
-        const tab = e.target.closest('.portfolio-tab');
-        if (tab && !tab.classList.contains('active')) setActivePortfolio(tab.dataset.name);
-    });
+        // Oturum İşlemleri (Çıkış Yap)
+        if (e.target.closest('#logoutBtn')) {
+            state.firebase?.auth?.signOut();
+        }
 
-    // Açılır/kapanır başlıklar (Collapsible headers)
-    document.body.addEventListener('click', (e) => {
+        // Portföy / Liste Yönetimi
+        if (e.target.closest('#newPortfolioBtn')) {
+            if (typeof showPortfolioModal === 'function') showPortfolioModal('new');
+        }
+        if (e.target.closest('#renamePortfolioBtn')) {
+            if (typeof showPortfolioModal === 'function') showPortfolioModal('rename');
+        }
+        if (e.target.closest('#deletePortfolioBtn')) {
+            if (typeof handleDeletePortfolio === 'function') handleDeletePortfolio();
+        }
+        if (e.target.closest('#savePortfolioBtn')) {
+            if (typeof handlePortfolioSave === 'function') handlePortfolioSave();
+        }
+        
+        // Açılır/kapanır başlıklar (Collapsible headers)
         const collapsibleHeader = e.target.closest('.collapsible-header');
         if (collapsibleHeader) {
             const content = collapsibleHeader.nextElementSibling;
@@ -121,6 +118,24 @@ function setupSharedEventListeners() {
             }
         }
     });
+
+    // Ayarlar Paneli İçindeki Butonlar
+    const settingsPanel = document.getElementById('settingsPanel');
+    if (settingsPanel) {
+        settingsPanel.querySelector('#saveSettingsBtn')?.addEventListener('click', saveSettings);
+        settingsPanel.querySelector('#sendTelegramTestBtn')?.addEventListener('click', sendTestTelegramMessage);
+    }
+    
+    // Portföy sekmeleri
+    const portfolioTabs = document.getElementById('portfolioTabs');
+    if(portfolioTabs){
+        portfolioTabs.addEventListener('click', (e) => {
+            const tab = e.target.closest('.portfolio-tab');
+            if (tab && !tab.classList.contains('active')) {
+                if (typeof setActivePortfolio === 'function') setActivePortfolio(tab.dataset.name);
+            }
+        });
+    }
 }
 
 /**
@@ -162,12 +177,12 @@ function setupCryptoPageListeners() {
     });
 
     // Tablo Sıralama
-    const sortableHeader = parentElement.querySelector('#crypto-content');
-    if(sortableHeader) {
-        sortableHeader.addEventListener('click', (e) => {
-            const header = e.target.closest('th.sortable');
-            if (header) {
-                const key = header.dataset.sortKey;
+    const cryptoContent = parentElement.querySelector('#crypto-content');
+    if (cryptoContent) {
+        cryptoContent.addEventListener('click', (e) => {
+            const sortableHeader = e.target.closest('th.sortable');
+            if (sortableHeader) {
+                const key = sortableHeader.dataset.sortKey;
                 if (state.currentSort.key !== key) {
                     state.currentSort.key = key;
                     state.currentSort.order = 'asc';
