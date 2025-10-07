@@ -173,7 +173,81 @@
             </div>
         </section>
                                 
-    <div id="settingsPanel" class="panel"> </div>
+   <div id="settingsPanel" class="panel">
+  <div class="panel-header">
+    <h3 data-lang="settings">Ayarlar</h3>
+    <button class="panel-btn close-btn" onclick="closeAllPanels()">×</button>
+  </div>
+  <div class="panel-content">
+    <div class="settings-section">
+      <h4 data-lang="general_settings">Genel Ayarlar</h4>
+      <div class="setting-item">
+        <label data-lang="language">Dil</label>
+        <select id="langSelect">
+          <option value="tr">Türkçe</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+      <div class="setting-item">
+        <label data-lang="auto_refresh">Otomatik Yenileme (Liste/Rapor)</label>
+        <input type="checkbox" id="autoRefreshToggle">
+      </div>
+      <div class="setting-item">
+        <label data-lang="refresh_interval">Yenileme Aralığı (sn)</label>
+        <input type="number" id="refreshInterval" min="10" step="10">
+      </div>
+
+      <div class="setting-item">
+        <label>Telegram Chat ID</label>
+        <input type="text" id="telegramChatIdInput" placeholder="123456789">
+        <button type="button" id="sendTelegramTestBtn" style="margin-left:8px;">Test</button>
+      </div>
+      <div class="telegram-info">
+        Telegram bildirimlerini almak için:
+        <ol style="padding-left:20px;margin:5px 0 0">
+          <li>Telegram’da <a href="https://t.me/fiyattakipv3_bot" target="_blank" rel="noopener noreferrer"><b>fiyattakipv3_bot</b></a> hesabını bulun.</li>
+          <li>Bota <code>/start</code> yazın.</li>
+          <li>Botun verdiği ID’yi yukarıdaki kutuya yapıştırın.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h4 data-lang="column_settings">Kolon Ayarları</h4>
+      <div class="setting-item"><label>Kolon 1 Adı</label><input type="text" id="col1_name_input"></div>
+      <div class="setting-item"><label>Gün Sayısı</label><input type="number" id="col1_days_input" min="1"></div>
+      <div class="setting-item"><label>Pozitif Eşik (%)</label><input type="number" id="col1_threshold_input" min="0"></div>
+      <hr>
+      <div class="setting-item"><label>Kolon 2 Adı</label><input type="text" id="col2_name_input"></div>
+      <div class="setting-item"><label>Gün Sayısı</label><input type="number" id="col2_days_input" min="1"></div>
+      <div class="setting-item"><label>Pozitif Eşik (%)</label><input type="number" id="col2_threshold_input" min="0"></div>
+      <hr>
+      <div class="setting-item"><label>Kolon 3 Adı</label><input type="text" id="col3_name_input"></div>
+      <div class="setting-item"><label>Gün Sayısı</label><input type="number" id="col3_days_input" min="1"></div>
+      <div class="setting-item"><label>Pozitif Eşik (%)</label><input type="number" id="col3_threshold_input" min="0"></div>
+    </div>
+
+    <div class="settings-section">
+      <h4 data-lang="color_settings">Renk Ayarları</h4>
+      <div class="setting-item">
+        <label data-lang="high_positive_color">Yüksek Pozitif Renk</label>
+        <div class="color-input-wrapper">
+          <input type="color" id="high_color_input">
+          <span class="color-preview" id="high_color_preview"></span>
+        </div>
+      </div>
+      <div class="setting-item">
+        <label data-lang="low_positive_color">Düşük Pozitif Renk</label>
+        <div class="color-input-wrapper">
+          <input type="color" id="low_color_input">
+          <span class="color-preview" id="low_color_preview"></span>
+        </div>
+      </div>
+    </div>
+
+    <button id="saveSettingsBtn" data-lang="save_settings">Ayarları Kaydet</button>
+  </div>
+</div>
     <div id="detailPanel" class="panel"> </div>
     <div id="chartPanel" class="panel"> </div>
     <div id="backtestPanel" class="panel"> </div>
