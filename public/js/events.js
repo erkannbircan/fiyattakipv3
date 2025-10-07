@@ -1,95 +1,45 @@
+// ---- GLOBAL ÇATI ----
+window.App = window.App || { version: 'v3.0.0', loaded: {}, guards: {}, log: (...args) => console.log('[App]', ...args) };
 
-// --- Failsafe guards (ensure functions exist even if ui.js loads later)
-window.updateAllTableRows     = window.updateAllTableRows     || function(){};
-window.renderDictionary       = window.renderDictionary       || function(){};
-window.renderIndicatorFilters = window.renderIndicatorFilters || function(){};
-window.renderSupportResistance= window.renderSupportResistance|| function(){};
+// ---- FALLBACK FONKSİYONLAR ----
+if (typeof window.showLoading !== 'function') { window.showLoading = function (button) { if (!button) return; button.dataset.originalHtml = button.innerHTML; button.innerHTML = '<div class="loading"></div>'; button.disabled = true; }; }
+if (typeof window.hideLoading !== 'function') { window.hideLoading = function (button) { if (!button) return; if (button.dataset.originalHtml) { button.innerHTML = button.dataset.originalHtml; } button.disabled = false; }; }
+if (typeof window.applySettingsToUI !== 'function') { window.applySettingsToUI = function () { window.App?.log?.('applySettingsToUI (fallback) çağrıldı.'); }; }
+if (typeof window.createCoinManager !== 'function') { window.createCoinManager = function () { /* no-op */ }; }
+if (typeof window.updateAllTableRows !== 'function') { window.updateAllTableRows = function() {}; }
+if (typeof window.renderDictionary !== 'function') { window.renderDictionary = function() { /* no-op */ }; }
+if (typeof window.renderIndicatorFilters !== 'function') { window.renderIndicatorFilters = function() { /* no-op */ }; }
+if (typeof window.renderSupportResistance !== 'function') { window.renderSupportResistance = function() {}; }
 
-// ---- GLOBAL ÇATI (her JS dosyasının en üstüne koy) ----
-window.App = window.App || {
-  // sürüm bilgisi bu tur için (elle güncelle)
-  version: 'v3.0.0-' + (window.App?.versionTag || ''),
-  loaded: {},
-  guards: {},
-  log: (...args) => console.log('[App]', ...args),
-};
-
-// --- Fallback: showLoading/hideLoading ui.js yüklenmeden çağrılırsa hata vermesin ---
-if (typeof window.showLoading !== 'function') {
-  window.showLoading = function (button) {
-    if (!button) return;
-    button.dataset.originalHtml = button.innerHTML;
-    button.innerHTML = '<div class="loading"></div>';
-    button.disabled = true;
-  };
-}
-if (typeof window.hideLoading !== 'function') {
-  window.hideLoading = function (button) {
-    if (!button) return;
-    if (button.dataset.originalHtml) {
-      button.innerHTML = button.dataset.originalHtml;
-    }
-    button.disabled = false;
-  };
-}
-
-// --- Fallback: applySettingsToUI tanımlı değilse çakılmasın ---
-if (typeof window.applySettingsToUI !== 'function') {
-  window.applySettingsToUI = function (settings) {
-    // Gerçek fonksiyon ui.js içinde olabilir; yüklenmediyse site çakılmasın
-    window.App?.log?.('applySettingsToUI (fallback): ayarlar şimdilik uygulanmadı');
-  };
-}
-if (typeof window.renderAllPortfolioTabs !== 'function') {
-  window.renderAllPortfolioTabs = function () { /* no-op */ };
-}
-if (typeof window.createCoinManager !== 'function') {
-  window.createCoinManager = function () { /* no-op */ };
-}
-// --- Fallback: renderIndicatorFilters tanımlı değilse girişte çakılmasın ---
-if (typeof window.renderIndicatorFilters !== 'function') {
-  window.renderIndicatorFilters = function() { /* no-op */ };
-}
-if (typeof window.renderDictionary !== 'function') {
-  window.renderDictionary = function() { /* no-op */ };
-}
-if (typeof window.updateAllTableRows !== 'function') {
-  // UI yüklenmeden bir çağrı gelirse uygulama düşmesin
-  window.updateAllTableRows = function() {};
-}
+// ===================================================================================
+// TEMEL OLAY DİNLEYİCİLERİ (HER SAYFADA ÇALIŞIR)
+// ===================================================================================
 
 function setupGlobalEventListeners() {
   document.body.addEventListener('click', async (e) => {
-    // 1) Panel kapat
-    if (e.target.closest('.close-btn') || e.target === document.getElementById('modalOverlay')) {
-  const chartPanel = document.getElementById('chartPanel');
-  if (chartPanel && chartPanel.classList.contains('show')) {
-    // Panel başlığından pariteyi al (örn. BTC → BTCUSDT)
-    const titleEl = document.getElementById('chartPanelTitle');
-    const pairFromTitle = titleEl?.textContent?.trim();
-    const pair = pairFromTitle ? `${pairFromTitle}USDT` : null;
-    if (pair) {
-      await saveChartState(pair);         // ✅ DOĞRU ARGÜMAN
+    // Panel kapatma
+    if (e.target.closest('.close-btn') || e.target.closest('.panel-close') || e.target === document.getElementById('modalOverlay')) {
+      const chartPanel = document.getElementById('chartPanel');
+      if (chartPanel && chartPanel.classList.contains('show')) {
+        const titleEl = document.getElementById('chartPanelTitle');
+        const pairFromTitle = titleEl?.textContent?.trim();
+        const pair = pairFromTitle ? `${pairFromTitle}USDT` : null;
+        if (pair) {
+          await saveChartState(pair);
+        }
+      }
+      closeAllPanels();
+      return;
     }
-  }
-  closeAllPanels();
-  return;
-}
 
-
-
-    // 2) Ayarlar aç (dişli buton ya da data-open-panel="settingsPanel")
-    if (
-      e.target.closest('#settingsBtn') ||                       // varsa id
-      e.target.closest('.btn-settings') ||                      // varsa class
-      e.target.closest('[data-open-panel="settingsPanel"]')     // data-attribute destek
-    ) {
+    // Ayarlar panelini açma
+    if (e.target.closest('#settingsBtn') || e.target.closest('[data-open-panel="settingsPanel"]')) {
       e.preventDefault();
       showPanel('settingsPanel');
       return;
     }
 
-    // 3) Genel panel açıcı: data-open-panel="panelId"
+    // Genel panel açıcı
     const opener = e.target.closest('[data-open-panel]');
     if (opener) {
       const panelId = opener.getAttribute('data-open-panel');
@@ -97,7 +47,6 @@ function setupGlobalEventListeners() {
     }
   });
 }
-
 
 function setupAuthEventListeners() {
     const loginBtn = document.getElementById('loginBtn');
@@ -145,6 +94,10 @@ function setupAuthEventListeners() {
     }
 }
 
+// ===================================================================================
+// GENEL AMAÇLI VE SAYFA YÖNLENDİRİCİ DİNLEYİCİLER
+// ===================================================================================
+
 function setupTrackerPageEventListeners() {
     const trackerPageEl = document.getElementById('tracker-page');
     if (!trackerPageEl) return;
@@ -155,207 +108,94 @@ function setupTrackerPageEventListeners() {
     setupCoinManagerEventListeners(trackerPageEl);
     setupReportEventListeners(trackerPageEl);
     setupStrategyDiscoveryListeners(trackerPageEl);
+    setupBacktestPageEventListeners();
 }
 
-// Bu fonksiyon artık sayfalar arası geçişle ilgili değil,
-// sadece belirli sayfalara özel işlemleri (tarayıcıyı başlatma gibi) tetiklemek için var.
 function setupTabEventListeners(parentElement) {
-    // Navigasyon linklerinin "active" durumunu güncelleyelim.
-    const currentPage = window.location.pathname.split('/').pop().replace('.html', '');
+    const currentPage = window.location.pathname.split('/').pop().replace('.html', '') || 'index';
     const navLinks = document.querySelectorAll('#main-nav .tab-link');
     
     navLinks.forEach(link => {
-        // "index" anasayfa olduğu için özel bir kontrol yapıyoruz.
         const linkPage = link.dataset.page;
-        if (linkPage === 'index' && (currentPage === '' || currentPage === 'index')) {
-            link.classList.add('active');
-        } else if (linkPage !== 'index' && currentPage === linkPage) {
-            link.classList.add('active');
-        }
+        link.classList.toggle('active', linkPage === currentPage);
     });
 
-// 2) Sinyal-performans sayfası
-if (currentPage === 'sinyal-performans' || window.location.pathname.endsWith('/sinyal-performans.html')) {
-  if (typeof loadAlarmReports === 'function') {
-    loadAlarmReports();
-  }
+    if (currentPage === 'sinyal-performans' && typeof loadAlarmReports === 'function') {
+      loadAlarmReports();
+    }
 }
-}
-  
-       
-// events.js dosyasının yaklaşık 203. satırı civarında
 
 function setupPanelEventListeners(parentElement) {
-  // Tüm tıklamalar için TEK delegasyon dinleyicisi
-  parentElement.addEventListener('click', async (e) => { // <-- DEĞİŞİKLİK BURADA
-    if (e.target.closest('#settingsBtn')) {
-  (async () => {
-    try {
-      const db = state.firebase?.firestore || state.firebase?.db;
-      if (db && !state.settings) {
-        const ref = state.userDocRef 
-          || (state.user?.uid ? db.collection('users').doc(state.user.uid) : null);
-        if (ref) {
-          const snap = await ref.get();
-          const data = snap.exists ? (snap.data() || {}) : {};
-          if (data.settings) {
-            state.settings = data.settings;
-          }
-        }
-      }
-      applySettingsToUI(state.settings || {});
-      showPanel('settingsPanel');
-    } catch (e) {
-      console.warn('Ayarlar yüklenemedi:', e);
-      showPanel('settingsPanel');
+  parentElement.addEventListener('click', async (e) => {
+    // AYARLARI KAYDET BUTONU (MERKEZİ VE DOĞRU)
+    if (e.target.closest('#saveSettingsBtn')) {
+      e.preventDefault();
+      saveSettings(); // app.js'teki ana fonksiyonu çağırır
+      return;
     }
-  })();
-  return;
-}
 
+    // TELEGRAM TEST BUTONU (MERKEZİ VE DOĞRU)
+    if (e.target.closest('#sendTelegramTestBtn')) {
+      e.preventDefault();
+      try {
+        const input = document.getElementById('telegramChatIdInput');
+        const chatId = (input?.value || '').trim();
+        if (!chatId) {
+          showNotification('Lütfen "Telegram Chat ID" alanına bir sayı girin.', false);
+          return;
+        }
+        const callSendTest = state.firebase.functions.httpsCallable('sendTestNotification');
+        await callSendTest({ chatId, text: '✅ Telegram test: Merhaba!' });
+        showNotification('Test mesajı gönderildi.', true);
+      } catch (error) {
+        console.error('Telegram test gönderilemedi:', error);
+        showNotification('Telegram test gönderimi başarısız. Konsolu kontrol edin.', false);
+      }
+      return;
+    }
+
+    // PORTFÖY KAYDET BUTONU
     if (e.target.closest('#savePortfolioBtn')) {
       handlePortfolioSave();
       return;
     }
-// Ayarları kaydet (Telegram Chat ID dahil)
-if (e.target.closest('#saveSettingsBtn') || e.target.closest('[data-action="save-settings"]')) {
-  e.preventDefault();
-  try {
-    const db = state.firebase?.firestore || state.firebase?.db;
-    // Kullanıcı belgesi
-    const docRef = state.userDocRef
-      || (state.user?.uid ? db.collection('users').doc(state.user.uid) : null);
 
-    if (!docRef) throw new Error('Kullanıcı belgesi bulunamadı.');
-
-    // Formdan değerleri oku
-    const chatInput = document.getElementById('telegramChatIdInput');
-    const chatId = chatInput ? String(chatInput.value || '').trim() : '';
-
-    // Mevcut settings ile birleştir
-    const prev = state.settings || {};
-    const next = {
-      ...prev,
-      telegramChatId: chatId || null
-    };
-
-    await docRef.set({ settings: next }, { merge: true });
-
-    // Yerel state'i güncelle & UI'ya bas
-    state.settings = next;
-    if (typeof applySettingsToUI === 'function') {
-      applySettingsToUI(state.settings);
-    }
-    // küçük geri bildirim
-    if (chatInput) chatInput.classList.add('saved-ok');
-    setTimeout(() => chatInput && chatInput.classList.remove('saved-ok'), 800);
-
-    console.log('[Settings] Kaydedildi:', next);
-  } catch (err) {
-    console.error('[Settings] Kaydetme hatası:', err);
-    alert('Ayarlar kaydedilemedi: ' + (err?.message || err));
-  }
-  return;
-}
-
-
-
-    // Açılır/Kapanır başlıklar
+    // AÇILIR/KAPANIR BAŞLIKLAR
     const collapsibleHeader = e.target.closest('.collapsible-header');
     if (collapsibleHeader) {
       const content = collapsibleHeader.nextElementSibling;
-      if (content) {
+      if(content) {
         collapsibleHeader.classList.toggle('open');
         content.classList.toggle('open');
       }
       return;
     }
   });
-
-  // Ayarlar butonuna ikincil (idempotent) dinleyici — iki kez eklenmesin
-  const settingsBtn = document.getElementById('settingsBtn');
-  if (settingsBtn && !settingsBtn.dataset.listenerAttached) {
-    settingsBtn.addEventListener('click', () => showPanel('settingsPanel'));
-    settingsBtn.dataset.listenerAttached = 'true';
-  }
-
-  // Alarm panelindeki checkbox’lar: kutu kapatma/açma
-  const alarmSettingsPanel = document.getElementById('alarmSettingsPanel');
-  if (alarmSettingsPanel) {
-    alarmSettingsPanel.addEventListener('change', (e) => {
-      if (e.target.matches('[data-condition]')) {
-        const isChecked = e.target.checked;
-        const parentBox = e.target.closest('.alarm-condition-box');
-        if (parentBox) {
-          parentBox.dataset.disabled = String(!isChecked);
-        }
-      }
-    });
-  }
 }
 
-function setupActionEventListeners() {
-    // Check if the page is fully loaded before attaching listeners
-    if (document.readyState !== 'complete') {
-        window.addEventListener('load', setupActionEventListeners);
-        return;
-    }
-    const eventsTarget =
-    document.getElementById('eventsTarget') || document.body;
-    if (!eventsTarget) {
-        console.warn('eventsTarget elementi bulunamadi.');
-        return;
-    }
-    
-    eventsTarget.addEventListener('click', async (e) => {   // ✅ async eklendi
-  const target = e.target;
-        
-        // --- Tablo Değişim Yüzdesi Tıklama Olayı (clickable-pct) ---
-        const clickablePct = target.closest('.clickable-pct');
-        if (clickablePct) {
-            const { col, pair } = clickablePct.dataset;
-            const assetData = state.allCryptoData.find(c => c.pair === pair);
-            
-            const detailTitle = document.getElementById('detailPanelTitle');
-            const detailContent = document.getElementById('detailPanelContent');
-            
-            if (!detailTitle || !detailContent) {
-                console.error('Detail panel elements not found!');
-                return;
-            }
+function setupActionEventListeners(parentElement) {
+    parentElement.addEventListener('click', async (e) => {
+        const target = e.target;
 
-            if (assetData && !assetData.error) {
-                const colData = assetData[`col${col}`];
-                if (colData && typeof colData.pct === 'number') {
-                    const periodName = state.settings.columns[col].name;
-                    const pctChange = colData.pct.toFixed(2);
-                    
-                    detailTitle.textContent = `${assetData.pair.replace('USDT', '')} - ${periodName} Değişim Detayı`;
-                    detailContent.innerHTML = `
-                        <div class="detail-item">
-                            <span>Değişim:</span>
-                            <span class="${colData.pct >= 0 ? 'positive' : 'negative'}">${pctChange}%</span>
-                        </div>
-                        <div class="detail-item">
-                            <span>Gün Sayısı:</span>
-                            <span>${state.settings.columns[col].days} gün</span>
-                        </div>
-                        <div class="detail-item">
-                            <span>Eşik Değeri:</span>
-                            <span>${state.settings.columns[col].threshold}%</span>
-                        </div>
-                        <div class="detail-item">
-                            <span>Hesaplanma Zamanı:</span>
-                            <span>${new Date().toLocaleString('tr-TR')}</span>
-                        </div>
-                    `;
-                    showPanel('detailPanel');
-                }
-            }
+        // Çıkış Yap
+        if (target.closest('#logoutBtn')) {
+            e.preventDefault();
+            try { await state.firebase?.auth?.signOut(); } catch (err) { console.error('Çıkış hatası:', err); }
             return;
         }
 
-        // --- Kripto Tablosu Başlık Sıralama Olayı (sortable) ---
+        // Portföy Modalı
+        if (target.closest('#newPortfolioBtn') || target.closest('#renamePortfolioBtn')) {
+            const action = target.closest('#renamePortfolioBtn') ? 'rename' : 'new';
+            showPortfolioModal(action);
+            return;
+        }
+        if (target.closest('#deletePortfolioBtn')) {
+            handleDeletePortfolio();
+            return;
+        }
+        
+        // Tablo Sıralama
         const sortableHeader = target.closest('#crypto-content th.sortable');
         if (sortableHeader) {
             const key = sortableHeader.dataset.sortKey;
@@ -364,80 +204,46 @@ function setupActionEventListeners() {
                 state.currentSort.order = 'asc';
             } else {
                 state.currentSort.order = state.currentSort.order === 'asc' ? 'desc' : 'default';
-                if (state.currentSort.order === 'default') {
-                    state.currentSort.key = null;
-                }
+                if (state.currentSort.order === 'default') state.currentSort.key = null;
             }
             sortAndRenderTable();
-            return;
-        }
-        
-        // --- Portföy Tablosu Başlık Sıralama Olayı (sortable) ---
-        const portfolioSortableHeader = target.closest('#portfolio-content th.sortable');
-        if (portfolioSortableHeader) {
-            const key = portfolioSortableHeader.dataset.sortKey;
-            if (state.currentPortfolioSort.key !== key) {
-                state.currentPortfolioSort.key = key;
-                state.currentPortfolioSort.order = 'asc';
-            } else {
-                state.currentPortfolioSort.order = state.currentPortfolioSort.order === 'asc' ? 'desc' : 'default';
-                if (state.currentPortfolioSort.order === 'default') {
-                    state.currentPortfolioSort.key = null;
-                }
-            }
-            renderPortfolio();
-            return;
-        }
-
-const logoutLink = target.closest('#logoutBtn');
-if (logoutLink) {
-  e.preventDefault();
-  try {
-    await state.firebase?.auth?.signOut();
-  } catch (err) {
-    console.error('Çıkış hatası:', err);
-    alert('Çıkış yapılamadı. Lütfen tekrar deneyin.');
-  }
-  return;
-}
-
-// 2) Eski loginBtn davranışı (hala varsa)
-const loginBtn = target.closest('#loginBtn');
-if (loginBtn) {
-  const action = loginBtn.dataset.action;
-  if (action === 'logout') {
-    try {
-      await state.firebase?.auth?.signOut();
-    } catch (err) {
-      console.error('Çıkış hatası:', err);
-      alert('Çıkış yapılamadı. Lütfen tekrar deneyin.');
-    }
-  }
-  return;
-}
-
-
-        // --- Portföy Görüntüleme Butonu (portfolioBtn) ---
-        const portfolioBtn = target.closest('#portfolioBtn');
-        if (portfolioBtn) {
-            showPanel('portfolioModal');
-            return;
-        }
-      
-        // --- Geri Butonu (backBtn) ---
-        const backBtn = target.closest('.back-btn');
-        if (backBtn) {
-            const panelId = backBtn.dataset.targetPanel;
-            hidePanel(panelId);
             return;
         }
     });
 }
 
+function setupCoinManagerEventListeners(parentElement) {
+    parentElement.addEventListener('click', (e) => {
+        const addBtn = e.target.closest('.add-coin-btn');
+        if (addBtn) { 
+            handleAddCoin(addBtn.dataset.listName); 
+            return; 
+        }
+        const removeBtn = e.target.closest('.remove-coin-tag, .remove-btn');
+        if (removeBtn) { 
+            handleRemoveCoin(removeBtn.dataset.listName, removeBtn.dataset.pair); 
+            return; 
+        }
+    });
+    parentElement.addEventListener('keypress', (e) => {
+        const input = e.target.closest('.new-coin-input');
+        if (input && e.key === 'Enter') { 
+            handleAddCoin(input.dataset.listName); 
+        }
+    });
+}
+
+// ===================================================================================
+// SAYFAYA ÖZEL OLAY DİNLEYİCİLERİ
+// ===================================================================================
+
 function setupReportEventListeners(parentElement) {
     parentElement.addEventListener('click', async (e) => {
         const target = e.target;
-        if (target.closest('#autoRefreshReportsToggle')) { toggleReportsAutoRefresh(); return; }
+        if (target.closest('#autoRefreshReportsToggle')) { 
+            toggleReportsAutoRefresh(); 
+            return; 
+        }
         if (target.closest('.remove-report-btn')) {
             const reportIdToRemove = target.closest('.remove-report-btn').dataset.reportId;
             state.trackedReports = state.trackedReports.filter(id => id !== reportIdToRemove);
@@ -459,56 +265,29 @@ function setupReportEventListeners(parentElement) {
     }
 }
 
-function setupCoinManagerEventListeners(parentElement) {
-    parentElement.addEventListener('click', (e) => {
-        const addBtn = e.target.closest('.add-coin-btn');
-        if (addBtn) { handleAddCoin(addBtn.dataset.listName); return; }
-        const removeBtn = e.target.closest('.remove-coin-tag, .remove-btn');
-        if (removeBtn) { handleRemoveCoin(removeBtn.dataset.listName, removeBtn.dataset.pair); return; }
-    });
-    parentElement.addEventListener('keypress', (e) => {
-        const input = e.target.closest('.new-coin-input');
-        if (input && e.key === 'Enter') { handleAddCoin(input.dataset.listName); }
-    });
-}
-
 function setupStrategyDiscoveryListeners(parentElement) {
-  
-    // --- YENİ: Ayar değişikliklerini dinleyen fonksiyon ---
-     const updateHintsOnTheFly = async () => {
+    const updateHintsOnTheFly = async () => {
         const timeframe = document.getElementById('signalAnalysisTimeframe')?.value;
         const days = parseInt(document.getElementById('signalAnalysisPeriod')?.value);
-        // Sadece 'auto' seçiliyken lookahead önerisini göstermek için
-        const fixedLookaheadPreset = document.getElementById('fixedLookaheadPreset')?.value;
 
         if (timeframe && days) {
             const smart = await computeSmartDiscoveryHints({ timeframe, days });
-            // Lookahead önerisini sadece "Akıllı" seçeneği aktifse göstermek için koşul ekliyoruz
             updateSmartBadges(smart); 
             
-            // Eğer lookahead için 'Akıllı' seçilmişse ve öneri varsa, bunu input'a da yazalım (eğer akıllı checkbox işaretliyse)
             const useSmartLookback = document.getElementById('useSmartLookback')?.checked;
             if (useSmartLookback && smart?.lookback) {
                 document.getElementById('signalLookbackCandles').value = smart.lookback;
             }
-            if (fixedLookaheadPreset === 'auto' && smart?.lookahead) {
-                // Burada bir input'a değer yazmadığımız için sadece göstereceğiz.
-            }
-
         } else {
-            // Eğer gerekli parametreler yoksa önerileri temizle
             updateSmartBadges(null);
         }
     };
 
-    // --- YENİ: Ayar kutularına dinleyici ekliyoruz ---
     const timeframeSelect = document.getElementById('signalAnalysisTimeframe');
     const periodSelect = document.getElementById('signalAnalysisPeriod');
-    
     if (timeframeSelect) timeframeSelect.addEventListener('change', updateHintsOnTheFly);
     if (periodSelect) periodSelect.addEventListener('change', updateHintsOnTheFly);
 
-    // --- Mevcut tıklama dinleyiciniz ---
     parentElement.addEventListener('click', async (e) => {
         const target = e.target;
 
@@ -535,19 +314,13 @@ function setupStrategyDiscoveryListeners(parentElement) {
                 const changePercent = parseFloat(document.getElementById('signalAnalysisChange').value);
                 const direction = document.getElementById('signalAnalysisDirection').value;
                 const useSmartLookback = document.getElementById('useSmartLookback')?.checked;
-
                 const dnaParams = {};
-document.querySelectorAll('#signalDnaParamsGrid input[type="checkbox"]:checked')
-  .forEach(cb => { dnaParams[cb.dataset.param] = true; });
-
-             const useAutoDna = document.getElementById('useAutoDna')?.checked;
-
-let lookbackCandles = parseInt(document.getElementById('signalLookbackCandles').value) || 9;
-
+                document.querySelectorAll('#signalDnaParamsGrid input[type="checkbox"]:checked').forEach(cb => { dnaParams[cb.dataset.param] = true; });
+                const useAutoDna = document.getElementById('useAutoDna')?.checked;
+                let lookbackCandles = parseInt(document.getElementById('signalLookbackCandles').value) || 9;
                 const lookaheadModeSelect = document.getElementById('fixedLookaheadPreset')?.value || 'auto';
                 const customLookaheadCandles = parseInt(document.getElementById('customLookaheadCandles')?.value) || 0;
                 
-                // Analiz butonuna basıldığında da en güncel öneriyi hesaplıyoruz.
                 const smart = await computeSmartDiscoveryHints({ timeframe, days });
                 updateSmartBadges(smart);
 
@@ -570,25 +343,24 @@ let lookbackCandles = parseInt(document.getElementById('signalLookbackCandles').
                     lookaheadFinalCandles = smart.lookahead;
                 }
 
-const successWindowMinutes = Number(lookaheadFinalCandles) * tfToMinutes(timeframe);
-const params = {
-  coins: state.discoveryCoins,
-  timeframe, changePercent, direction, days,
-  lookbackCandles: Number(lookbackCandles),
-  lookaheadCandles: Number(lookaheadFinalCandles),
-  lookaheadMode: finalMode,
-  successWindowMinutes,
-  params: dnaParams,
-  auto: !!useAutoDna
-};
-if (params.auto) { delete params.featureOrder; }
+                const successWindowMinutes = Number(lookaheadFinalCandles) * tfToMinutes(timeframe);
+                const params = {
+                  coins: state.discoveryCoins,
+                  timeframe, changePercent, direction, days,
+                  lookbackCandles: Number(lookbackCandles),
+                  lookaheadCandles: Number(lookaheadFinalCandles),
+                  lookaheadMode: finalMode,
+                  successWindowMinutes,
+                  params: dnaParams,
+                  auto: !!useAutoDna
+                };
+                if (params.auto) { delete params.featureOrder; }
               
                 if (typeof runSignalAnalysisPreviewRemote === 'function') {
                     await runSignalAnalysisPreviewRemote(params);
                 } else {
                     if (rc) rc.innerHTML = `<div class="error-msg">Analiz fonksiyonu yüklenemedi.</div>`;
                 }
-
             } catch (err) {
                 console.error('Analiz hatası:', err);
                 const rc = document.getElementById('signalAnalysisResultContainer');
@@ -598,201 +370,87 @@ if (params.auto) { delete params.featureOrder; }
             }
             return;
         }
-if (target.closest('#sendTelegramTestBtn')) {
-  try {
-    // ✅ Doğru input id'si
-    const input = document.getElementById('telegramChatIdInput');
-    const chatId = (input?.value || '').trim();
-    if (!chatId) {
-      alert('Lütfen "Telegram Chat ID" alanına bir sayı girin.');
-      return;
-    }
-
-    // ✅ Güvenli yol: Cloud Functions onCall
-    const callSendTest = state.firebase.functions.httpsCallable('sendTestNotification');
-    await callSendTest({ chatId, text: '✅ Telegram test: Merhaba!' });
-
-    alert('Test mesajı gönderildi.');
-  } catch (e) {
-    console.error('Telegram test gönderilemedi:', e);
-    alert('Telegram test gönderimi başarısız. Konsolu kontrol edin.');
-  }
-  return;
-}
-
-
-// Telegram test if'i ... (yukarıda)
-
-// ▼▼ Ayarları Kaydet butonu ▼▼
-// ▼▼ Ayarları Kaydet butonu ▼▼
-if (target.closest('#saveSettingsBtn')) {
-  try {
-    const lang = document.getElementById('langSelect')?.value || 'tr';
-    const autoRefresh = !!document.getElementById('autoRefreshToggle')?.checked;
-    const refreshInterval = Number(document.getElementById('refreshInterval')?.value || 30);
-    // ✅ Doğru input id'si
-    const telegramChatId = (document.getElementById('telegramChatIdInput')?.value || '').trim();
-    const liveScannerInterval = Number(document.getElementById('liveScannerInterval')?.value || 5);
-
-    // Firestore'a yaz
-    await state.userDocRef.update({
-      'settings.lang': lang,
-      'settings.autoRefresh': autoRefresh,
-      'settings.refreshInterval': refreshInterval,
-      'settings.telegramChatId': telegramChatId,
-      'settings.liveScannerInterval': liveScannerInterval
-    });
-
-    // Local state’i güncelle + UI'ye uygula
-    state.settings = {
-      ...state.settings,
-      lang,
-      autoRefresh,
-      refreshInterval,
-      telegramChatId,
-      liveScannerInterval
-    };
-    if (typeof applySettingsToUI === 'function') applySettingsToUI();
-
-    alert('Ayarlar kaydedildi.');
-    hidePanel('settingsPanel');
-  } catch (e) {
-    console.error('Ayarlar kaydedilemedi:', e);
-    alert('Ayarlar kaydedilemedi. Konsolu kontrol edin.');
-  }
-  return;
-}
-// ▲▲ Ayarları Kaydet butonu ▲▲
-
-// ▲▲ Ayarları Kaydet butonu ▲▲
-
       
        const saveBtn = target.closest('.save-dna-btn');
-if (saveBtn) {
-  const profileData = JSON.parse(saveBtn.dataset.profile || '{}');
-
-  // name yoksa burada üret (api.js yine kontrol ediyor ama iki tarafta da güvence)
-  if (profileData && !profileData.name) {
-    const ts  = Date.now();
-    const sym = profileData.coin || 'COIN';
-    const tf  = profileData.timeframe || 'TF';
-    const lb  = profileData.lookbackCandles ?? 'LB';
-    const dir = (profileData.direction === 'down' ? '-' : '+') + (profileData.changePercent ?? 0) + '%';
-    const sig = Array.isArray(profileData.featureOrder) ? profileData.featureOrder.join('').slice(0,12) : 'DNA';
-    profileData.name = `${sym}__${dir}__${tf}__${lb}LB__${sig}__${ts}`;
-  }
-
-  await saveDnaProfile(profileData, saveBtn);
-  return;
+        if (saveBtn) {
+          const profileData = JSON.parse(saveBtn.dataset.profile || '{}');
+          if (profileData && !profileData.name) {
+            const ts  = Date.now();
+            const sym = profileData.coin || 'COIN';
+            const tf  = profileData.timeframe || 'TF';
+            const lb  = profileData.lookbackCandles ?? 'LB';
+            const dir = (profileData.direction === 'down' ? '-' : '+') + (profileData.changePercent ?? 0) + '%';
+            const sig = Array.isArray(profileData.featureOrder) ? profileData.featureOrder.join('').slice(0,12) : 'DNA';
+            profileData.name = `${sym}__${dir}__${tf}__${lb}LB__${sig}__${ts}`;
+          }
+          await saveDnaProfile(profileData, saveBtn);
+          return;
         }
     });
 
-  // Sayfa ilk yüklendiğinde akıllı önerileri hesapla ve göster
-  updateHintsOnTheFly();
+    updateHintsOnTheFly();
 }
-
-function setupSaveSettingsButtonListener() {
-    const saveBtn = document.getElementById('saveSettingsBtn');
-    if (saveBtn) {
-        if (saveBtn.dataset.listenerAttached) return;
-        saveBtn.addEventListener('click', () => { saveSettings(); });
-        saveBtn.dataset.listenerAttached = 'true';
-    }
-}
-
-function setupUpdateAnalysisButtonListener() {
-    const updateBtn = document.getElementById('updateCryptoAnalysisBtn');
-    if (updateBtn) {
-        if (updateBtn.dataset.listenerAttached) return;
-        updateBtn.addEventListener('click', () => { updateAnalysisSettings(); });
-        updateBtn.dataset.listenerAttached = 'true';
-    }
-}
-// events.js dosyasının sonuna bu yeni fonksiyonu ekleyin
 
 function setupBacktestPageEventListeners() {
-    let currentProfileId = null; // Test edilen profili hafızada tutmak için
-
-    // Olayları sadece body'ye bir kere bağlıyoruz, bu daha verimli.
+    let currentProfileId = null; 
   
     document.body.addEventListener('click', async (e) => {
-  const backtestBtn = e.target.closest('.run-dna-backtest-btn');
-  const rerunBtn    = e.target.closest('#rerunBacktestBtn');
-  const refreshBtn  = e.target.closest('#refreshDnaProfilesBtn');
-  const toggleLink  = e.target.closest('.toggle-details-link');
-  const deleteBtn   = e.target.closest('.delete-dna-btn');
-      if (typeof window.applySettingsToUI !== 'function') {
-  window.applySettingsToUI = function() { /* no-op */ };
-}
+        const backtestBtn = e.target.closest('.run-dna-backtest-btn');
+        const rerunBtn = e.target.closest('#rerunBacktestBtn');
+        const refreshBtn = e.target.closest('#refreshDnaProfilesBtn');
+        const toggleLink = e.target.closest('.toggle-details-link');
+        const deleteBtn = e.target.closest('.delete-dna-btn');
 
-if (typeof window.renderPortfolioTabs !== 'function') {
-  window.renderPortfolioTabs = function() { /* no-op */ };
-}
-
-// YENİ: app.js içinde çağrılan renderAllPortfolioTabs yoksa, tekli olanı çalıştır
-if (typeof window.renderAllPortfolioTabs !== 'function') {
-  window.renderAllPortfolioTabs = function() {
-    if (typeof window.renderPortfolioTabs === 'function') {
-      window.renderPortfolioTabs(); // en azından temel sekmeleri çiz
-    }
-  };
-}
-
-  if (deleteBtn) {
-    const pid = deleteBtn.dataset.profileId;
-    const containerId = deleteBtn.dataset.containerId || 'dnaProfilesContainer';
-    await deleteDnaProfile(pid, containerId);
-    return; // <-- kritik
-  }
-
-  if (backtestBtn) {
-    currentProfileId = backtestBtn.dataset.profileId;
-    runTest();
-    return;
-  }
-
-  if (rerunBtn && currentProfileId) {
-    runTest();
-    return;
-  }
-
-  if (refreshBtn) {
-    fetchDnaProfiles('dnaProfilesContainer');
-    return;
-  }
-
-  if (toggleLink) {
-    e.preventDefault();
-    const detailsContent = toggleLink.parentElement.nextElementSibling;
-    if (detailsContent && detailsContent.classList.contains('dna-card-details-content')) {
-      detailsContent.classList.toggle('open');
+        if (deleteBtn) {
+            const pid = deleteBtn.dataset.profileId;
+            const containerId = deleteBtn.dataset.containerId || 'dnaProfilesContainer';
+            await deleteDnaProfile(pid, containerId);
+            return;
+        }
+        if (backtestBtn) {
+            currentProfileId = backtestBtn.dataset.profileId;
+            runTest();
+            return;
+        }
+        if (rerunBtn && currentProfileId) {
+            runTest();
+            return;
+        }
+        if (refreshBtn) {
+            fetchDnaProfiles('dnaProfilesContainer');
+            return;
+        }
+        if (toggleLink) {
+            e.preventDefault();
+            const detailsContent = toggleLink.parentElement.nextElementSibling;
+            if (detailsContent && detailsContent.classList.contains('dna-card-details-content')) {
+                detailsContent.classList.toggle('open');
             }
         }
-  
     });
     
     function runTest() {
         if (!currentProfileId) return;
-
         const backtestSection = document.getElementById('backtest-results-section');
         if (!backtestSection) return;
-
         backtestSection.style.display = 'block';
         document.getElementById('backtestProfileName').textContent = `Profil: ${currentProfileId}`;
         backtestSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
         const scoreThreshold = parseInt(document.getElementById('backtestThreshold').value) || 80;
         const debugMode = document.getElementById('backtestDebugMode').checked;
-        
         runDnaBacktest(currentProfileId, 30, scoreThreshold, debugMode);
     }
 }
-// Timeframe → dakika
+
+// ===================================================================================
+// YARDIMCI FONKSİYONLAR VE GLOBAL EXPORT
+// ===================================================================================
+
 function tfToMinutes(tf) {
     const map = { '15m': 15, '1h': 60, '4h': 240, '1d': 1440 };
     return map[tf] || 60;
 }
-// Preset → mum sayısı
+
 function presetToCandles(preset, timeframe) {
     const m = tfToMinutes(timeframe);
     if (preset === '1h') return Math.ceil(60 / m);
@@ -801,7 +459,6 @@ function presetToCandles(preset, timeframe) {
     return 0;
 }
 
-// Akıllı öneri: ATR% tabanlı, coin listesinden ilk geçerli coin ile hesap
 async function computeSmartDiscoveryHints({ timeframe, days }) {
   try {
     const samplePair = (state.discoveryCoins && state.discoveryCoins[0]) || 'BTCUSDT';
@@ -809,7 +466,6 @@ async function computeSmartDiscoveryHints({ timeframe, days }) {
     const klines = await getKlines(samplePair, timeframe, limit);
     if (!klines || klines.length < 60) return null;
 
-    // 1) ATR% (oynaklık ölçüsü)
     const closes = klines.map(k => Number(k[4]));
     const trs = [];
     for (let i=1;i<klines.length;i++){
@@ -820,66 +476,51 @@ async function computeSmartDiscoveryHints({ timeframe, days }) {
       trs.push(tr);
     }
     const N = 14;
-    const atr = average(trs.slice(-N));
+    const atr = trs.slice(-N).reduce((a, b) => a + b, 0) / Math.max(1, N);
     const lastC = closes[closes.length - 1] || 0;
-    const atrPct = lastC>0 ? (atr/lastC)*100 : 0;
+    const atrPct = lastC > 0 ? (atr / lastC) * 100 : 0;
+    const lookback = Math.round(Math.max(1, Math.min(9, (-1.8 * atrPct + 9))));
 
-    // 2) Lookback (geçmiş mum) – oynaklığa göre
-    const lookback = Math.round(clamp((-1.8 * atrPct + 9), 1, 9));
-
-    // 3) Lookahead oto-seçimi – {8,10,12,14,16} mum adaylarını küçük bir “MFE ortalama” testiyle kıyasla
     const candidates = [8, 10, 12, 14, 16];
-    const mfeAvg = (win) => {
-      let sum = 0, cnt = 0;
-      for (let i = 50; i < klines.length - (win + 1); i++) {
-        const entry = Number(klines[i][4]);
-        if (!Number.isFinite(entry) || entry <= 0) continue;
-        const slice = klines.slice(i + 1, i + 1 + win);
-        const highs = slice.map(k => Number(k[2]));
-        const lows  = slice.map(k => Number(k[3]));
-        const up = ((Math.max(...highs) - entry) / entry) * 100; // yön bağımsız "potansiyel yukarı"
-        if (Number.isFinite(up)) { sum += up; cnt++; }
-      }
-      return cnt ? (sum / cnt) : -Infinity;
-    };
     let best = 12, bestVal = -Infinity;
     for (const w of candidates) {
-      const v = mfeAvg(w);
+      let sum = 0, cnt = 0;
+      for (let i = 50; i < klines.length - (w + 1); i++) {
+        const entry = Number(klines[i][4]);
+        if (!Number.isFinite(entry) || entry <= 0) continue;
+        const slice = klines.slice(i + 1, i + 1 + w);
+        const highs = slice.map(k => Number(k[2]));
+        const up = ((Math.max(...highs) - entry) / entry) * 100;
+        if (Number.isFinite(up)) { sum += up; cnt++; }
+      }
+      const v = cnt ? (sum / cnt) : -Infinity;
       if (v > bestVal) { bestVal = v; best = w; }
     }
     const maxOneDay = Math.ceil(1440 / tfToMinutes(timeframe));
-    const lookahead = clamp(best, 2, maxOneDay);
+    const lookahead = Math.max(2, Math.min(maxOneDay, best));
 
     return { atrPct: Number(atrPct.toFixed(2)), lookback, lookahead, samplePair };
   } catch (e) {
     console.warn('computeSmartDiscoveryHints hata:', e);
     return null;
   }
-
-  function average(arr){ return arr.reduce((a,b)=>a+b,0)/Math.max(1,arr.length); }
-  function clamp(x,min,max){ return Math.max(min, Math.min(max, x)); }
 }
 
-
 function updateSmartBadges(smart){
-  // DNA Mumu (Geçmiş) önerisini gösterme
   const lookbackHintText = document.getElementById('lookbackHintText');
   if (lookbackHintText) {
     if (smart && smart.lookback) {
       lookbackHintText.textContent = `(Öneri: ${smart.lookback} mum)`;
-      lookbackHintText.title = `ATR Volatilitesi: ${smart.atrPct}%`; // Tooltip ekleyelim
+      lookbackHintText.title = `ATR Volatilitesi: ${smart.atrPct}%`;
     } else {
       lookbackHintText.textContent = '';
       lookbackHintText.title = '';
     }
   }
 
-  // Gelecek Penceresi (Hedef) önerisini gösterme
   const lookaheadSelect = document.getElementById('fixedLookaheadPreset');
-  const autoOption = lookaheadSelect ? lookaheadSelect.querySelector('option[value="auto"]') : null;
-  const lookaheadHintText = document.getElementById('lookaheadHintText'); // Yeni span
-
-  if (autoOption && lookaheadHintText) {
+  const lookaheadHintText = document.getElementById('lookaheadHintText');
+  if (lookaheadSelect && lookaheadHintText) {
     if (smart && smart.lookahead && lookaheadSelect.value === 'auto') {
       lookaheadHintText.textContent = `(Öneri: ${smart.lookahead} mum)`;
     } else {
@@ -890,34 +531,19 @@ function updateSmartBadges(smart){
 
 /* === window'a sabitleme (global export) === */
 (() => {
-  if (typeof window === 'undefined') return;
-  try {
-    if (typeof setupGlobalEventListeners === 'function')
-      window.setupGlobalEventListeners = window.setupGlobalEventListeners || setupGlobalEventListeners;
-    if (typeof setupAuthEventListeners === 'function')
-      window.setupAuthEventListeners = window.setupAuthEventListeners || setupAuthEventListeners;
-
-if (typeof setupTrackerPageEventListeners === 'function')
-  window.setupTrackerPageEventListeners = window.setupTrackerPageEventListeners || setupTrackerPageEventListeners;
-
-if (typeof setupTabEventListeners === 'function')
-  window.setupTabEventListeners = window.setupTabEventListeners || setupTabEventListeners;
-if (typeof setupPanelEventListeners === 'function')
-  window.setupPanelEventListeners = window.setupPanelEventListeners || setupPanelEventListeners;
-
-
-      window.setupActionEventListeners = window.setupActionEventListeners || setupActionEventListeners;
-    if (typeof setupReportEventListeners === 'function')
-      window.setupReportEventListeners = window.setupReportEventListeners || setupReportEventListeners;
-    if (typeof setupCoinManagerEventListeners === 'function')
-      window.setupCoinManagerEventListeners = window.setupCoinManagerEventListeners || setupCoinManagerEventListeners;
-    if (typeof setupAiPageActionListeners === 'function')
-      window.setupStrategyDiscoveryListeners = window.setupStrategyDiscoveryListeners || setupStrategyDiscoveryListeners;
-    if (typeof setupSaveSettingsButtonListener === 'function')
-      window.setupSaveSettingsButtonListener = window.setupSaveSettingsButtonListener || setupSaveSettingsButtonListener;
-    if (typeof setupUpdateAnalysisButtonListener === 'function')
-      window.setupBacktestPageEventListeners = window.setupBacktestPageEventListeners || setupBacktestPageEventListeners;
-  } catch (e) {
-    console.warn('Global export hatası:', e);
-  }
+    if (typeof window === 'undefined') return;
+    try {
+        window.setupGlobalEventListeners = setupGlobalEventListeners;
+        window.setupAuthEventListeners = setupAuthEventListeners;
+        window.setupTrackerPageEventListeners = setupTrackerPageEventListeners;
+        window.setupTabEventListeners = setupTabEventListeners;
+        window.setupPanelEventListeners = setupPanelEventListeners;
+        window.setupActionEventListeners = setupActionEventListeners;
+        window.setupReportEventListeners = setupReportEventListeners;
+        window.setupCoinManagerEventListeners = setupCoinManagerEventListeners;
+        window.setupStrategyDiscoveryListeners = setupStrategyDiscoveryListeners;
+        window.setupBacktestPageEventListeners = setupBacktestPageEventListeners;
+    } catch (e) {
+        console.warn('Global export hatası:', e);
+    }
 })();
