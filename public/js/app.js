@@ -145,6 +145,7 @@ function loadSettingsAndRole(userData) {
     document.getElementById('userEmail').textContent = state.firebase.auth.currentUser.email;
 }
 
+// app.js içindeki initializeTrackerPage fonksiyonunun YENİ HALİ
 async function initializeTrackerPage(userData) {
     state.pageInitialized = true;
 
@@ -156,29 +157,25 @@ async function initializeTrackerPage(userData) {
     applySettingsToUI();
     renderAllPortfolioTabs();
 
-    // --- SAYFAYA ÖZEL KODLARI ÇALIŞTIRMA ---
+    // --- YENİ YAPI: Ana olay dinleyici başlatıcısını çağır ---
+    if (typeof initializeEventListeners === 'function') {
+        initializeEventListeners();
+    } else {
+        console.error("HATA: events.js'teki initializeEventListeners fonksiyonu bulunamadı!");
+    }
+
+    // --- SAYFAYA ÖZEL İÇERİĞİ YÜKLE ---
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
 
-    if (currentPage === 'index.html' || currentPage === '') {
+    if ((currentPage === 'index.html' || currentPage === '')) {
         await fetchAllDataAndRender();
-        if (document.getElementById('crypto-coin-manager-container')) {
-            createCoinManager('crypto-coin-manager-container', state.userPortfolios[state.activePortfolio] || [], 'crypto');
-        }
+        createCoinManager('crypto-coin-manager-container', state.userPortfolios[state.activePortfolio] || [], 'crypto');
     }
     else if (currentPage === 'strateji.html') {
-        if (document.getElementById('discovery-coin-manager-container')) {
-            createCoinManager('discovery-coin-manager-container', state.discoveryCoins, 'discovery');
-        }
+        createCoinManager('discovery-coin-manager-container', state.discoveryCoins, 'discovery');
     }
     else if (currentPage === 'backtest.html') {
         fetchDnaProfiles('dnaProfilesContainer');
-    }
-
-    // --- EN SONDA, TÜM SAYFALAR İÇİN ORTAK OLAY DİNLEYİCİLERİNİ YÜKLE ---
-    if (typeof setupTrackerPageEventListeners === 'function') {
-        setupTrackerPageEventListeners();
-    } else {
-        console.warn('setupTrackerPageEventListeners henüz yüklenmedi.');
     }
 }
 
@@ -214,6 +211,27 @@ function sortAndRenderTable() {
         if (th.dataset.sortKey === key && order !== 'default') th.classList.add(order);
     });
     updateAllTableRows(sortedData);
+}
+// app.js dosyasına EKLENECEK YENİ fonksiyon
+async function sendTestTelegramMessage() {
+    const btn = document.getElementById('sendTelegramTestBtn');
+    try {
+        const input = document.getElementById('telegramChatIdInput');
+        const chatId = (input?.value || '').trim();
+        if (!chatId) {
+            showNotification('Lütfen geçerli bir Telegram Chat ID girin.', false);
+            return;
+        }
+        showLoading(btn);
+        const callSendTest = state.firebase.functions.httpsCallable('sendTestNotification');
+        await callSendTest({ chatId: chatId, text: '✅ Tebrikler! Bu bir test mesajıdır.' });
+        showNotification('Test mesajı başarıyla gönderildi.', true);
+    } catch (error) {
+        console.error('Telegram test gönderimi başarısız:', error);
+        showNotification(`Hata: ${error.message}`, false);
+    } finally {
+        hideLoading(btn);
+    }
 }
 
 function saveSettings() {
