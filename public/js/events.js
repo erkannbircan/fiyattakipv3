@@ -1,7 +1,7 @@
 // ---- GLOBAL ÇATI ----
 window.App = window.App || { version: 'v3.0.0', loaded: {}, guards: {}, log: (...args) => console.log('[App]', ...args) };
 
-// ---- FALLBACK FONKSİYONLAR ----
+// ---- FALLBACK FONKSİYONLAR (Güvenlik için kalıyor) ----
 if (typeof window.showLoading !== 'function') { window.showLoading = function (button) { if (!button) return; button.dataset.originalHtml = button.innerHTML; button.innerHTML = '<div class="loading"></div>'; button.disabled = true; }; }
 if (typeof window.hideLoading !== 'function') { window.hideLoading = function (button) { if (!button) return; if (button.dataset.originalHtml) { button.innerHTML = button.dataset.originalHtml; } button.disabled = false; }; }
 if (typeof window.applySettingsToUI !== 'function') { window.applySettingsToUI = function () { window.App?.log?.('applySettingsToUI (fallback) çağrıldı.'); }; }
@@ -11,43 +11,10 @@ if (typeof window.renderDictionary !== 'function') { window.renderDictionary = f
 if (typeof window.renderIndicatorFilters !== 'function') { window.renderIndicatorFilters = function() { /* no-op */ }; }
 if (typeof window.renderSupportResistance !== 'function') { window.renderSupportResistance = function() {}; }
 
+
 // ===================================================================================
-// TEMEL OLAY DİNLEYİCİLERİ (HER SAYFADA ÇALIŞIR)
+// BÖLÜM 1: GİRİŞ SAYFASI İÇİN OLAY DİNLEYİCİLERİ
 // ===================================================================================
-
-function setupGlobalEventListeners() {
-  document.body.addEventListener('click', async (e) => {
-    // Panel kapatma
-    if (e.target.closest('.close-btn') || e.target.closest('.panel-close') || e.target === document.getElementById('modalOverlay')) {
-      const chartPanel = document.getElementById('chartPanel');
-      if (chartPanel && chartPanel.classList.contains('show')) {
-        const titleEl = document.getElementById('chartPanelTitle');
-        const pairFromTitle = titleEl?.textContent?.trim();
-        const pair = pairFromTitle ? `${pairFromTitle}USDT` : null;
-        if (pair) {
-          await saveChartState(pair);
-        }
-      }
-      closeAllPanels();
-      return;
-    }
-
-    // Ayarlar panelini açma
-    if (e.target.closest('#settingsBtn') || e.target.closest('[data-open-panel="settingsPanel"]')) {
-      e.preventDefault();
-      showPanel('settingsPanel');
-      return;
-    }
-
-    // Genel panel açıcı
-    const opener = e.target.closest('[data-open-panel]');
-    if (opener) {
-      const panelId = opener.getAttribute('data-open-panel');
-      if (panelId) showPanel(panelId);
-    }
-  });
-}
-
 function setupAuthEventListeners() {
     const loginBtn = document.getElementById('loginBtn');
     const signupBtn = document.getElementById('signupBtn');
@@ -94,148 +61,125 @@ function setupAuthEventListeners() {
     }
 }
 
+
 // ===================================================================================
-// GENEL AMAÇLI VE SAYFA YÖNLENDİRİCİ DİNLEYİCİLER
+// BÖLÜM 2: ANA UYGULAMA İÇİN OLAY DİNLEYİCİLERİ (Giriş Yaptıktan Sonra)
 // ===================================================================================
 
-function setupTrackerPageEventListeners() {
-    const trackerPageEl = document.getElementById('tracker-page');
-    if (!trackerPageEl) return;
-
-    setupTabEventListeners(trackerPageEl);
-    setupPanelEventListeners(trackerPageEl);
-    setupActionEventListeners(trackerPageEl);
-    setupCoinManagerEventListeners(trackerPageEl);
-    setupReportEventListeners(trackerPageEl);
-    setupStrategyDiscoveryListeners(trackerPageEl);
-    setupBacktestPageEventListeners();
+/**
+ * Bu ana fonksiyon, app.js tarafından çağrılır.
+ * Önce her sayfada ortak olan butonları (Ayarlar, Çıkış vb.) aktif eder.
+ * Sonra, bulunulan sayfaya göre o sayfaya özel butonları (Sırala, Analizi Başlat vb.) aktif eder.
+ */
+function initializeEventListeners() {
+    setupSharedEventListeners();
+    setupPageSpecificEventListeners();
 }
 
-function setupTabEventListeners(parentElement) {
-    const currentPage = window.location.pathname.split('/').pop().replace('.html', '') || 'index';
-    const navLinks = document.querySelectorAll('#main-nav .tab-link');
+/**
+ * Her sayfada bulunan ortak elementleri (header, paneller vb.) dinler.
+ */
+function setupSharedEventListeners() {
+    // Panel ve Modal Yönetimi (Ayarlar, Kapatma Butonları)
+    document.body.addEventListener('click', (e) => {
+        if (e.target.closest('#settingsBtn')) togglePanel('settingsPanel');
+        if (e.target.closest('.panel .close-btn') || e.target.id === 'modalOverlay') closeAllPanels();
+    });
+
+    // Ayarlar Paneli İçindeki Butonlar
+    const settingsPanel = document.getElementById('settingsPanel');
+    if (settingsPanel) {
+        settingsPanel.querySelector('#saveSettingsBtn')?.addEventListener('click', saveSettings);
+        settingsPanel.querySelector('#sendTelegramTestBtn')?.addEventListener('click', sendTestTelegramMessage);
+    }
     
-    navLinks.forEach(link => {
-        const linkPage = link.dataset.page;
-        link.classList.toggle('active', linkPage === currentPage);
+    // Oturum İşlemleri
+    document.getElementById('logoutBtn')?.addEventListener('click', () => state.firebase?.auth?.signOut());
+    
+    // Portföy / Liste Yönetimi
+    document.body.addEventListener('click', (e) => {
+        if (e.target.closest('#newPortfolioBtn')) showPortfolioModal('new');
+        if (e.target.closest('#renamePortfolioBtn')) showPortfolioModal('rename');
+        if (e.target.closest('#deletePortfolioBtn')) handleDeletePortfolio();
+    });
+    document.getElementById('savePortfolioBtn')?.addEventListener('click', handlePortfolioSave);
+    
+    // Portföy sekmeleri
+    document.getElementById('portfolioTabs')?.addEventListener('click', (e) => {
+        const tab = e.target.closest('.portfolio-tab');
+        if (tab && !tab.classList.contains('active')) setActivePortfolio(tab.dataset.name);
     });
 
-    if (currentPage === 'sinyal-performans' && typeof loadAlarmReports === 'function') {
-      loadAlarmReports();
-    }
-}
-
-function setupPanelEventListeners(parentElement) {
-  parentElement.addEventListener('click', async (e) => {
-    // AYARLARI KAYDET BUTONU (MERKEZİ VE DOĞRU)
-    if (e.target.closest('#saveSettingsBtn')) {
-      e.preventDefault();
-      saveSettings(); // app.js'teki ana fonksiyonu çağırır
-      return;
-    }
-
-    // TELEGRAM TEST BUTONU (MERKEZİ VE DOĞRU)
-    if (e.target.closest('#sendTelegramTestBtn')) {
-      e.preventDefault();
-      try {
-        const input = document.getElementById('telegramChatIdInput');
-        const chatId = (input?.value || '').trim();
-        if (!chatId) {
-          showNotification('Lütfen "Telegram Chat ID" alanına bir sayı girin.', false);
-          return;
-        }
-        const callSendTest = state.firebase.functions.httpsCallable('sendTestNotification');
-        await callSendTest({ chatId, text: '✅ Telegram test: Merhaba!' });
-        showNotification('Test mesajı gönderildi.', true);
-      } catch (error) {
-        console.error('Telegram test gönderilemedi:', error);
-        showNotification('Telegram test gönderimi başarısız. Konsolu kontrol edin.', false);
-      }
-      return;
-    }
-
-    // PORTFÖY KAYDET BUTONU
-    if (e.target.closest('#savePortfolioBtn')) {
-      handlePortfolioSave();
-      return;
-    }
-
-    // AÇILIR/KAPANIR BAŞLIKLAR
-    const collapsibleHeader = e.target.closest('.collapsible-header');
-    if (collapsibleHeader) {
-      const content = collapsibleHeader.nextElementSibling;
-      if(content) {
-        collapsibleHeader.classList.toggle('open');
-        content.classList.toggle('open');
-      }
-      return;
-    }
-  });
-}
-
-function setupActionEventListeners(parentElement) {
-    parentElement.addEventListener('click', async (e) => {
-        const target = e.target;
-
-        // Çıkış Yap
-        if (target.closest('#logoutBtn')) {
-            e.preventDefault();
-            try { await state.firebase?.auth?.signOut(); } catch (err) { console.error('Çıkış hatası:', err); }
-            return;
-        }
-
-        // Portföy Modalı
-        if (target.closest('#newPortfolioBtn') || target.closest('#renamePortfolioBtn')) {
-            const action = target.closest('#renamePortfolioBtn') ? 'rename' : 'new';
-            showPortfolioModal(action);
-            return;
-        }
-        if (target.closest('#deletePortfolioBtn')) {
-            handleDeletePortfolio();
-            return;
-        }
-        
-        // Tablo Sıralama
-        const sortableHeader = target.closest('#crypto-content th.sortable');
-        if (sortableHeader) {
-            const key = sortableHeader.dataset.sortKey;
-            if (state.currentSort.key !== key) {
-                state.currentSort.key = key;
-                state.currentSort.order = 'asc';
-            } else {
-                state.currentSort.order = state.currentSort.order === 'asc' ? 'desc' : 'default';
-                if (state.currentSort.order === 'default') state.currentSort.key = null;
+    // Açılır/kapanır başlıklar (Collapsible headers)
+    document.body.addEventListener('click', (e) => {
+        const collapsibleHeader = e.target.closest('.collapsible-header');
+        if (collapsibleHeader) {
+            const content = collapsibleHeader.nextElementSibling;
+            if (content) {
+                collapsibleHeader.classList.toggle('open');
+                content.classList.toggle('open');
             }
-            sortAndRenderTable();
-            return;
         }
     });
 }
 
-function setupCoinManagerEventListeners(parentElement) {
+/**
+ * Sadece o anki aktif sayfaya özel olan dinleyicileri kurar.
+ */
+function setupPageSpecificEventListeners() {
+    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+
+    if (currentPage === 'index.html' || currentPage === '') {
+        setupCryptoPageListeners();
+    } else if (currentPage === 'strateji.html') {
+        setupStrategyDiscoveryListeners(document.body);
+    } else if (currentPage === 'backtest.html') {
+        setupBacktestPageEventListeners();
+    } else if (currentPage === 'sinyal-performans.html') {
+        setupReportEventListeners(document.body);
+    }
+}
+
+// -----------------------------------------------------------------------------------
+// SAYFA ÖZELİNDEKİ FONKSİYONLAR (Kodlarınız olduğu gibi korundu)
+// -----------------------------------------------------------------------------------
+
+function setupCryptoPageListeners() {
+    const parentElement = document.getElementById('tracker-page');
+    if (!parentElement) return;
+
+    // Coin Ekleme/Çıkarma
     parentElement.addEventListener('click', (e) => {
         const addBtn = e.target.closest('.add-coin-btn');
-        if (addBtn) { 
-            handleAddCoin(addBtn.dataset.listName); 
-            return; 
-        }
+        if (addBtn) handleAddCoin(addBtn.dataset.listName);
         const removeBtn = e.target.closest('.remove-coin-tag, .remove-btn');
-        if (removeBtn) { 
-            handleRemoveCoin(removeBtn.dataset.listName, removeBtn.dataset.pair); 
-            return; 
-        }
+        if (removeBtn) handleRemoveCoin(removeBtn.dataset.listName, removeBtn.dataset.pair);
     });
     parentElement.addEventListener('keypress', (e) => {
-        const input = e.target.closest('.new-coin-input');
-        if (input && e.key === 'Enter') { 
-            handleAddCoin(input.dataset.listName); 
+        if (e.target.closest('.new-coin-input') && e.key === 'Enter') {
+            handleAddCoin(e.target.dataset.listName);
         }
     });
-}
 
-// ===================================================================================
-// SAYFAYA ÖZEL OLAY DİNLEYİCİLERİ
-// ===================================================================================
+    // Tablo Sıralama
+    const sortableHeader = parentElement.querySelector('#crypto-content');
+    if(sortableHeader) {
+        sortableHeader.addEventListener('click', (e) => {
+            const header = e.target.closest('th.sortable');
+            if (header) {
+                const key = header.dataset.sortKey;
+                if (state.currentSort.key !== key) {
+                    state.currentSort.key = key;
+                    state.currentSort.order = 'asc';
+                } else {
+                    state.currentSort.order = state.currentSort.order === 'asc' ? 'desc' : 'default';
+                }
+                if (state.currentSort.order === 'default') state.currentSort.key = null;
+                sortAndRenderTable();
+            }
+        });
+    }
+}
 
 function setupReportEventListeners(parentElement) {
     parentElement.addEventListener('click', async (e) => {
@@ -442,10 +386,10 @@ function setupBacktestPageEventListeners() {
     }
 }
 
-// ===================================================================================
-// YARDIMCI FONKSİYONLAR VE GLOBAL EXPORT
-// ===================================================================================
 
+// ===================================================================================
+// YARDIMCI FONKSİYONLAR (Kodlarınız olduğu gibi korundu)
+// ===================================================================================
 function tfToMinutes(tf) {
     const map = { '15m': 15, '1h': 60, '4h': 240, '1d': 1440 };
     return map[tf] || 60;
@@ -528,22 +472,3 @@ function updateSmartBadges(smart){
     }
   }
 }
-
-/* === window'a sabitleme (global export) === */
-(() => {
-    if (typeof window === 'undefined') return;
-    try {
-        window.setupGlobalEventListeners = setupGlobalEventListeners;
-        window.setupAuthEventListeners = setupAuthEventListeners;
-        window.setupTrackerPageEventListeners = setupTrackerPageEventListeners;
-        window.setupTabEventListeners = setupTabEventListeners;
-        window.setupPanelEventListeners = setupPanelEventListeners;
-        window.setupActionEventListeners = setupActionEventListeners;
-        window.setupReportEventListeners = setupReportEventListeners;
-        window.setupCoinManagerEventListeners = setupCoinManagerEventListeners;
-        window.setupStrategyDiscoveryListeners = setupStrategyDiscoveryListeners;
-        window.setupBacktestPageEventListeners = setupBacktestPageEventListeners;
-    } catch (e) {
-        console.warn('Global export hatası:', e);
-    }
-})();
