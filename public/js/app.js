@@ -153,7 +153,6 @@ async function initializeTrackerPage(userData) {
     state.activePortfolio = userData.activePortfolio || Object.keys(state.userPortfolios)[0];
     state.discoveryCoins = userData.coins_discovery || ["BTCUSDT", "ETHUSDT"];
     
-    // Ortak UI elementlerini her sayfada başta bir kez çizelim
     applySettingsToUI();
     renderAllPortfolioTabs();
 
@@ -161,14 +160,20 @@ async function initializeTrackerPage(userData) {
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
 
     // 1. Ana Kripto Sayfası (`index.html`)
-    if (currentPage === 'index.html') {
+    if (currentPage === 'index.html' || currentPage === '') {
         await fetchAllDataAndRender();
-        createCoinManager('crypto-coin-manager-container', state.userPortfolios[state.activePortfolio] || [], 'crypto');
+        // Bu sayfada coin yöneticisini oluştur
+        if (document.getElementById('crypto-coin-manager-container')) {
+            createCoinManager('crypto-coin-manager-container', state.userPortfolios[state.activePortfolio] || [], 'crypto');
+        }
     }
 
     // 2. Strateji Keşfi Sayfası (`strateji.html`)
     if (currentPage === 'strateji.html') {
-        createCoinManager('discovery-coin-manager-container', state.discoveryCoins, 'discovery');
+        // Bu sayfada coin yöneticisini oluştur
+        if (document.getElementById('discovery-coin-manager-container')) {
+            createCoinManager('discovery-coin-manager-container', state.discoveryCoins, 'discovery');
+        }
     }
 
     // 3. DNA Kütüphanesi Sayfası (`backtest.html`)
@@ -177,14 +182,8 @@ async function initializeTrackerPage(userData) {
         setupBacktestPageEventListeners();
     }
     
-    // 4. Sinyal Performansı Sayfası (`sinyal-performans.html`)
-    if (currentPage === 'sinyal-performans.html') {
-        // Bu sayfanın kendine özel yükleme fonksiyonu zaten var (loadAlarmReports)
-        // O yüzden burada ek bir şeye gerek yok.
-    }
-
     // --- EN SONDA, TÜM SAYFALAR İÇİN ORTAK OLAY DİNLEYİCİLERİNİ YÜKLE ---
-    // Bu kodun en sonda olması, önceki adımlardaki hataların buraya ulaşmasını engellemesini önler.
+    // Bu, artık her sayfada butonların çalışmasını garantileyecek.
     if (typeof setupTrackerPageEventListeners === 'function') {
         setupTrackerPageEventListeners();
     } else {
