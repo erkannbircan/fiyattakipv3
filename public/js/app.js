@@ -159,31 +159,22 @@ async function initializeTrackerPage(userData) {
     // --- SAYFAYA ÖZEL KODLARI ÇALIŞTIRMA ---
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
 
-    // 1. Ana Kripto Sayfası (`index.html`)
     if (currentPage === 'index.html' || currentPage === '') {
         await fetchAllDataAndRender();
-        // Bu sayfada coin yöneticisini oluştur
         if (document.getElementById('crypto-coin-manager-container')) {
             createCoinManager('crypto-coin-manager-container', state.userPortfolios[state.activePortfolio] || [], 'crypto');
         }
     }
-
-    // 2. Strateji Keşfi Sayfası (`strateji.html`)
-    if (currentPage === 'strateji.html') {
-        // Bu sayfada coin yöneticisini oluştur
+    else if (currentPage === 'strateji.html') {
         if (document.getElementById('discovery-coin-manager-container')) {
             createCoinManager('discovery-coin-manager-container', state.discoveryCoins, 'discovery');
         }
     }
-
-    // 3. DNA Kütüphanesi Sayfası (`backtest.html`)
-    if (currentPage === 'backtest.html') {
+    else if (currentPage === 'backtest.html') {
         fetchDnaProfiles('dnaProfilesContainer');
-        setupBacktestPageEventListeners();
     }
-    
+
     // --- EN SONDA, TÜM SAYFALAR İÇİN ORTAK OLAY DİNLEYİCİLERİNİ YÜKLE ---
-    // Bu, artık her sayfada butonların çalışmasını garantileyecek.
     if (typeof setupTrackerPageEventListeners === 'function') {
         setupTrackerPageEventListeners();
     } else {
