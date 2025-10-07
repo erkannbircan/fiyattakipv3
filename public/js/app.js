@@ -148,46 +148,50 @@ function loadSettingsAndRole(userData) {
 async function initializeTrackerPage(userData) {
     state.pageInitialized = true;
 
-    // Ortak ayarları ve verileri yükle
+    // --- TÜM SAYFALAR İÇİN ORTAK AYARLAR ---
     state.userPortfolios = userData.portfolios || { "Varsayılan": ["BTCUSDT", "ETHUSDT", "SOLUSDT"] };
     state.activePortfolio = userData.activePortfolio || Object.keys(state.userPortfolios)[0];
     state.discoveryCoins = userData.coins_discovery || ["BTCUSDT", "ETHUSDT"];
-
-    // Sayfaya özel fonksiyonları çağırmadan önce global UI ayarlarını yap
+    
+    // Ortak UI elementlerini her sayfada başta bir kez çizelim
     applySettingsToUI();
     renderAllPortfolioTabs();
 
-    // Hangi sayfada olduğumuzu URL'den anla
-    const currentPage = window.location.pathname.split('/').pop();
+    // --- SAYFAYA ÖZEL KODLARI ÇALIŞTIRMA ---
+    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
 
-    if (currentPage === 'backtest.html') {
-        // --- Sadece backtest sayfasında çalışacak kodlar ---
-        fetchDnaProfiles('dnaProfilesContainer');
-        setupBacktestPageEventListeners(); // Yeni olay dinleyicimizi burada çağırıyoruz
-        
-    } else {
-        // --- Diğer tüm sayfalarda çalışacak ortak kodlar ---
-        createCoinManager('discovery-coin-manager-container', state.discoveryCoins, 'discovery');
-        renderIndicatorFilters();
-        renderDictionary();
-        
+    // 1. Ana Kripto Sayfası (`index.html`)
+    if (currentPage === 'index.html') {
         await fetchAllDataAndRender();
-        renderAlarmReports();
-if (typeof setupTrackerPageEventListeners === 'function') {
-  setupTrackerPageEventListeners(); // Eski genel olay dinleyicimiz
-} else {
-  console.warn('setupTrackerPageEventListeners henüz yüklenmedi');
-}
-if (typeof setupUpdateAnalysisButtonListener === 'function') {
-  setupUpdateAnalysisButtonListener();
-}
+        createCoinManager('crypto-coin-manager-container', state.userPortfolios[state.activePortfolio] || [], 'crypto');
     }
 
-    const toggle = document.getElementById('toggleAutoScanner');
-    if (toggle && toggle.checked) {
-        toggleAutoScanner(true);
+    // 2. Strateji Keşfi Sayfası (`strateji.html`)
+    if (currentPage === 'strateji.html') {
+        createCoinManager('discovery-coin-manager-container', state.discoveryCoins, 'discovery');
+    }
+
+    // 3. DNA Kütüphanesi Sayfası (`backtest.html`)
+    if (currentPage === 'backtest.html') {
+        fetchDnaProfiles('dnaProfilesContainer');
+        setupBacktestPageEventListeners();
+    }
+    
+    // 4. Sinyal Performansı Sayfası (`sinyal-performans.html`)
+    if (currentPage === 'sinyal-performans.html') {
+        // Bu sayfanın kendine özel yükleme fonksiyonu zaten var (loadAlarmReports)
+        // O yüzden burada ek bir şeye gerek yok.
+    }
+
+    // --- EN SONDA, TÜM SAYFALAR İÇİN ORTAK OLAY DİNLEYİCİLERİNİ YÜKLE ---
+    // Bu kodun en sonda olması, önceki adımlardaki hataların buraya ulaşmasını engellemesini önler.
+    if (typeof setupTrackerPageEventListeners === 'function') {
+        setupTrackerPageEventListeners();
+    } else {
+        console.warn('setupTrackerPageEventListeners henüz yüklenmedi.');
     }
 }
+
 async function fetchAllDataAndRender() {
     const refreshBtn = document.getElementById('refreshBtn');
     if (refreshBtn) showLoading(refreshBtn);
