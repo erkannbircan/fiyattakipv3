@@ -314,3 +314,29 @@ span.smart-hint { font-size: 0.8em; color: var(--accent-blue); margin-left: 5px;
 .hide-col-col3 .col-col3 {
     display: none;
 }
+/* GITHUB/public/style.css DOSYASININ SONUNA EKLENECEK */
+/* Yeni kolonları gizleme kuralı */
+.hide-col-rsi .col-rsi,
+.hide-col-macd .col-macd {
+    display: none;
+}
+
+/* İndikatör değerleri için özel stiller */
+.rsi-oversold { color: var(--accent-green); font-weight: 600; }
+.rsi-overbought { color: var(--accent-red); font-weight: 600; }
+
+.macd-positive { color: #28a745; }
+.macd-negative { color: #dc3545; }
+
+.indicator-bar-container {
+    width: 100%;
+    height: 8px;
+    background-color: var(--bg-tertiary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.indicator-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease-in-out;
+}
