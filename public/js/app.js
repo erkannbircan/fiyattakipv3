@@ -156,7 +156,8 @@ async function initializeTrackerPage(userData) {
     
     applySettingsToUI();
     renderAllPortfolioTabs();
-
+ fetchFearAndGreedIndex().then(renderFearAndGreedWidget);
+  
     // --- YENİ YAPI: Ana olay dinleyici başlatıcısını çağır ---
     if (typeof initializeEventListeners === 'function') {
         initializeEventListeners();
