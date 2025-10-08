@@ -955,9 +955,6 @@ if (!App.confirm) {
     overlay.addEventListener('click', (e) => { if (e.target === overlay) cleanup(false); });
   });
 }
-
-
-
 // --- Güvenli global bağlama ---
 try {
   if (typeof updateAllTableRows === 'function') window.updateAllTableRows = window.updateAllTableRows || updateAllTableRows;
@@ -967,3 +964,22 @@ try {
   if (typeof renderAlarmReports === 'function') window.renderAlarmReports = window.renderAlarmReports || renderAlarmReports;
 } catch (e) { console.warn('UI export warning:', e); }
 
+// GITHUB/public/js/ui.js DOSYASININ SONUNA EKLENECEK
+function renderFearAndGreedWidget(data) {
+    const widget = document.getElementById('fearGreedWidget');
+    if (!widget) return;
+
+    if (!data) {
+        widget.innerHTML = `<span class="fg-text">Piyasa Duyarlılığı Yüklenemedi</span>`;
+        return;
+    }
+
+    const value = parseInt(data.value);
+    const classification = data.value_classification.replace(" ", "-").toLowerCase();
+    
+    widget.innerHTML = `
+        <span class="fg-text">Piyasa Duyarlılığı:</span>
+        <span class="fg-value fg-${classification}">${value}</span>
+        <span class="fg-text fg-${classification}">${data.value_classification}</span>
+    `;
+}
