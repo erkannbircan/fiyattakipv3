@@ -245,7 +245,7 @@ const formatVolume = (volume) => {
     return num.toFixed(0);
 };
 
-unction applySettingsToUI() {
+function applySettingsToUI() {
     if (!state.settings) {
         console.error("applySettingsToUI çağrıldı ancak state.settings tanımsız. Ayarlar yüklenemedi.");
         return;
