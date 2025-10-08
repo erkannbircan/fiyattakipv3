@@ -17,14 +17,14 @@ function setupAuthEventListeners() {
                 if (errorMessageDiv) errorMessageDiv.textContent = 'E-posta ve şifre alanları boş bırakılamaz.';
                 return;
             }
-            showLoading(loginBtn);
+            if (typeof showLoading === 'function') showLoading(loginBtn);
             try {
                 await state.firebase.auth.signInWithEmailAndPassword(email, password);
                 if (errorMessageDiv) errorMessageDiv.textContent = '';
             } catch (error) {
                 if (errorMessageDiv) errorMessageDiv.textContent = `Giriş yapılamadı: ${error.message}`;
             } finally {
-                hideLoading(loginBtn);
+                if (typeof hideLoading === 'function') hideLoading(loginBtn);
             }
         });
     }
@@ -37,14 +37,14 @@ function setupAuthEventListeners() {
                 if (errorMessageDiv) errorMessageDiv.textContent = 'E-posta ve şifre alanları boş bırakılamaz.';
                 return;
             }
-            showLoading(signupBtn);
+            if (typeof showLoading === 'function') showLoading(signupBtn);
             try {
                 await state.firebase.auth.createUserWithEmailAndPassword(email, password);
                 if (errorMessageDiv) errorMessageDiv.textContent = '';
             } catch (error) {
                 if (errorMessageDiv) errorMessageDiv.textContent = `Kayıt olunamadı: ${error.message}`;
             } finally {
-                hideLoading(signupBtn);
+                if (typeof hideLoading === 'function') hideLoading(signupBtn);
             }
         });
     }
@@ -60,42 +60,22 @@ function initializeEventListeners() {
 }
 
 function setupGlobalEventListeners() {
-    // Gelecekteki genel olaylar için yer tutucu
+    // Bu fonksiyon app.js tarafından çağrılır ve gelecekteki genel olaylar için bir yer tutucudur.
     console.log("Global event listeners setup.");
 }
 
 function setupSharedEventListeners() {
     document.body.addEventListener('click', (e) => {
-        if (e.target.closest('#refreshBtn')) {
-            fetchAllDataAndRender();
-        }
-        if (e.target.closest('#settingsBtn')) {
-            if (typeof togglePanel === 'function') togglePanel('settingsPanel');
-        }
-        if (e.target.closest('.panel .close-btn') || e.target.id === 'modalOverlay') {
-            if (typeof closeAllPanels === 'function') closeAllPanels();
-        }
-        if (e.target.closest('#logoutBtn')) {
-            state.firebase?.auth?.signOut();
-        }
-        if (e.target.closest('#saveChartStateBtn')) {
-            if (state.activeChartPair && typeof saveChartState === 'function') {
-                saveChartState(state.activeChartPair);
-                showNotification('Grafik durumu kaydedildi.', true);
-            }
-        }
-        if (e.target.closest('#newPortfolioBtn')) {
-            if (typeof showPortfolioModal === 'function') showPortfolioModal('new');
-        }
-        if (e.target.closest('#renamePortfolioBtn')) {
-            if (typeof showPortfolioModal === 'function') showPortfolioModal('rename');
-        }
-        if (e.target.closest('#deletePortfolioBtn')) {
-            if (typeof handleDeletePortfolio === 'function') handleDeletePortfolio();
-        }
-        if (e.target.closest('#savePortfolioBtn')) {
-            if (typeof handlePortfolioSave === 'function') handlePortfolioSave();
-        }
+        if (e.target.closest('#refreshBtn')) { if (typeof fetchAllDataAndRender === 'function') fetchAllDataAndRender(); }
+        if (e.target.closest('#settingsBtn')) { if (typeof togglePanel === 'function') togglePanel('settingsPanel'); }
+        if (e.target.closest('.panel .close-btn') || e.target.id === 'modalOverlay') { if (typeof closeAllPanels === 'function') closeAllPanels(); }
+        if (e.target.closest('#logoutBtn')) { state.firebase?.auth?.signOut(); }
+        if (e.target.closest('#saveChartStateBtn')) { if (state.activeChartPair && typeof saveChartState === 'function') { saveChartState(state.activeChartPair); showNotification('Grafik durumu kaydedildi.', true); } }
+        if (e.target.closest('#newPortfolioBtn')) { if (typeof showPortfolioModal === 'function') showPortfolioModal('new'); }
+        if (e.target.closest('#renamePortfolioBtn')) { if (typeof showPortfolioModal === 'function') showPortfolioModal('rename'); }
+        if (e.target.closest('#deletePortfolioBtn')) { if (typeof handleDeletePortfolio === 'function') handleDeletePortfolio(); }
+        if (e.target.closest('#savePortfolioBtn')) { if (typeof handlePortfolioSave === 'function') handlePortfolioSave(); }
+        
         const collapsibleHeader = e.target.closest('.collapsible-header');
         if (collapsibleHeader) {
             const content = collapsibleHeader.nextElementSibling;
@@ -137,10 +117,6 @@ function setupPageSpecificEventListeners() {
     }
 }
 
-// -----------------------------------------------------------------------------------
-// SAYFA ÖZELİNDEKİ FONKSİYONLAR
-// -----------------------------------------------------------------------------------
-
 function setupCryptoPageListeners() {
     const parentElement = document.getElementById('tracker-page');
     if (!parentElement) return;
@@ -162,15 +138,18 @@ function setupCryptoPageListeners() {
             return;
         }
         const addBtn = e.target.closest('.add-coin-btn');
-        if (addBtn) handleAddCoin(addBtn.dataset.listName);
-        
+        if (addBtn) {
+            if (typeof handleAddCoin === 'function') handleAddCoin(addBtn.dataset.listName);
+        }
         const removeBtn = e.target.closest('.remove-coin-tag, .remove-btn');
-        if (removeBtn) handleRemoveCoin(removeBtn.dataset.listName, removeBtn.dataset.pair);
+        if (removeBtn) {
+            if (typeof handleRemoveCoin === 'function') handleRemoveCoin(removeBtn.dataset.listName, removeBtn.dataset.pair);
+        }
     });
 
     parentElement.addEventListener('keypress', (e) => {
         if (e.target.closest('.new-coin-input') && e.key === 'Enter') {
-            handleAddCoin(e.target.dataset.listName);
+            if (typeof handleAddCoin === 'function') handleAddCoin(e.target.dataset.listName);
         }
     });
 
@@ -197,7 +176,7 @@ function setupReportEventListeners(parentElement) {
     parentElement.addEventListener('click', async (e) => {
         const target = e.target;
         if (target.closest('#autoRefreshReportsToggle')) { 
-            toggleReportsAutoRefresh(); 
+            if (typeof toggleReportsAutoRefresh === 'function') toggleReportsAutoRefresh(); 
             return; 
         }
         if (target.closest('.remove-report-btn')) {
@@ -205,7 +184,7 @@ function setupReportEventListeners(parentElement) {
             state.trackedReports = state.trackedReports.filter(id => id !== reportIdToRemove);
             state.settings.trackedReportIds = state.trackedReports;
             await state.userDocRef.update({ 'settings.trackedReportIds': state.trackedReports });
-            await renderAlarmReports();
+            if(typeof renderAlarmReports === 'function') await renderAlarmReports();
             return;
         }
     });
@@ -214,7 +193,7 @@ function setupReportEventListeners(parentElement) {
         reportIdInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 const reportId = e.target.value.trim();
-                if (reportId) addReportToTrack(reportId);
+                if (reportId && typeof addReportToTrack === 'function') addReportToTrack(reportId);
                 e.target.value = '';
             }
         });
@@ -223,13 +202,12 @@ function setupReportEventListeners(parentElement) {
 
 function setupStrategyDiscoveryListeners(parentElement) {
     const updateHintsOnTheFly = async () => {
+        if (typeof computeSmartDiscoveryHints !== 'function' || typeof updateSmartBadges !== 'function') return;
         const timeframe = document.getElementById('signalAnalysisTimeframe')?.value;
         const days = parseInt(document.getElementById('signalAnalysisPeriod')?.value);
-
         if (timeframe && days) {
             const smart = await computeSmartDiscoveryHints({ timeframe, days });
             updateSmartBadges(smart); 
-            
             const useSmartLookback = document.getElementById('useSmartLookback')?.checked;
             if (useSmartLookback && smart?.lookback) {
                 document.getElementById('signalLookbackCandles').value = smart.lookback;
@@ -248,9 +226,7 @@ function setupStrategyDiscoveryListeners(parentElement) {
         const target = e.target;
         if (target.matches('.show-all-opportunities-btn')) {
             const coinSymbol = target.dataset.coin;
-            document.querySelectorAll(`.opportunity-row.hidden[data-coin="${coinSymbol}"]`).forEach(row => {
-                row.classList.remove('hidden');
-            });
+            document.querySelectorAll(`.opportunity-row.hidden[data-coin="${coinSymbol}"]`).forEach(row => { row.classList.remove('hidden'); });
             target.style.display = 'none';
             return;
         }
@@ -265,55 +241,24 @@ function setupStrategyDiscoveryListeners(parentElement) {
                 const days = parseInt(document.getElementById('signalAnalysisPeriod').value);
                 const changePercent = parseFloat(document.getElementById('signalAnalysisChange').value);
                 const direction = document.getElementById('signalAnalysisDirection').value;
-                const useSmartLookback = document.getElementById('useSmartLookback')?.checked;
                 const dnaParams = {};
                 document.querySelectorAll('#signalDnaParamsGrid input[type="checkbox"]:checked').forEach(cb => { dnaParams[cb.dataset.param] = true; });
                 const useAutoDna = document.getElementById('useAutoDna')?.checked;
                 let lookbackCandles = parseInt(document.getElementById('signalLookbackCandles').value) || 9;
-                const lookaheadModeSelect = document.getElementById('fixedLookaheadPreset')?.value || 'auto';
-                const customLookaheadCandles = parseInt(document.getElementById('customLookaheadCandles')?.value) || 0;
                 
-                const smart = await computeSmartDiscoveryHints({ timeframe, days });
-                updateSmartBadges(smart);
-
-                if (useSmartLookback && smart?.lookback) {
-                  lookbackCandles = smart.lookback;
-                  const el = document.getElementById('signalLookbackCandles');
-                  if (el) el.value = lookbackCandles;
-                }
-                let lookaheadFinalCandles = 0;
-                let finalMode = 'smart';
-                if (customLookaheadCandles > 0) {
-                    lookaheadFinalCandles = customLookaheadCandles;
-                    finalMode = 'custom';
-                } else if (lookaheadModeSelect !== 'auto') {
-                    lookaheadFinalCandles = presetToCandles(lookaheadModeSelect, timeframe);
-                    finalMode = lookaheadModeSelect;
-                } else if (smart?.lookahead) {
-                    lookaheadFinalCandles = smart.lookahead;
-                }
-                const successWindowMinutes = Number(lookaheadFinalCandles) * tfToMinutes(timeframe);
                 const params = {
                   coins: state.discoveryCoins,
                   timeframe, changePercent, direction, days,
                   lookbackCandles: Number(lookbackCandles),
-                  lookaheadCandles: Number(lookaheadFinalCandles),
-                  lookaheadMode: finalMode,
-                  successWindowMinutes,
                   params: dnaParams,
                   auto: !!useAutoDna
                 };
-                if (params.auto) { delete params.featureOrder; }
               
                 if (typeof runSignalAnalysisPreviewRemote === 'function') {
                     await runSignalAnalysisPreviewRemote(params);
-                } else {
-                    if (rc) rc.innerHTML = `<div class="error-msg">Analiz fonksiyonu yüklenemedi.</div>`;
                 }
             } catch (err) {
                 console.error('Analiz hatası:', err);
-                const rc = document.getElementById('signalAnalysisResultContainer');
-                if (rc) rc.innerHTML = `<div class="error-msg">Analiz sırasında hata oluştu.</div>`;
             } finally {
                 hideLoading(btn);
             }
@@ -322,16 +267,7 @@ function setupStrategyDiscoveryListeners(parentElement) {
        const saveBtn = target.closest('.save-dna-btn');
         if (saveBtn) {
           const profileData = JSON.parse(saveBtn.dataset.profile || '{}');
-          if (profileData && !profileData.name) {
-            const ts  = Date.now();
-            const sym = profileData.coin || 'COIN';
-            const tf  = profileData.timeframe || 'TF';
-            const lb  = profileData.lookbackCandles ?? 'LB';
-            const dir = (profileData.direction === 'down' ? '-' : '+') + (profileData.changePercent ?? 0) + '%';
-            const sig = Array.isArray(profileData.featureOrder) ? profileData.featureOrder.join('').slice(0,12) : 'DNA';
-            profileData.name = `${sym}__${dir}__${tf}__${lb}LB__${sig}__${ts}`;
-          }
-          await saveDnaProfile(profileData, saveBtn);
+          if (typeof saveDnaProfile === 'function') await saveDnaProfile(profileData, saveBtn);
           return;
         }
     });
@@ -340,17 +276,17 @@ function setupStrategyDiscoveryListeners(parentElement) {
 
 function setupBacktestPageEventListeners() {
     let currentProfileId = null; 
+    
     document.body.addEventListener('click', async (e) => {
         const backtestBtn = e.target.closest('.run-dna-backtest-btn');
         const rerunBtn = e.target.closest('#rerunBacktestBtn');
         const refreshBtn = e.target.closest('#refreshDnaProfilesBtn');
-        const toggleLink = e.target.closest('.toggle-details-link');
         const deleteBtn = e.target.closest('.delete-dna-btn');
 
         if (deleteBtn) {
             const pid = deleteBtn.dataset.profileId;
             const containerId = deleteBtn.dataset.containerId || 'dnaProfilesContainer';
-            await deleteDnaProfile(pid, containerId);
+            if(typeof deleteDnaProfile === 'function') await deleteDnaProfile(pid, containerId);
             return;
         }
         if (backtestBtn) {
@@ -363,15 +299,8 @@ function setupBacktestPageEventListeners() {
             return;
         }
         if (refreshBtn) {
-            fetchDnaProfiles('dnaProfilesContainer');
+            if(typeof fetchDnaProfiles === 'function') fetchDnaProfiles('dnaProfilesContainer');
             return;
-        }
-        if (toggleLink) {
-            e.preventDefault();
-            const detailsContent = toggleLink.parentElement.nextElementSibling;
-            if (detailsContent && detailsContent.classList.contains('dna-card-details-content')) {
-                detailsContent.classList.toggle('open');
-            }
         }
     });
     
@@ -384,13 +313,10 @@ function setupBacktestPageEventListeners() {
         backtestSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         const scoreThreshold = parseInt(document.getElementById('backtestThreshold').value) || 80;
         const debugMode = document.getElementById('backtestDebugMode').checked;
-        runDnaBacktest(currentProfileId, 30, scoreThreshold, debugMode);
+        if(typeof runDnaBacktest === 'function') runDnaBacktest(currentProfileId, 30, scoreThreshold, debugMode);
     }
 }
 
-// ===================================================================================
-// YARDIMCI FONKSİYONLAR
-// ===================================================================================
 function tfToMinutes(tf) {
     const map = { '15m': 15, '1h': 60, '4h': 240, '1d': 1440 };
     return map[tf] || 60;
@@ -408,6 +334,7 @@ async function computeSmartDiscoveryHints({ timeframe, days }) {
   try {
     const samplePair = (state.discoveryCoins && state.discoveryCoins[0]) || 'BTCUSDT';
     const limit = Math.min(500, Math.max(150, Math.ceil((days || 30) * (1440 / tfToMinutes(timeframe)))));
+    if(typeof getKlines !== 'function') return null;
     const klines = await getKlines(samplePair, timeframe, limit);
     if (!klines || klines.length < 60) return null;
 
