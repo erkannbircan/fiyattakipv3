@@ -394,7 +394,6 @@ function showPortfolioModal(action) {
     showPanel('portfolioModal');
 }
 
-function updateAllTableRows(data) {// GITHUB/public/js/ui.js -> updateAllTableRows fonksiyonunun YENİ ve TAM HALİ
 function updateAllTableRows(data) {
     const tableBody = document.getElementById('cryptoPriceTable');
     if (!tableBody) return;
