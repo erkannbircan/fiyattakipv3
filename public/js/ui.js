@@ -245,7 +245,7 @@ const formatVolume = (volume) => {
     return num.toFixed(0);
 };
 
-function applySettingsToUI() {
+unction applySettingsToUI() {
     if (!state.settings) {
         console.error("applySettingsToUI çağrıldı ancak state.settings tanımsız. Ayarlar yüklenemedi.");
         return;
@@ -261,6 +261,17 @@ function applySettingsToUI() {
     }
     const telegramChatIdInput = document.getElementById('telegramChatIdInput');
     if (telegramChatIdInput) telegramChatIdInput.value = state.settings.telegramChatId || '';
+
+    const visibleColumns = state.settings.visibleColumns || {};
+    document.querySelectorAll('#columnVisibilityCheckboxes input[type="checkbox"]').forEach(cb => {
+        const col = cb.dataset.col;
+        if (visibleColumns[col] === false) { 
+            cb.checked = false;
+        } else {
+            cb.checked = true;
+        }
+    });
+
     for (let i = 1; i <= 3; i++) {
         if (state.settings.columns && state.settings.columns[i]) {
             const colNameInput = document.getElementById(`col${i}_name_input`);
@@ -271,6 +282,10 @@ function applySettingsToUI() {
             if (colThresholdInput) colThresholdInput.value = state.settings.columns[i].threshold;
             const colHeaderCrypto = document.getElementById(`col${i}_header_crypto`);
             if (colHeaderCrypto) colHeaderCrypto.innerHTML = `${state.settings.columns[i].name}<span class="sort-indicator"></span>`;
+            
+            // Kolon görünürlük etiketlerini güncelle
+            const colVisLabel = document.getElementById(`col${i}_vis_label`);
+            if (colVisLabel) colVisLabel.textContent = state.settings.columns[i].name;
         }
     }
     const highColorInput = document.getElementById('high_color_input');
@@ -282,12 +297,27 @@ function applySettingsToUI() {
     const lowColorPreview = document.getElementById('low_color_preview');
     if (lowColorPreview) lowColorPreview.style.backgroundColor = state.settings.colors.low;
     
+    applyColumnVisibility();
     translatePage(state.settings.lang);
+
     if (typeof toggleAutoRefresh === 'function') {
         toggleAutoRefresh();
     }
     if (typeof toggleReportsAutoRefresh === 'function') {
         toggleReportsAutoRefresh(false);
+    }
+}
+
+function applyColumnVisibility() {
+    const table = document.querySelector('.table-wrapper table');
+    if (!table || !state.settings.visibleColumns) return;
+
+    for (const col in state.settings.visibleColumns) {
+        if (state.settings.visibleColumns[col]) {
+            table.classList.remove(`hide-col-${col}`);
+        } else {
+            table.classList.add(`hide-col-${col}`);
+        }
     }
 }
 
@@ -372,12 +402,8 @@ function updateAllTableRows(data) {
     const formatPct = (pct) => (typeof pct === 'number') ? `${pct.toFixed(2)}%` : 'N/A';
     const getCellStyle = (colData, threshold) => {
         const pct = colData?.pct;
-        let classes = '',
-            style = '';
-        if (typeof pct !== 'number') return {
-            classes: '',
-            style: ''
-        };
+        let classes = '', style = '';
+        if (typeof pct !== 'number') return { classes: '', style: '' };
         if (pct < 0) {
             classes = 'negative';
         } else if (pct >= threshold) {
@@ -387,31 +413,28 @@ function updateAllTableRows(data) {
             classes = 'positive-low';
             style = `style="color: ${state.settings.colors.low};"`;
         }
-        return {
-            classes,
-            style
-        };
+        return { classes, style };
     };
     data.forEach(result => {
         const row = document.createElement("tr");
         row.dataset.pair = result.pair;
         let rowHTML;
         if (result.error) {
-            rowHTML = `<td class="drag-handle-col ${isSorting ? '' : 'hidden'}"><i class="fas fa-grip-lines drag-handle"></i></td><td class="asset-cell">${result.pair.replace("USDT", "")}</td><td colspan="5" style="text-align:center; color: var(--accent-red);">Veri alınamadı</td>`;
+            rowHTML = `<td class="drag-handle-col ${isSorting ? '' : 'hidden'}"><i class="fas fa-grip-lines drag-handle"></i></td><td class="asset-cell col-pair">${result.pair.replace("USDT", "")}</td><td class="col-latestPrice"></td><td class="col-col1"></td><td class="col-col2"></td><td class="col-col3" style="text-align:center; color: var(--accent-red);">Veri alınamadı</td>`;
         } else {
             const cellStyle1 = getCellStyle(result.col1, state.settings.columns[1].threshold);
             const cellStyle2 = getCellStyle(result.col2, state.settings.columns[2].threshold);
             const cellStyle3 = getCellStyle(result.col3, state.settings.columns[3].threshold);
             rowHTML = `
                 <td class="drag-handle-col ${isSorting ? '' : 'hidden'}"><i class="fas fa-grip-lines drag-handle"></i></td>
-                <td class="asset-cell" data-pair="${result.pair}">${result.pair.replace("USDT", "")}</td>
-                <td>${formatPrice(result.latestPrice)}</td>
-                <td class="${cellStyle1.classes} clickable-pct" ${cellStyle1.style} data-col="1" data-pair="${result.pair}">${formatPct(result.col1.pct)}</td>
-                <td class="${cellStyle2.classes} clickable-pct" ${cellStyle2.style} data-col="2" data-pair="${result.pair}">${formatPct(result.col2.pct)}</td>
-                <td class="${cellStyle3.classes} clickable-pct" ${cellStyle3.style} data-col="3" data-pair="${result.pair}">${formatPct(result.col3.pct)}</td>
+                <td class="asset-cell col-pair" data-pair="${result.pair}">${result.pair.replace("USDT", "")}</td>
+                <td class="col-latestPrice">${formatPrice(result.latestPrice)}</td>
+                <td class="col-col1 ${cellStyle1.classes} clickable-pct" ${cellStyle1.style} data-col="1" data-pair="${result.pair}">${formatPct(result.col1.pct)}</td>
+                <td class="col-col2 ${cellStyle2.classes} clickable-pct" ${cellStyle2.style} data-col="2" data-pair="${result.pair}">${formatPct(result.col2.pct)}</td>
+                <td class="col-col3 ${cellStyle3.classes} clickable-pct" ${cellStyle3.style} data-col="3" data-pair="${result.pair}">${formatPct(result.col3.pct)}</td>
             `;
         }
-        rowHTML += `<td><button class="action-btn remove-btn" data-list-name="crypto" data-pair="${result.pair}"><i class="fas fa-times"></i></button></td>`;
+        rowHTML += `<td class="col-delete"><button class="action-btn remove-btn" data-list-name="crypto" data-pair="${result.pair}"><i class="fas fa-times"></i></button></td>`;
         row.innerHTML = rowHTML;
         tableBody.appendChild(row);
     });
