@@ -1,3 +1,5 @@
+// GITHUB/public/js/telegram.js DOSYASININ YENİ İÇERİĞİ
+
 // ---- GLOBAL ÇATI (her JS dosyasının en üstüne koy) ----
 window.App = window.App || {
   // sürüm bilgisi bu tur için (elle güncelle)
@@ -16,11 +18,21 @@ async function sendTestTelegramMessage() {
     showLoading(btn);
     try {
         const sendTestNotification = state.firebase.functions.httpsCallable('sendTestNotification');
-        await sendTestNotification({ chatId: state.settings.telegramChatId });
+
+        // --- DÜZELTME BURADA ---
+        // Sunucuya artık hem chatId hem de bir "text" alanı gönderiyoruz.
+        const payload = {
+            chatId: state.settings.telegramChatId,
+            text: '✅ Bu bir test bildirimidir. Ayarlarınız doğru çalışıyor!'
+        };
+        
+        await sendTestNotification(payload);
+
         showNotification("Test bildirimi başarıyla gönderildi!", true);
     } catch (error) {
         console.error("Telegram test hatası:", error);
-        showNotification("Test bildirimi gönderilemedi. Chat ID'nizi kontrol edin.", false);
+        // Hata mesajını daha anlaşılır hale getirdik.
+        showNotification(`Test gönderilemedi: ${error.message}`, false);
     } finally {
         hideLoading(btn);
     }
