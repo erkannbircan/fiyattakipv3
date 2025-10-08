@@ -1,6 +1,5 @@
 // ---- GLOBAL ÇATI (her JS dosyasının en üstüne koy) ----
 window.App = window.App || {
-  // sürüm bilgisi bu tur için (elle güncelle)
   version: 'v3.0.0-' + (window.App?.versionTag || ''),
   loaded: {},
   guards: {},
@@ -11,9 +10,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeApp();
 });
 
-// app.js dosyasının yaklaşık 11. satırı
-
-// GITHUB/public/js/app.js -> initializeApp fonksiyonunun GÜNCELLENMİŞ HALİ
 function initializeApp() {
     // Firebase güvenlik kontrolü
     if (typeof firebase === 'undefined' || !firebase.initializeApp) {
@@ -22,7 +18,7 @@ function initializeApp() {
     }
 
     try {
-        if (!firebase.apps || !firebase.apps.length) {
+        if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
         state.firebase.auth = firebase.auth();
@@ -34,10 +30,9 @@ function initializeApp() {
         return;
     }
 
-    // YENİ YAPI: Fonksiyonların varlığını kontrol etmeden, doğru sırada çağırıyoruz.
-    setupGlobalEventListeners();
+    // index.html'deki dosya sırası doğru olduğu için, bu fonksiyonların var olduğunu varsayarak doğrudan çağırıyoruz.
     setupAuthEventListeners();
-    initializeAuthListener();
+    initializeAuthListener(); // Bu, login kontrolünü başlatır. Diğer her şey login olunca tetiklenir.
 }
 
 function getDefaultSettings() {
@@ -45,30 +40,28 @@ function getDefaultSettings() {
         lang: 'tr',
         autoRefresh: true,
         refreshInterval: 300,
-        visibleColumns: { // <-- YENİ VEYA GÜNCELLENMİŞ
+        visibleColumns: {
             latestPrice: true,
             col1: true,
             col2: true,
             col3: true,
-            rsi: false, // Varsayılan olarak kapalı
-            macd: false, // Varsayılan olarak kapalı
+            rsi: false,
+            macd: false,
         },
         columns: {
             1: { name: '1G', days: 1, threshold: 5 },
             2: { name: '7G', days: 7, threshold: 10 },
             3: { name: '30G', days: 30, threshold: 20 },
         },
-        colors: { high: '#26de81', low: '#26a69a' }
+        colors: { high: '#26de81', low: '#26a69a' },
+        chartState: {}
     };
 }
 
 function initializeAuthListener() {
-    console.log('Adım 2: initializeAuthListener fonksiyonu başladı.'); // <-- BU SATIRI EKLE
     state.firebase.auth.onAuthStateChanged(async user => {
-        // console.log('Adım 3: Auth durumu değişti, kontrol ediliyor...'); // <-- Silebilirsin
         if (user) {
-            // console.log('Sonuç: Kullanıcı GİRİŞ YAPMIŞ durumda.'); // <-- Silebilirsin
-            showPage('tracker-page'); // <-- PERDEYİ AÇAN KOMUT BU!
+            showPage('tracker-page');
             state.user = user;
             state.userDocRef = state.firebase.db.collection('users').doc(user.uid);
             try {
@@ -76,13 +69,12 @@ function initializeAuthListener() {
                 let userData = doc.data();
                 if (!doc.exists) {
                     userData = {
-                         email: user.email,
+                        email: user.email,
                         role: 'new_user',
                         portfolios: { "Varsayılan": ["BTCUSDT", "ETHUSDT", "SOLUSDT"] },
                         activePortfolio: "Varsayılan",
                         coins_discovery: ["BTCUSDT", "ETHUSDT"],
                         settings: getDefaultSettings(),
-                        alarms: []
                     };
                     await state.userDocRef.set(userData, { merge: true });
                 }
@@ -91,35 +83,19 @@ function initializeAuthListener() {
                 if (!state.pageInitialized) {
                     await initializeTrackerPage(userData);
                 }
-
-              try {
-  const path = window.location.pathname;
-  if (typeof loadAlarmReports === 'function' &&
-      (path.endsWith('/sinyal-performans.html') || path.includes('sinyal-performans'))) {
-    await loadAlarmReports();
-  }
-} catch (e) {
-  console.warn('[App] Alarm raporları otomatik yüklenemedi:', e);
-}
                 updateAdminUI();
 
             } catch (err) {
                 console.error("Auth/Firestore Hatası:", err);
-                const errorMessageDiv = document.getElementById('error-message');
-                if (errorMessageDiv) {
-                    errorMessageDiv.textContent = `Bir hata oluştu: ${err.message}`;
-                }
                 state.firebase.auth.signOut();
             }
         } else {
-           console.log('Sonuç: Kullanıcı GİRİŞ YAPMAMIŞ durumda. Login sayfası gösterilecek.'); // <-- BU SATIRI EKLE
             showPage('login-page');
             state.pageInitialized = false;
+            state.user = null;
             state.userDocRef = null;
             if (state.autoRefreshTimer) clearInterval(state.autoRefreshTimer);
             if (state.reportsRefreshTimer) clearInterval(state.reportsRefreshTimer);
-            // YENİ: Oturum kapanınca tarayıcıyı da durdur.
-            if (state.liveScannerTimer) clearInterval(state.liveScannerTimer);
         }
     });
 }
@@ -129,42 +105,33 @@ function loadSettingsAndRole(userData) {
     state.settings = { 
         ...defaultSettings, 
         ...userData.settings,
-        chartIndicators: userData.settings?.chartIndicators || {} // ← BU SATIRI EKLEYİN
+        columns: { ...defaultSettings.columns, ...(userData.settings?.columns || {}) },
+        colors: { ...defaultSettings.colors, ...(userData.settings?.colors || {}) },
+        chartState: userData.settings?.chartState || {}
     };
-    state.settings.columns = { ...defaultSettings.columns, ...(userData.settings?.columns || {}) };
-    state.settings.colors = { ...defaultSettings.colors, ...(userData.settings?.colors || {}) };
-    state.trackedReports = userData.settings?.trackedReportIds || [];
-    state.settings.chartStates_v2 = userData.settings?.chartStates_v2 || {};
     state.currentUserRole = userData.role;
     const limits = { admin: { coin: Infinity }, qualified: { coin: 50 }, new_user: { coin: 15 } };
     state.coinLimit = limits[state.currentUserRole]?.coin ?? 15;
     document.getElementById('userEmail').textContent = state.firebase.auth.currentUser.email;
 }
 
-// app.js içindeki initializeTrackerPage fonksiyonunun YENİ HALİ
 async function initializeTrackerPage(userData) {
     state.pageInitialized = true;
-
-    // --- TÜM SAYFALAR İÇİN ORTAK AYARLAR ---
     state.userPortfolios = userData.portfolios || { "Varsayılan": ["BTCUSDT", "ETHUSDT", "SOLUSDT"] };
     state.activePortfolio = userData.activePortfolio || Object.keys(state.userPortfolios)[0];
     state.discoveryCoins = userData.coins_discovery || ["BTCUSDT", "ETHUSDT"];
     
     applySettingsToUI();
     renderAllPortfolioTabs();
- fetchFearAndGreedIndex().then(renderFearAndGreedWidget);
-  
-    // --- YENİ YAPI: Ana olay dinleyici başlatıcısını çağır ---
-    if (typeof initializeEventListeners === 'function') {
-        initializeEventListeners();
-    } else {
-        console.error("HATA: events.js'teki initializeEventListeners fonksiyonu bulunamadı!");
+    
+    if (typeof fetchFearAndGreedIndex === 'function') {
+        fetchFearAndGreedIndex().then(renderFearAndGreedWidget);
     }
+  
+    initializeEventListeners();
 
-    // --- SAYFAYA ÖZEL İÇERİĞİ YÜKLE ---
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-
-    if ((currentPage === 'index.html' || currentPage === '')) {
+    if (currentPage === 'index.html' || currentPage === '') {
         await fetchAllDataAndRender();
         createCoinManager('crypto-coin-manager-container', state.userPortfolios[state.activePortfolio] || [], 'crypto');
     }
@@ -172,32 +139,28 @@ async function initializeTrackerPage(userData) {
         createCoinManager('discovery-coin-manager-container', state.discoveryCoins, 'discovery');
     }
     else if (currentPage === 'backtest.html') {
-        fetchDnaProfiles('dnaProfilesContainer');
+        if (typeof fetchDnaProfiles === 'function') fetchDnaProfiles('dnaProfilesContainer');
     }
 }
 
-// GITHUB/public/js/app.js DOSYASINDAKİ fetchAllDataAndRender FONKSİYONUNUN YENİ HALİ
 async function fetchAllDataAndRender() {
-    // --- YENİ: "Meşgulüm" kontrolü ---
     if (state.isFetchingData) {
         console.warn("Zaten devam eden bir veri çekme işlemi var. Yenisi iptal edildi.");
         return;
     }
-    state.isFetchingData = true; // "Meşgulüm" tabelasını as
+    state.isFetchingData = true;
 
     const refreshBtn = document.getElementById('refreshBtn');
     if (refreshBtn) showLoading(refreshBtn);
 
     try {
         let currentCoinList = state.userPortfolios[state.activePortfolio] || [];
-        // --- YENİ: Listeyi her ihtimale karşı temizleyerek çift kayıtları engelleyelim ---
         currentCoinList = [...new Set(currentCoinList)];
         state.userPortfolios[state.activePortfolio] = currentCoinList;
 
-        const promises = currentCoinList.map(pair => fetchCryptoData(pair, false));
+        const promises = currentCoinList.map(pair => fetchCryptoData(pair));
         state.allCryptoData = await Promise.all(promises);
         sortAndRenderTable();
-        renderSupportResistance(); // Bu fonksiyonun ui.js içinde olduğundan emin ol
         
         const updateTimeEl = document.getElementById('updateTime');
         if (updateTimeEl) updateTimeEl.textContent = new Date().toLocaleString(state.settings.lang);
@@ -205,25 +168,34 @@ async function fetchAllDataAndRender() {
         console.error("fetchAllDataAndRender sırasında hata:", error);
         showNotification("Veriler yüklenirken bir hata oluştu.", false);
     } finally {
-        // --- YENİ: İşlem bitince veya hata olunca tabelayı kaldır ve butonu düzelt ---
         if (refreshBtn) hideLoading(refreshBtn);
-        state.isFetchingData = false; // "Meşgulüm" tabelasını kaldır
+        state.isFetchingData = false;
     }
 }
 
-
 function sortAndRenderTable() {
     const { key, order } = state.currentSort;
-    let sortedData = (order === 'default') ? [...state.allCryptoData] : [...state.allCryptoData].sort((a, b) => {
-        let valA, valB;
-        if (key.startsWith('col')) { valA = a[key]?.pct; valB = b[key]?.pct; }
-        else { valA = a[key]; valB = b[key]; }
-        if (a.error) return 1; if (b.error) return -1;
-        if (valA === undefined || valA === null || valA === 'N/A') return 1;
-        if (valB === undefined || valB === null || valB === 'N/A') return -1;
-        if (typeof valA === 'string') return order === 'asc' ? valA.localeCompare(valA) : valB.localeCompare(valA);
-        return order === 'asc' ? valA - valB : valB - valA;
-    });
+    let sortedData = [...state.allCryptoData];
+    if (order !== 'default' && key) {
+        sortedData.sort((a, b) => {
+            let valA, valB;
+            if (key.startsWith('col')) { valA = a[key]?.pct; }
+            else if (key === 'rsi') { valA = a.rsi; }
+            else if (key === 'macd') { valA = a.macd?.histogram; }
+            else { valA = a[key]; }
+
+            if (key.startsWith('col')) { valB = b[key]?.pct; }
+            else if (key === 'rsi') { valB = b.rsi; }
+            else if (key === 'macd') { valB = b.macd?.histogram; }
+            else { valB = b[key]; }
+
+            if (a.error) return 1; if (b.error) return -1;
+            if (valA === undefined || valA === null || valA === 'N/A') return 1;
+            if (valB === undefined || valB === null || valB === 'N/A') return -1;
+            if (typeof valA === 'string') return order === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            return order === 'asc' ? valA - valB : valB - valA;
+        });
+    }
 
     document.querySelectorAll('#crypto-content th.sortable').forEach(th => {
         th.classList.remove('asc', 'desc');
@@ -231,7 +203,7 @@ function sortAndRenderTable() {
     });
     updateAllTableRows(sortedData);
 }
-// app.js dosyasına EKLENECEK YENİ fonksiyon
+
 async function sendTestTelegramMessage() {
     const btn = document.getElementById('sendTelegramTestBtn');
     try {
@@ -256,16 +228,13 @@ async function sendTestTelegramMessage() {
 function saveSettings() {
     const btn = document.getElementById('saveSettingsBtn');
     showLoading(btn);
-
     let interval = parseInt(document.getElementById('refreshInterval').value);
     const minInterval = { admin: 10, qualified: 120, new_user: 300 }[state.currentUserRole] || 300;
     if (interval < minInterval) interval = minInterval;
 
     const visibleColumns = {};
     document.querySelectorAll('#columnVisibilityCheckboxes input[type="checkbox"]').forEach(cb => {
-        if (!cb.disabled) {
-            visibleColumns[cb.dataset.col] = cb.checked;
-        }
+        if (!cb.disabled) { visibleColumns[cb.dataset.col] = cb.checked; }
     });
     
     const settingsToUpdate = {
@@ -281,19 +250,13 @@ function saveSettings() {
         },
         colors: { high: document.getElementById('high_color_input').value, low: document.getElementById('low_color_input').value }
     };
-
     Object.assign(state.settings, settingsToUpdate);
-
     if (state.userDocRef) {
         state.userDocRef.update({ settings: state.settings })
             .then(() => {
-                applySettingsToUI(); // Bu fonksiyon UI'ı güncelleyecek
+                applySettingsToUI();
                 closeAllPanels();
                 showNotification("Ayarlar başarıyla kaydedildi.", true);
-                const toggle = document.getElementById('toggleAutoScanner');
-                if (toggle && toggle.checked) {
-                    toggleAutoScanner(true);
-                }
             })
             .catch((error) => {
                 console.error("Ayarları kaydederken hata oluştu:", error);
@@ -318,68 +281,20 @@ function toggleAutoRefresh() {
     }
 }
 
-function toggleReportsAutoRefresh(forceState) {
-    const btn = document.getElementById('autoRefreshReportsToggle');
-    if (!btn) return;
-    let shouldBeActive = forceState !== undefined ? forceState : !btn.classList.contains('active');
-
-    if (state.reportsRefreshTimer) {
-        clearInterval(state.reportsRefreshTimer);
-        state.reportsRefreshTimer = null;
-    }
-    btn.classList.toggle('active', shouldBeActive);
-
-    if (shouldBeActive) {
-        const intervalSeconds = state.settings.refreshInterval;
-        if (!isNaN(intervalSeconds) && intervalSeconds >= 10) {
-            state.reportsRefreshTimer = setInterval(renderAlarmReports, intervalSeconds * 1000);
-            if (forceState === undefined) showNotification("Rapor yenileme aktif.", true);
-        }
-    } else {
-        if (forceState === undefined) showNotification("Rapor yenileme durduruldu.", true);
-    }
-}
-
-// app.js dosyasındaki handleAddCoin fonksiyonunu bununla değiştirin
 async function handleAddCoin(listName) {
-    // İyileştirme: Input alanını, aktif olan sekme içinden daha spesifik olarak bul.
     const activeTabContent = document.querySelector('.tab-content.active');
     const input = activeTabContent.querySelector(`.new-coin-input[data-list-name="${listName}"]`);
-    if (!input) {
-        console.error(`Coin input alanı bulunamadı: ${listName}`);
-        return;
-    }
-
-    let assetList;
-    if (listName === 'crypto') assetList = state.userPortfolios[state.activePortfolio] || [];
-    else if (listName === 'discovery') assetList = state.discoveryCoins || [];
-    else if (listName === 'alarm') assetList = state.tempAlarmCoins || [];
-    else return;
-
+    if (!input) { console.error(`Coin input alanı bulunamadı: ${listName}`); return; }
+    let assetList = state.userPortfolios[state.activePortfolio] || [];
     const newAssetSymbols = input.value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
     if (newAssetSymbols.length === 0) return;
-
-    if (listName !== 'alarm' && state.coinLimit !== Infinity && (assetList.length + newAssetSymbols.length) > state.coinLimit) {
-        showNotification(translations[state.settings.lang].role_info(state.currentUserRole, state.coinLimit, 'coin'), false);
-        return;
-    }
-
     const addedCoins = [];
     for (const symbol of newAssetSymbols) {
         const newPair = !symbol.endsWith('USDT') ? `${symbol}USDT` : symbol;
-        if (assetList.includes(newPair)) {
-            showNotification(translations[state.settings.lang].already_in_list(symbol), false);
-            continue;
-        }
-        try {
-            await axios.get(`https://api.binance.com/api/v3/ticker/price?symbol=${newPair}`);
-            assetList.push(newPair);
-            addedCoins.push(newPair);
-        } catch (error) {
-            showNotification(translations[state.settings.lang].invalid_asset(symbol), false);
-        }
+        if (assetList.includes(newPair)) continue;
+        assetList.push(newPair);
+        addedCoins.push(newPair);
     }
-
     if (addedCoins.length > 0) {
         updateCoinList(listName, assetList);
         await saveCoinListToFirestore(listName);
@@ -389,18 +304,9 @@ async function handleAddCoin(listName) {
 }
 
 async function handleRemoveCoin(listName, pair) {
-    let assetList;
-    if (listName === 'crypto') assetList = state.userPortfolios[state.activePortfolio];
-    else if (listName === 'discovery') assetList = state.discoveryCoins;
-    else if (listName === 'alarm') assetList = state.tempAlarmCoins;
-    else return;
-
+    let assetList = state.userPortfolios[state.activePortfolio];
     const updatedList = (assetList || []).filter(p => p !== pair);
-
-    if (listName === 'crypto') state.userPortfolios[state.activePortfolio] = updatedList;
-    else if (listName === 'discovery') state.discoveryCoins = updatedList;
-    else if (listName === 'alarm') state.tempAlarmCoins = updatedList;
-
+    state.userPortfolios[state.activePortfolio] = updatedList;
     updateCoinList(listName, updatedList);
     await saveCoinListToFirestore(listName);
     if (listName === 'crypto') await fetchAllDataAndRender();
@@ -410,7 +316,6 @@ async function saveCoinListToFirestore(listName) {
     if (!state.userDocRef) return;
     try {
         if (listName === 'crypto') await state.userDocRef.update({ portfolios: state.userPortfolios });
-        else if (listName === 'discovery') await state.userDocRef.update({ coins_discovery: state.discoveryCoins });
     } catch (error) {
         console.error(`Error saving ${listName} list:`, error);
     }
@@ -429,10 +334,8 @@ async function handlePortfolioSave() {
     const newName = document.getElementById('portfolioNameInput').value.trim();
     const originalName = document.getElementById('originalPortfolioNameInput').value;
     const errorDiv = document.getElementById('portfolio-error-message');
-
     if (!newName) { errorDiv.textContent = 'Liste adı boş olamaz.'; return; }
     if (state.userPortfolios[newName] && newName !== originalName) { errorDiv.textContent = 'Bu isimde bir liste zaten var.'; return; }
-
     if (action === 'new') {
         state.userPortfolios[newName] = [];
     } else if (action === 'rename') {
@@ -450,7 +353,8 @@ async function handlePortfolioSave() {
 
 async function handleDeletePortfolio() {
     if (Object.keys(state.userPortfolios).length <= 1) { showNotification("Son listeyi silemezsiniz!", false); return; }
-    if (confirm(`"${state.activePortfolio}" listesini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
+    const ok = await App.confirm({title: 'Listeyi Sil', message: `"${state.activePortfolio}" listesini silmek istediğinizden emin misiniz?`, confirmText: 'Sil', confirmStyle: 'danger'});
+    if(ok){
         const deletedPortfolio = state.activePortfolio;
         delete state.userPortfolios[state.activePortfolio];
         const newActive = Object.keys(state.userPortfolios)[0];
@@ -460,50 +364,35 @@ async function handleDeletePortfolio() {
     }
 }
 
-// GITHUB/public/js/app.js -> saveChartState fonksiyonunun YENİ ve DOĞRU HALİ
 function saveChartState(pair) {
     if (state.tradingViewWidget && typeof state.tradingViewWidget.save === 'function') {
         state.tradingViewWidget.save(function(savedData) {
-            // savedData hem indikatörleri hem de çizimleri içerir.
-            const updatePayload = {
-                [`settings.chartState.${pair}`]: savedData
-            };
-
+            const updatePayload = { [`settings.chartState.${pair}`]: savedData };
             if (state.userDocRef) {
                 state.userDocRef.update(updatePayload)
                     .then(() => {
                         if (!state.settings.chartState) state.settings.chartState = {};
                         state.settings.chartState[pair] = savedData;
-                        console.log('Grafik durumu başarıyla kaydedildi:', pair);
-                        // showNotification('Grafik durumu kaydedildi.', true); // Otomatik kayıtta sürekli bildirim çıkmasın.
                     })
-                    .catch(error => {
-                        console.error("Grafik ayarları kaydedilirken hata:", error);
-                    });
+                    .catch(error => console.error("Grafik ayarları kaydedilirken hata:", error));
             }
         });
     }
 }
 
-// GITHUB/public/js/app.js DOSYASINA EKLENECEK YENİ FONKSİYONLAR
-// Global state'e sortable instance'ını tutmak için bir değişken ekleyelim.
-// state.js dosyasında state objesine eklenebilir ama şimdilik burada tanımlayalım.
 state.sortableInstance = null;
-
 function toggleSortable() {
     const tableBody = document.getElementById('cryptoPriceTable');
     const dragHandles = document.querySelectorAll('#crypto-content .drag-handle-col');
     const toggleBtn = document.getElementById('toggleSortBtn');
 
     if (state.sortableInstance) {
-        // Sıralamayı Kapat
         state.sortableInstance.destroy();
         state.sortableInstance = null;
         dragHandles.forEach(th => th.classList.add('hidden'));
         toggleBtn.innerHTML = '<i class="fas fa-sort"></i> Sırala';
         showNotification("Sıralama modu kapatıldı.", true);
     } else {
-        // Sıralamayı Aç
         dragHandles.forEach(th => th.classList.remove('hidden'));
         toggleBtn.innerHTML = '<i class="fas fa-check"></i> Sıralamayı Kaydet';
         state.sortableInstance = new Sortable(tableBody, {
@@ -513,8 +402,6 @@ function toggleSortable() {
                 const newOrder = [...evt.to.rows].map(row => row.dataset.pair);
                 state.userPortfolios[state.activePortfolio] = newOrder;
                 await saveCoinListToFirestore('crypto');
-                // Tabloyu yeni sıraya göre anında render etmeye gerek yok çünkü DOM zaten güncel.
-                // Sadece state'i ve veritabanını güncelledik.
             }
         });
         showNotification("Sıralama modu aktif. Coinleri sürükleyip bırakabilirsiniz.", true);
@@ -523,45 +410,10 @@ function toggleSortable() {
 
 function updateAdminUI() {
     const isAdmin = state.currentUserRole === 'admin';
-    
     const discoveryTab = document.getElementById('strategy-discovery-tab');
-    if (discoveryTab) {
-        discoveryTab.style.display = isAdmin ? 'block' : 'none';
-    }
-
+    if (discoveryTab) discoveryTab.style.display = isAdmin ? 'block' : 'none';
     const reportsTab = document.getElementById('alarm-reports-tab');
-    if (reportsTab) {
-        reportsTab.style.display = isAdmin ? 'block' : 'none';
-    }
+    if (reportsTab) reportsTab.style.display = isAdmin ? 'block' : 'none';
     const backtestTab = document.getElementById('backtest-tab');
-    if (backtestTab) {
-        backtestTab.style.display = isAdmin ? 'block' : 'none';
-    }
+    if (backtestTab) backtestTab.style.display = isAdmin ? 'block' : 'none';
 }
-// ---- YÜKLEME DENETÇİSİ ----
-(() => {
-  // Basit showPage yedeği (yoksa)
-  if (typeof window.showPage !== 'function') {
-    window.showPage = function(id) {
-      document.querySelectorAll('.page').forEach(el => el.style.display = (el.id === id ? 'block' : 'none'));
-    };
-  }
-
-  // Beklenen globaller:
-  const expected = [
-    ['UI',   () => typeof window.renderSignalAnalysisPreview === 'function'],
-    ['API',  () => typeof window.runSignalAnalysisPreview === 'function' || typeof window.getKlines === 'function'],
-    ['EVT',  () => typeof window.setupStrategyDiscoveryListeners === 'function']
-  ];
-
-  const missing = expected.filter(([name, test]) => !test());
-  if (missing.length) {
-    console.group('[App] Eksik modüller');
-    missing.forEach(([n]) => console.error('Eksik:', n));
-    console.groupEnd();
-  } else {
-    App.log('Tüm modüller yüklendi.');
-  }
-})();
-window.App = window.App || { loaded:{} };
-window.App.loaded.EVT = true;
