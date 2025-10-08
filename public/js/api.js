@@ -13,58 +13,36 @@ function getKlines(pair, interval, limit = 500) {
     }).then(res => res.data);
 }
 
-function fetchCryptoData(pair, withIndicators = false) {
-    const timeout = 7000;
-    const dailyKlinesPromise = axios.get(`https://api.binance.com/api/v3/klines?symbol=${pair}&interval=1d&limit=1000`, { timeout });
-    const tickerPromise = axios.get(`https://api.binance.com/api/v3/ticker/24hr?symbol=${pair}`, { timeout });
+async function fetchCryptoData(pair) {
+    try {
+        // Sunucudaki yeni fonksiyonumuzu çağırıyoruz
+        const getCoinData = state.firebase.functions.httpsCallable('getCoinDataWithIndicators');
+        const result = await getCoinData({ pair });
 
-    return Promise.all([dailyKlinesPromise, tickerPromise])
-        .then(([dailyKlinesResult, tickerResult]) => {
-            const dailyKlines = dailyKlinesResult.data;
-            const tickerData = tickerResult.data;
-
-            if (!dailyKlines || dailyKlines.length < 2) throw new Error("Yetersiz günlük veri.");
-
-            const latestPrice = parseFloat(tickerData.lastPrice);
-            const calculatePct = (colKey) => {
-                const days = state.settings.columns[colKey].days;
-                if (dailyKlines.length < days + 1) return { pct: 'N/A' };
-                const periodData = dailyKlines.slice(-(days + 1), -1);
-                let lowestPrice = Infinity, lowestDate = null;
-                periodData.forEach(d => {
-                    const low = parseFloat(d[3]);
-                    if (low < lowestPrice) {
-                        lowestPrice = low;
-                        lowestDate = new Date(d[0]);
-                    }
-                });
-                if (lowestPrice === Infinity) return { pct: 'N/A' };
-                return {
-                    pct: ((latestPrice - lowestPrice) / lowestPrice * 100),
-                    lowestPrice,
-                    lowestDate: lowestDate.toLocaleDateString(state.settings.lang)
-                };
-            };
-            const yesterday = dailyKlines[dailyKlines.length - 2];
-            const high = parseFloat(yesterday[2]), low = parseFloat(yesterday[3]), close = parseFloat(yesterday[4]);
-            const pivot = (high + low + close) / 3;
-
+        if (result.data.error) {
+            throw new Error(`Sunucu ${pair} için veri alamadı.`);
+        }
+        
+        // Gelen veriyi, eski yapıyla uyumlu hale getiriyoruz (lowestDate formatlaması)
+        const processColumn = (colData) => {
+            if (!colData || colData.pct === 'N/A') return { pct: 'N/A' };
             return {
-                pair,
-                latestPrice,
-                error: false,
-                type: 'crypto',
-                currency: 'USDT',
-                col1: calculatePct(1),
-                col2: calculatePct(2),
-                col3: calculatePct(3),
-                sr: { r2: pivot + (high - low), r1: (2 * pivot) - low, pivot: pivot, s1: (2 * pivot) - high, s2: pivot - (high - low) }
+                ...colData,
+                lowestDate: new Date(colData.lowestDate).toLocaleDateString(state.settings.lang)
             };
-        })
-        .catch(error => {
-            console.error(`${pair} verisi çekilirken hata oluştu:`, error);
-            return { pair, error: true, type: 'crypto' };
-        });
+        };
+
+        return {
+            ...result.data,
+            col1: processColumn(result.data.col1),
+            col2: processColumn(result.data.col2),
+            col3: processColumn(result.data.col3)
+        };
+
+    } catch (error) {
+        console.error(`${pair} verisi çekilirken hata oluştu:`, error);
+        return { pair, error: true };
+    }
 }
 
 // api.js — Strateji keşfi önizleme (istemci)
