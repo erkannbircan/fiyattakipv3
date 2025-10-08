@@ -257,7 +257,7 @@ async function sendTestTelegramMessage() {
     }
 }
 
-unction saveSettings() {
+function saveSettings() {
     const btn = document.getElementById('saveSettingsBtn');
     showLoading(btn);
 
