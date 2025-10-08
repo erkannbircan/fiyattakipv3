@@ -354,33 +354,59 @@ function updateAllTableRows(data) {
     });
 }
 
+// GITHUB/public/js/ui.js -> showChart fonksiyonunun YENİ ve DOĞRU HALİ
 function showChart(pair) {
     const chartPanelTitle = document.getElementById('chartPanelTitle');
     const container = document.getElementById('chartContainer');
-    if (!chartPanelTitle || !container) { return; }
+    if (!chartPanelTitle || !container) {
+        console.error('Grafik paneli elementleri bulunamadı!');
+        return;
+    }
+
     chartPanelTitle.textContent = pair.replace("USDT", "");
-    container.innerHTML = '<div class="loading" style="margin: auto;"></div>';
+    container.innerHTML = '<div class="loading" style="margin: auto;"></div>'; // Alanı temizle ve yükleme animasyonu koy
     showPanel('chartPanel');
+    
+    // chartState, hem çizimleri hem de indikatörleri içeren tek bir objedir.
     const savedChartState = state.settings?.chartState?.[pair];
+    
     try {
-        if (state.tradingViewWidget && typeof state.tradingViewWidget.remove === 'function') {
-            state.tradingViewWidget.remove();
-            state.tradingViewWidget = null;
-        }
+        // NOT: Önceki widget'ı .remove() ile kaldırma işlemini sildik.
+        // container.innerHTML = '' satırı bu işi daha temiz yapıyor.
+        state.tradingViewWidget = null; // Referansı temizle
+
         const widgetOptions = {
-            symbol: `BINANCE:${pair}`, interval: "D", autosize: true, container_id: "chartContainer", theme: "dark", style: "1", locale: "tr", toolbar_bg: "#1e222d", enable_publishing: false, withdateranges: true, hide_side_toolbar: false, allow_symbol_change: true, details: true, disabled_features: ["use_localstorage_for_settings"], loading_screen: { backgroundColor: "#1e222d" },
+            symbol: `BINANCE:${pair}`,
+            interval: "1D", // "D" yerine "1D" daha standart bir kullanımdır
+            autosize: true,
+            container_id: "chartContainer",
+            theme: "dark",
+            style: "1",
+            locale: "tr",
+            toolbar_bg: "#1e222d",
+            enable_publishing: false,
+            withdateranges: true,
+            hide_side_toolbar: false,
+            allow_symbol_change: true,
+            details: true,
+            disabled_features: ["use_localstorage_for_settings"],
+            loading_screen: { backgroundColor: "#1e222d" },
             saved_data: savedChartState || null,
-            onChartReady: function() {
-                if (state.tradingViewWidget && typeof state.tradingViewWidget.subscribe === 'function') {
-                    state.tradingViewWidget.subscribe('onAutoSaveNeeded', function() {
-                        if (typeof saveChartState === "function") saveChartState(pair);
-                    });
-                }
-            },
+            // onChartReady, widget'ın kendisine aittir, option değildir.
+            // Bu yüzden widget oluştuktan sonra çağıracağız.
             overrides: { "mainSeriesProperties.showPriceLine": true, "mainSeriesProperties.priceLineWidth": 2 },
-            studies_overrides: { "volume.volume.color.0": "#ff6b6b", "volume.volume.color.1": "#4ecdc4", "volume.volume.transparency": 70, "volume.volume ma.color": "#ffa726", "volume.volume ma.transparency": 30, "volume.volume ma.linewidth": 5 }
+            studies_overrides: { "volume.volume.color.0": "#ff6b6b", "volume.volume.color.1": "#4ecdc4", "volume.volume.transparency": 70 }
         };
+
         state.tradingViewWidget = new TradingView.widget(widgetOptions);
+
+        state.tradingViewWidget.onChartReady(() => {
+            console.log('TradingView chart ready for:', pair);
+            state.tradingViewWidget.subscribe('onAutoSaveNeeded', () => {
+                if (typeof saveChartState === "function") saveChartState(pair);
+            });
+        });
+
     } catch (error) {
         console.error("TradingView widget hatası:", error);
         container.innerHTML = `<p style="color:var(--accent-red); text-align:center; padding:20px;">Grafik yüklenemedi: ${error.message}</p>`;
