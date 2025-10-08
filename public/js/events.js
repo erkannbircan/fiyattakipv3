@@ -173,10 +173,25 @@ function setupCryptoPageListeners() {
     const parentElement = document.getElementById('tracker-page');
     if (!parentElement) return;
 
-    // Coin Ekleme/Çıkarma
     parentElement.addEventListener('click', (e) => {
+        // --- YENİ: Yüzdeye tıklama olayı ---
+        const pctCell = e.target.closest('.clickable-pct');
+        if (pctCell) {
+            showPriceDetailPopup(pctCell.dataset.pair, pctCell.dataset.col);
+            return; // Diğer olaylarla çakışmasın diye burada bitiriyoruz.
+        }
+
+        // --- YENİ: Coin ismine tıklama olayı ---
+        const assetCell = e.target.closest('.asset-cell');
+        if (assetCell) {
+            state.activeChartPair = assetCell.dataset.pair; // Aktif grafiği state'e kaydet
+            showChart(state.activeChartPair);
+            return;
+        }
+
         const addBtn = e.target.closest('.add-coin-btn');
         if (addBtn) handleAddCoin(addBtn.dataset.listName);
+        
         const removeBtn = e.target.closest('.remove-coin-tag, .remove-btn');
         if (removeBtn) handleRemoveCoin(removeBtn.dataset.listName, removeBtn.dataset.pair);
     });
