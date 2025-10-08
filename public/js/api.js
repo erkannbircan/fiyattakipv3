@@ -17,6 +17,10 @@ async function fetchCryptoData(pair) {
     try {
         // Sunucudaki yeni fonksiyonumuzu çağırıyoruz
         const getCoinData = state.firebase.functions.httpsCallable('getCoinDataWithIndicators');
+      const payload = { 
+            pair: pair,
+            interval: state.settings.indicatorTimeframe || '1d' 
+        };
         const result = await getCoinData({ pair });
 
         if (result.data.error) {
