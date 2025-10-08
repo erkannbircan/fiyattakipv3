@@ -13,8 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // app.js dosyasının yaklaşık 11. satırı
 
+// GITHUB/public/js/app.js -> initializeApp fonksiyonunun GÜNCELLENMİŞ HALİ
 function initializeApp() {
-    console.log('Adım 1: initializeApp fonksiyonu başladı.'); // <-- BU SATIRI EKLE
     // Firebase güvenlik kontrolü
     if (typeof firebase === 'undefined' || !firebase.initializeApp) {
         console.error('Firebase SDK yüklenmedi ya da sırası yanlış. Lütfen <script src="firebase-*.js"> etiketlerini kontrol et.');
@@ -22,49 +22,23 @@ function initializeApp() {
     }
 
     try {
-    if (!firebase.apps || !firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-    state.firebase.auth = firebase.auth();
-    state.firebase.db = firebase.firestore();
-
-    // ✅ UI'nin beklediği kısa yol: alias ekle
-    state.firebase.firestore = state.firebase.db;
-
-    state.firebase.functions = firebase.app().functions('europe-west1');
-  } catch (e) {
-    console.error('Firebase init hatası:', e);
-    return;
-  }
-
-    // Bu fonksiyonlar bazı sayfalarda/yük sıralarında henüz gelmemiş olabilir.
-    if (typeof window.setupGlobalEventListeners === 'function') {
-        window.setupGlobalEventListeners();
-    } else {
-        console.warn('setupGlobalEventListeners henüz yüklenmemiş.');
+        if (!firebase.apps || !firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        state.firebase.auth = firebase.auth();
+        state.firebase.db = firebase.firestore();
+        state.firebase.firestore = state.firebase.db; // alias
+        state.firebase.functions = firebase.app().functions('europe-west1');
+    } catch (e) {
+        console.error('Firebase init hatası:', e);
+        return;
     }
 
-    if (typeof window.setupAuthEventListeners === 'function') {
-        window.setupAuthEventListeners();
-    } else {
-        console.warn('setupAuthEventListeners henüz yüklenmemiş.');
-    }
-    
-    if (typeof window.showPage !== 'function') {
-  window.showPage = function(id) {
-    document.querySelectorAll('.page').forEach(el => {
-      el.style.display = (el.id === id ? 'block' : 'none');
-    });
-    try { document.getElementById(id)?.scrollIntoView({ behavior:'auto', block:'start' }); } catch (_) {}
-  };
+    // YENİ YAPI: Fonksiyonların varlığını kontrol etmeden, doğru sırada çağırıyoruz.
+    setupGlobalEventListeners();
+    setupAuthEventListeners();
+    initializeAuthListener();
 }
-// Bu dosyada tanımlı olduğu için güvenle çağırabiliriz (her durumda çalışsın)
-initializeAuthListener();
-} // <-- initializeApp burada biter (EKLENDİ)
-
-
-
-// app.js dosyasının yaklaşık 68. satırı
 
 function getDefaultSettings() {
     return {
