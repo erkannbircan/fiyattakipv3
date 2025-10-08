@@ -280,3 +280,28 @@ span.smart-hint { font-size: 0.8em; color: var(--accent-blue); margin-left: 5px;
     min-width: 220px;
     padding: 12px 24px; /* Daha kibar bir boyut */
 }
+/* GITHUB/public/style.css DOSYASININ SONUNA EKLENECEK */
+.fear-greed-widget {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: var(--bg-tertiary);
+    padding: 5px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    font-size: 0.9rem;
+    margin-left: 20px;
+}
+.fg-value {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+.fg-text {
+    color: var(--text-secondary);
+}
+/* Farklı duyarlılık durumları için renkler */
+.fg-extreme-fear { color: #e74c3c; }
+.fg-fear { color: #f39c12; }
+.fg-neutral { color: var(--text-primary); }
+.fg-greed { color: #27ae60; }
+.fg-extreme-greed { color: #2ecc71; }
