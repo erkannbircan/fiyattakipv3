@@ -305,3 +305,12 @@ span.smart-hint { font-size: 0.8em; color: var(--accent-blue); margin-left: 5px;
 .fg-neutral { color: var(--text-primary); }
 .fg-greed { color: #27ae60; }
 .fg-extreme-greed { color: #2ecc71; }
+
+/* GITHUB/public/style.css DOSYASININ SONUNA EKLENECEK */
+/* Kolon Gizleme/Gösterme Mantığı */
+.hide-col-latestPrice .col-latestPrice,
+.hide-col-col1 .col-col1,
+.hide-col-col2 .col-col2,
+.hide-col-col3 .col-col3 {
+    display: none;
+}
