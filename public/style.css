@@ -340,3 +340,40 @@ span.smart-hint { font-size: 0.8em; color: var(--accent-blue); margin-left: 5px;
     border-radius: 4px;
     transition: width 0.3s ease-in-out;
 }
+/* GITHUB/public/style.css DOSYASININ SONUNA EKLENECEK */
+.tooltip-trigger {
+    cursor: help;
+    color: var(--text-secondary);
+    margin-left: 4px;
+    position: relative;
+}
+
+th {
+    position: relative; /* Tooltip'in doğru konumlanması için */
+}
+
+.tooltip {
+    visibility: hidden;
+    opacity: 0;
+    width: 220px;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    text-align: center;
+    border-radius: 6px;
+    padding: 10px;
+    position: absolute;
+    z-index: 10;
+    bottom: 125%; /* Başlığın üstünde */
+    left: 50%;
+    margin-left: -110px; /* Yarısı kadar sola kaydır */
+    transition: opacity 0.3s;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    border: 1px solid var(--border-color);
+    pointer-events: none; /* Üzerine gelince titrememesi için */
+}
+
+.tooltip-trigger:hover + .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
