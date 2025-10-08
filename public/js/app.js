@@ -464,43 +464,29 @@ async function handleDeletePortfolio() {
     }
 }
 
-// Fonksiyon artık parametre olarak bir 'widget' alıyor.
-// Tek tip imza: pair ile kaydet (ui.js ile aynı davranış)
+// GITHUB/public/js/app.js -> saveChartState fonksiyonunun YENİ ve DOĞRU HALİ
 function saveChartState(pair) {
-  try {
-    if (!pair || !state.tradingViewWidget) {
-      console.warn("saveChartState: pair veya widget yok.");
-      return;
+    if (state.tradingViewWidget && typeof state.tradingViewWidget.save === 'function') {
+        state.tradingViewWidget.save(function(savedData) {
+            // savedData hem indikatörleri hem de çizimleri içerir.
+            const updatePayload = {
+                [`settings.chartState.${pair}`]: savedData
+            };
+
+            if (state.userDocRef) {
+                state.userDocRef.update(updatePayload)
+                    .then(() => {
+                        if (!state.settings.chartState) state.settings.chartState = {};
+                        state.settings.chartState[pair] = savedData;
+                        console.log('Grafik durumu başarıyla kaydedildi:', pair);
+                        // showNotification('Grafik durumu kaydedildi.', true); // Otomatik kayıtta sürekli bildirim çıkmasın.
+                    })
+                    .catch(error => {
+                        console.error("Grafik ayarları kaydedilirken hata:", error);
+                    });
+            }
+        });
     }
-
-    // TradingView'den çalışmalar ve çizimler
-    const studiesList = typeof state.tradingViewWidget.getStudiesList === 'function'
-      ? state.tradingViewWidget.getStudiesList()
-      : [];
-    const drawings = typeof state.tradingViewWidget.getDrawings === 'function'
-      ? state.tradingViewWidget.getDrawings()
-      : [];
-
-    const updateData = {
-      [`settings.chartIndicators.${pair}`]: studiesList,
-      [`settings.chartDrawings.${pair}`]: drawings
-    };
-
-    if (state.userDocRef) {
-      state.userDocRef.update(updateData)
-        .then(() => {
-          // local state’i de güncelle
-          state.settings.chartIndicators = state.settings.chartIndicators || {};
-          state.settings.chartDrawings   = state.settings.chartDrawings   || {};
-          state.settings.chartIndicators[pair] = studiesList;
-          state.settings.chartDrawings[pair]   = drawings;
-          console.log('Chart state saved for:', pair);
-        })
-        .catch(err => console.error('Grafik ayarları kaydedilirken hata:', err));
-    }
-  } catch (err) {
-    console.error('saveChartState genel hata:', err);
-  }
 }
 
 // GITHUB/public/js/app.js DOSYASINA EKLENECEK YENİ FONKSİYONLAR
