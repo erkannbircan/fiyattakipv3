@@ -189,6 +189,11 @@ function setupCryptoPageListeners() {
             return;
         }
 
+        if (e.target.closest('#toggleSortBtn')) {
+            toggleSortable(); // app.js'e ekleyeceğimiz yeni fonksiyon
+            return;
+        }
+
         const addBtn = e.target.closest('.add-coin-btn');
         if (addBtn) handleAddCoin(addBtn.dataset.listName);
         
