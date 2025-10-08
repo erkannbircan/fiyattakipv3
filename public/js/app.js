@@ -109,6 +109,7 @@ function loadSettingsAndRole(userData) {
         colors: { ...defaultSettings.colors, ...(userData.settings?.colors || {}) },
         chartState: userData.settings?.chartState || {}
     };
+  state.settings.indicatorTimeframe = userData.settings?.indicatorTimeframe || '1d';
     state.currentUserRole = userData.role;
     const limits = { admin: { coin: Infinity }, qualified: { coin: 50 }, new_user: { coin: 15 } };
     state.coinLimit = limits[state.currentUserRole]?.coin ?? 15;
@@ -242,6 +243,7 @@ function saveSettings() {
         autoRefresh: document.getElementById('autoRefreshToggle').checked,
         refreshInterval: interval,
         telegramChatId: document.getElementById('telegramChatIdInput').value,
+      indicatorTimeframe: document.getElementById('indicatorTimeframeSelect').value, 
         visibleColumns: visibleColumns,
         columns: {
             1: { name: document.getElementById('col1_name_input').value, days: parseInt(document.getElementById('col1_days_input').value), threshold: parseFloat(document.getElementById('col1_threshold_input').value) },
