@@ -394,14 +394,28 @@ function showPortfolioModal(action) {
     showPanel('portfolioModal');
 }
 
+// GITHUB/public/js/ui.js -> DOĞRU updateAllTableRows FONKSİYONU
 function updateAllTableRows(data) {
     const tableBody = document.getElementById('cryptoPriceTable');
     if (!tableBody) return;
     tableBody.innerHTML = '';
     const isSorting = document.querySelector('#crypto-content .drag-handle-col') && !document.querySelector('#crypto-content .drag-handle-col.hidden');
     const formatPct = (pct) => (typeof pct === 'number') ? `${pct.toFixed(2)}%` : 'N/A';
+    
     const getCellStyle = (colData, threshold) => {
-        // ... (Bu iç fonksiyon aynı kalıyor, değişiklik yok)
+        const pct = colData?.pct;
+        let classes = '', style = '';
+        if (typeof pct !== 'number') return { classes: '', style: '' };
+        if (pct < 0) {
+            classes = 'negative';
+        } else if (pct >= threshold) {
+            classes = 'positive-high';
+            style = `style="color: ${state.settings.colors.high};"`;
+        } else {
+            classes = 'positive-low';
+            style = `style="color: ${state.settings.colors.low};"`;
+        }
+        return { classes, style };
     };
 
     data.forEach(result => {
@@ -415,7 +429,6 @@ function updateAllTableRows(data) {
             const cellStyle2 = getCellStyle(result.col2, state.settings.columns[2].threshold);
             const cellStyle3 = getCellStyle(result.col3, state.settings.columns[3].threshold);
             
-            // --- YENİ: İndikatörler için HTML ve stil oluşturma ---
             let rsiCell = '<td class="col-rsi">N/A</td>';
             if (typeof result.rsi === 'number') {
                 const rsiVal = result.rsi.toFixed(2);
@@ -429,8 +442,7 @@ function updateAllTableRows(data) {
             if (result.macd && typeof result.macd.histogram === 'number') {
                 const hist = result.macd.histogram.toFixed(4);
                 const macdClass = hist >= 0 ? 'macd-positive' : 'macd-negative';
-                // MACD Histogramını küçük bir bar ile görselleştirelim
-                const barWidth = Math.min(100, Math.abs(hist) * 200); // Görsel ayar
+                const barWidth = Math.min(100, Math.abs(hist) * 200);
                 const barColor = hist >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
                 macdCell = `
                     <td class="col-macd ${macdClass}">
