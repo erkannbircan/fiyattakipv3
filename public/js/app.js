@@ -179,17 +179,39 @@ async function initializeTrackerPage(userData) {
     }
 }
 
+// GITHUB/public/js/app.js DOSYASINDAKİ fetchAllDataAndRender FONKSİYONUNUN YENİ HALİ
 async function fetchAllDataAndRender() {
+    // --- YENİ: "Meşgulüm" kontrolü ---
+    if (state.isFetchingData) {
+        console.warn("Zaten devam eden bir veri çekme işlemi var. Yenisi iptal edildi.");
+        return;
+    }
+    state.isFetchingData = true; // "Meşgulüm" tabelasını as
+
     const refreshBtn = document.getElementById('refreshBtn');
     if (refreshBtn) showLoading(refreshBtn);
-    const currentCoinList = state.userPortfolios[state.activePortfolio] || [];
-    const promises = currentCoinList.map(pair => fetchCryptoData(pair, false));
-    state.allCryptoData = await Promise.all(promises);
-    sortAndRenderTable();
-    renderSupportResistance();
-    if (refreshBtn) hideLoading(refreshBtn);
-    const updateTimeEl = document.getElementById('updateTime');
-    if (updateTimeEl) updateTimeEl.textContent = new Date().toLocaleString(state.settings.lang);
+
+    try {
+        let currentCoinList = state.userPortfolios[state.activePortfolio] || [];
+        // --- YENİ: Listeyi her ihtimale karşı temizleyerek çift kayıtları engelleyelim ---
+        currentCoinList = [...new Set(currentCoinList)];
+        state.userPortfolios[state.activePortfolio] = currentCoinList;
+
+        const promises = currentCoinList.map(pair => fetchCryptoData(pair, false));
+        state.allCryptoData = await Promise.all(promises);
+        sortAndRenderTable();
+        renderSupportResistance(); // Bu fonksiyonun ui.js içinde olduğundan emin ol
+        
+        const updateTimeEl = document.getElementById('updateTime');
+        if (updateTimeEl) updateTimeEl.textContent = new Date().toLocaleString(state.settings.lang);
+    } catch (error) {
+        console.error("fetchAllDataAndRender sırasında hata:", error);
+        showNotification("Veriler yüklenirken bir hata oluştu.", false);
+    } finally {
+        // --- YENİ: İşlem bitince veya hata olunca tabelayı kaldır ve butonu düzelt ---
+        if (refreshBtn) hideLoading(refreshBtn);
+        state.isFetchingData = false; // "Meşgulüm" tabelasını kaldır
+    }
 }
 
 
