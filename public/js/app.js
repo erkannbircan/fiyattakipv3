@@ -495,6 +495,42 @@ function saveChartState(pair) {
   }
 }
 
+// GITHUB/public/js/app.js DOSYASINA EKLENECEK YENİ FONKSİYONLAR
+// Global state'e sortable instance'ını tutmak için bir değişken ekleyelim.
+// state.js dosyasında state objesine eklenebilir ama şimdilik burada tanımlayalım.
+state.sortableInstance = null;
+
+function toggleSortable() {
+    const tableBody = document.getElementById('cryptoPriceTable');
+    const dragHandles = document.querySelectorAll('#crypto-content .drag-handle-col');
+    const toggleBtn = document.getElementById('toggleSortBtn');
+
+    if (state.sortableInstance) {
+        // Sıralamayı Kapat
+        state.sortableInstance.destroy();
+        state.sortableInstance = null;
+        dragHandles.forEach(th => th.classList.add('hidden'));
+        toggleBtn.innerHTML = '<i class="fas fa-sort"></i> Sırala';
+        showNotification("Sıralama modu kapatıldı.", true);
+    } else {
+        // Sıralamayı Aç
+        dragHandles.forEach(th => th.classList.remove('hidden'));
+        toggleBtn.innerHTML = '<i class="fas fa-check"></i> Sıralamayı Kaydet';
+        state.sortableInstance = new Sortable(tableBody, {
+            handle: '.drag-handle',
+            animation: 150,
+            onEnd: async function (evt) {
+                const newOrder = [...evt.to.rows].map(row => row.dataset.pair);
+                state.userPortfolios[state.activePortfolio] = newOrder;
+                await saveCoinListToFirestore('crypto');
+                // Tabloyu yeni sıraya göre anında render etmeye gerek yok çünkü DOM zaten güncel.
+                // Sadece state'i ve veritabanını güncelledik.
+            }
+        });
+        showNotification("Sıralama modu aktif. Coinleri sürükleyip bırakabilirsiniz.", true);
+    }
+}
+
 function updateAdminUI() {
     const isAdmin = state.currentUserRole === 'admin';
     
