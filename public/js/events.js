@@ -80,20 +80,30 @@ function initializeEventListeners() {
  */
 function setupSharedEventListeners() {
     document.body.addEventListener('click', (e) => {
+        // --- YENİ: Refresh butonu için olay dinleyici ---
+        if (e.target.closest('#refreshBtn')) {
+            fetchAllDataAndRender();
+        }
+
         // Panel ve Modal Yönetimi
         if (e.target.closest('#settingsBtn')) {
-            // 'ui.js' dosyasındaki togglePanel fonksiyonunu çağırır
             if (typeof togglePanel === 'function') togglePanel('settingsPanel');
         }
-        if (e.target.closest('.panel .close-btn') || e.target.id === 'modalOverlay') {
-            if (typeof closeAllPanels === 'function') closeAllPanels();
-        }
+        // ... (diğer if blokları aynı kalacak)
 
         // Oturum İşlemleri (Çıkış Yap)
         if (e.target.closest('#logoutBtn')) {
             state.firebase?.auth?.signOut();
         }
 
+        // --- YENİ: Grafik kaydetme butonu ---
+        if (e.target.closest('#saveChartStateBtn')) {
+            if (state.activeChartPair && typeof saveChartState === 'function') {
+                saveChartState(state.activeChartPair);
+                showNotification('Grafik durumu kaydedildi.', true);
+            }
+        }
+        
         // Portföy / Liste Yönetimi
         if (e.target.closest('#newPortfolioBtn')) {
             if (typeof showPortfolioModal === 'function') showPortfolioModal('new');
