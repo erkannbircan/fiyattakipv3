@@ -440,12 +440,13 @@ function updateAllTableRows(data) {
     });
 }
 
+// GITHUB/public/js/ui.js -> showChart fonksiyonunun YENİ ve DOĞRU HALİ
 function showChart(pair) {
     const chartPanelTitle = document.getElementById('chartPanelTitle');
     const container = document.getElementById('chartContainer');
     
     if (!chartPanelTitle || !container) {
-        console.error('Chart elements not found!');
+        console.error('Grafik elementleri bulunamadı!');
         return;
     }
 
@@ -456,11 +457,17 @@ function showChart(pair) {
     const savedStudies = state.settings?.chartIndicators?.[pair] || [];
     
     try {
+        // Önceki widget'ı temizle (varsa)
+        if (state.tradingViewWidget && typeof state.tradingViewWidget.remove === 'function') {
+            state.tradingViewWidget.remove();
+            state.tradingViewWidget = null;
+        }
+
         state.tradingViewWidget = new TradingView.widget({
             symbol: `BINANCE:${pair}`,
             interval: "D",
             autosize: true,
-            container_id: "chartContainer",
+            container_id: "chartContainer", // 'container' yerine 'container_id' olmalı
             theme: "dark",
             style: "1",
             locale: "tr",
@@ -472,7 +479,20 @@ function showChart(pair) {
             details: true,
             studies: savedStudies,
             disabled_features: ["use_localstorage_for_settings"],
-            saved_data: state.settings?.chartDrawings?.[pair] || {},
+            // DÜZELTME: onChartReady buraya, constructor içine bir callback olarak ekleniyor.
+            onChartReady: function() {
+                console.log('TradingView chart ready for:', pair);
+                
+                // Kayıtlı çizimleri yükle
+                if (state.settings?.chartDrawings?.[pair]) {
+                    state.tradingViewWidget.load({ drawings: state.settings.chartDrawings[pair] });
+                }
+                
+                // Otomatik kaydetme için dinleyici ekle
+                state.tradingViewWidget.subscribe('onAutoSaveNeeded', function() {
+                    saveChartState(pair);
+                });
+            },
             loading_screen: { backgroundColor: "#1e222d" },
             overrides: {
                 "mainSeriesProperties.showPriceLine": true,
@@ -486,18 +506,6 @@ function showChart(pair) {
                 "volume.volume ma.transparency": 30,
                 "volume.volume ma.linewidth": 5
             }
-        });
-
-        state.tradingViewWidget.onChartReady(function() {
-            console.log('TradingView chart ready for:', pair);
-            
-            if (state.settings?.chartDrawings?.[pair]) {
-                state.tradingViewWidget.loadDrawings(state.settings.chartDrawings[pair]);
-            }
-            
-            state.tradingViewWidget.subscribe('onAutoSaveNeeded', function() {
-                saveChartState(pair);
-            });
         });
 
     } catch (error) {
