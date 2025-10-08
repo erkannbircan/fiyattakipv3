@@ -775,6 +775,34 @@ function renderDnaProfiles(profiles, containerId) {
     container.appendChild(gridContainer);
 }
 
+// GITHUB/public/js/ui.js DOSYASINA EKLENECEK YENİ FONKSİYON
+function showPriceDetailPopup(pair, colKey) {
+    const coinData = state.allCryptoData.find(c => c.pair === pair);
+    if (!coinData || !coinData[colKey]) return;
+
+    const detailData = coinData[colKey];
+    const colName = state.settings.columns[colKey].name;
+
+    const content = `
+        <div class="status-table">
+            <table>
+                <tbody>
+                    <tr><td>Coin</td><td>${pair.replace("USDT", "")}</td></tr>
+                    <tr><td>Periyot Adı</td><td>${colName}</td></tr>
+                    <tr><td>Mevcut Fiyat</td><td>$${formatPrice(coinData.latestPrice)}</td></tr>
+                    <tr><td>Hesaplanan En Düşük Fiyat</td><td>$${formatPrice(detailData.lowestPrice)}</td></tr>
+                    <tr><td>En Düşük Fiyat Tarihi</td><td>${detailData.lowestDate}</td></tr>
+                    <tr><td style="font-weight: bold;">Fark (Yüzde)</td><td style="font-weight: bold; color: var(--accent-green);">${detailData.pct.toFixed(2)}%</td></tr>
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    document.getElementById('detailPanelTitle').textContent = `${pair.replace("USDT", "")} - Fiyat Analizi`;
+    document.getElementById('detailPanelContent').innerHTML = content;
+    showPanel('detailPanel');
+}
+
 function renderDnaBacktestResults(data, profileId) {
     const section = document.getElementById('backtest-results-section');
     const summaryContainer = document.getElementById('backtestSummaryContainer');
