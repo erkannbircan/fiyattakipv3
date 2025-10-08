@@ -84,17 +84,17 @@
     </div>
                 <div class="table-wrapper">
                     <table>
-                        <thead>
-                            <tr>
-                                <th class="drag-handle-col hidden"><i class="fas fa-grip-lines"></i></th>
-                                <th class="sortable" data-sort-key="pair"><span data-lang="coin">Coin</span><span class="sort-indicator"></span></th>
-                                <th class="sortable" data-sort-key="latestPrice"><span data-lang="price">Fiyat</span><span class="sort-indicator"></span></th>
-                                <th id="col1_header_crypto" class="sortable" data-sort-key="col1"></th>
-                                <th id="col2_header_crypto" class="sortable" data-sort-key="col2"></th>
-                                <th id="col3_header_crypto" class="sortable" data-sort-key="col3"></th>
-                                <th data-lang="delete">Sil</th>
-                            </tr>
-                        </thead>
+                       <thead>
+    <tr>
+        <th class="drag-handle-col hidden"><i class="fas fa-grip-lines"></i></th>
+        <th class="sortable col-pair" data-sort-key="pair"><span data-lang="coin">Coin</span><span class="sort-indicator"></span></th>
+        <th class="sortable col-latestPrice" data-sort-key="latestPrice"><span data-lang="price">Fiyat</span><span class="sort-indicator"></span></th>
+        <th id="col1_header_crypto" class="sortable col-col1" data-sort-key="col1"></th>
+        <th id="col2_header_crypto" class="sortable col-col2" data-sort-key="col2"></th>
+        <th id="col3_header_crypto" class="sortable col-col3" data-sort-key="col3"></th>
+        <th class="col-delete" data-lang="delete">Sil</th>
+    </tr>
+</thead>
                         <tbody id="cryptoPriceTable"></tbody>
                     </table>
                 </div>
@@ -131,6 +131,16 @@
       <button class="panel-btn close-btn">×</button>
     </div>
     <div class="panel-content">
+        <div class="settings-section">
+        <h4 data-lang="table_view_settings">Tablo Görünümü</h4>
+        <div id="columnVisibilityCheckboxes" class="filters-grid compact">
+            <label class="form-field check-inline"><input type="checkbox" data-col="pair" checked disabled> <span>Coin</span></label>
+            <label class="form-field check-inline"><input type="checkbox" data-col="latestPrice" checked> <span>Fiyat</span></label>
+            <label class="form-field check-inline"><input type="checkbox" data-col="col1" checked> <span id="col1_vis_label">Kolon 1</span></label>
+            <label class="form-field check-inline"><input type="checkbox" data-col="col2" checked> <span id="col2_vis_label">Kolon 2</span></label>
+            <label class="form-field check-inline"><input type="checkbox" data-col="col3" checked> <span id="col3_vis_label">Kolon 3</span></label>
+            </div>
+      </div>
       <div class="settings-section">
         <h4 data-lang="general_settings">Genel Ayarlar</h4>
         <div class="setting-item"><label data-lang="language">Dil</label><select id="langSelect"><option value="tr">Türkçe</option><option value="en">English</option></select></div>
