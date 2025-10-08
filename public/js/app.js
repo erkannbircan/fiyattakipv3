@@ -257,19 +257,27 @@ async function sendTestTelegramMessage() {
     }
 }
 
-function saveSettings() {
+unction saveSettings() {
     const btn = document.getElementById('saveSettingsBtn');
     showLoading(btn);
 
     let interval = parseInt(document.getElementById('refreshInterval').value);
     const minInterval = { admin: 10, qualified: 120, new_user: 300 }[state.currentUserRole] || 300;
     if (interval < minInterval) interval = minInterval;
+
+    const visibleColumns = {};
+    document.querySelectorAll('#columnVisibilityCheckboxes input[type="checkbox"]').forEach(cb => {
+        if (!cb.disabled) {
+            visibleColumns[cb.dataset.col] = cb.checked;
+        }
+    });
     
     const settingsToUpdate = {
         lang: document.getElementById('langSelect').value,
         autoRefresh: document.getElementById('autoRefreshToggle').checked,
         refreshInterval: interval,
         telegramChatId: document.getElementById('telegramChatIdInput').value,
+        visibleColumns: visibleColumns,
         columns: {
             1: { name: document.getElementById('col1_name_input').value, days: parseInt(document.getElementById('col1_days_input').value), threshold: parseFloat(document.getElementById('col1_threshold_input').value) },
             2: { name: document.getElementById('col2_name_input').value, days: parseInt(document.getElementById('col2_days_input').value), threshold: parseFloat(document.getElementById('col2_threshold_input').value) },
@@ -283,10 +291,9 @@ function saveSettings() {
     if (state.userDocRef) {
         state.userDocRef.update({ settings: state.settings })
             .then(() => {
-                applySettingsToUI();
+                applySettingsToUI(); // Bu fonksiyon UI'ı güncelleyecek
                 closeAllPanels();
                 showNotification("Ayarlar başarıyla kaydedildi.", true);
-                // YENİ: Ayarlar kaydedildikten sonra tarayıcıyı yeni aralıkla yeniden başlat
                 const toggle = document.getElementById('toggleAutoScanner');
                 if (toggle && toggle.checked) {
                     toggleAutoScanner(true);
