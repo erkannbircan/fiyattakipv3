@@ -66,6 +66,28 @@ initializeAuthListener();
 
 // app.js dosyasının yaklaşık 68. satırı
 
+function getDefaultSettings() {
+    return {
+        lang: 'tr',
+        autoRefresh: true,
+        refreshInterval: 300,
+        visibleColumns: { // <-- YENİ VEYA GÜNCELLENMİŞ
+            latestPrice: true,
+            col1: true,
+            col2: true,
+            col3: true,
+            rsi: false, // Varsayılan olarak kapalı
+            macd: false, // Varsayılan olarak kapalı
+        },
+        columns: {
+            1: { name: '1G', days: 1, threshold: 5 },
+            2: { name: '7G', days: 7, threshold: 10 },
+            3: { name: '30G', days: 30, threshold: 20 },
+        },
+        colors: { high: '#26de81', low: '#26a69a' }
+    };
+}
+
 function initializeAuthListener() {
     console.log('Adım 2: initializeAuthListener fonksiyonu başladı.'); // <-- BU SATIRI EKLE
     state.firebase.auth.onAuthStateChanged(async user => {
