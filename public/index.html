@@ -58,18 +58,25 @@
                 <a href="./sinyal-performans.html" class="tab-link" data-page="sinyal-performans" id="alarm-reports-tab" style="display: none;">Sinyal Performansı</a>
             </nav>
             <div id="crypto-content" class="tab-content active">
-                <div class="portfolio-controls">
-                    <div class="portfolio-tabs" id="portfolioTabs"></div>
-                    <div class="portfolio-actions">
-                         <button id="newPortfolioBtn" class="action-btn-sm" title="Yeni Liste"><i class="fas fa-plus"></i></button>
-                         <button id="renamePortfolioBtn" class="action-btn-sm" title="Yeniden Adlandır"><i class="fas fa-edit"></i></button>
-                         <button id="deletePortfolioBtn" class="action-btn-sm" title="Listeyi Sil"><i class="fas fa-trash"></i></button>
-                    </div>
+    
+    <div class="collapsible" style="margin-bottom: 20px;">
+        <div class="collapsible-header open"> <h4 style="margin:0;">Liste ve Varlık Yönetimi</h4>
+            <i class="fas fa-chevron-down"></i>
+        </div>
+        <div class="collapsible-content open"> <div class="portfolio-controls">
+                <div class="portfolio-tabs" id="portfolioTabs"></div>
+                <div class="portfolio-actions">
+                     <button id="newPortfolioBtn" class="action-btn-sm" title="Yeni Liste"><i class="fas fa-plus"></i></button>
+                     <button id="renamePortfolioBtn" class="action-btn-sm" title="Yeniden Adlandır"><i class="fas fa-edit"></i></button>
+                     <button id="deletePortfolioBtn" class="action-btn-sm" title="Listeyi Sil"><i class="fas fa-trash"></i></button>
                 </div>
-                 <div id="crypto-coin-manager-container"></div>
-                <div class="table-controls">
-                    <button id="toggleSortBtn"><i class="fas fa-sort"></i> Sırala</button>
-                </div>
+            </div>
+             <div id="crypto-coin-manager-container"></div>
+        </div>
+    </div>
+    <div class="table-controls">
+        <button id="toggleSortBtn"><i class="fas fa-sort"></i> Sırala</button>
+    </div>
                 <div class="table-wrapper">
                     <table>
                         <thead>
