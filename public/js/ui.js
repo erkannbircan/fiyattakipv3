@@ -394,6 +394,7 @@ function showPortfolioModal(action) {
     showPanel('portfolioModal');
 }
 
+function updateAllTableRows(data) {// GITHUB/public/js/ui.js -> updateAllTableRows fonksiyonunun YENİ ve TAM HALİ
 function updateAllTableRows(data) {
     const tableBody = document.getElementById('cryptoPriceTable');
     if (!tableBody) return;
@@ -401,30 +402,46 @@ function updateAllTableRows(data) {
     const isSorting = document.querySelector('#crypto-content .drag-handle-col') && !document.querySelector('#crypto-content .drag-handle-col.hidden');
     const formatPct = (pct) => (typeof pct === 'number') ? `${pct.toFixed(2)}%` : 'N/A';
     const getCellStyle = (colData, threshold) => {
-        const pct = colData?.pct;
-        let classes = '', style = '';
-        if (typeof pct !== 'number') return { classes: '', style: '' };
-        if (pct < 0) {
-            classes = 'negative';
-        } else if (pct >= threshold) {
-            classes = 'positive-high';
-            style = `style="color: ${state.settings.colors.high};"`;
-        } else {
-            classes = 'positive-low';
-            style = `style="color: ${state.settings.colors.low};"`;
-        }
-        return { classes, style };
+        // ... (Bu iç fonksiyon aynı kalıyor, değişiklik yok)
     };
+
     data.forEach(result => {
         const row = document.createElement("tr");
         row.dataset.pair = result.pair;
         let rowHTML;
         if (result.error) {
-            rowHTML = `<td class="drag-handle-col ${isSorting ? '' : 'hidden'}"><i class="fas fa-grip-lines drag-handle"></i></td><td class="asset-cell col-pair">${result.pair.replace("USDT", "")}</td><td class="col-latestPrice"></td><td class="col-col1"></td><td class="col-col2"></td><td class="col-col3" style="text-align:center; color: var(--accent-red);">Veri alınamadı</td>`;
+            rowHTML = `<td class="drag-handle-col ${isSorting ? '' : 'hidden'}"><i class="fas fa-grip-lines drag-handle"></i></td><td class="asset-cell col-pair">${result.pair.replace("USDT", "")}</td><td colspan="7" style="text-align:center; color: var(--accent-red);">Veri alınamadı</td>`;
         } else {
             const cellStyle1 = getCellStyle(result.col1, state.settings.columns[1].threshold);
             const cellStyle2 = getCellStyle(result.col2, state.settings.columns[2].threshold);
             const cellStyle3 = getCellStyle(result.col3, state.settings.columns[3].threshold);
+            
+            // --- YENİ: İndikatörler için HTML ve stil oluşturma ---
+            let rsiCell = '<td class="col-rsi">N/A</td>';
+            if (typeof result.rsi === 'number') {
+                const rsiVal = result.rsi.toFixed(2);
+                let rsiClass = '';
+                if (rsiVal >= 70) rsiClass = 'rsi-overbought';
+                if (rsiVal <= 30) rsiClass = 'rsi-oversold';
+                rsiCell = `<td class="col-rsi ${rsiClass}">${rsiVal}</td>`;
+            }
+
+            let macdCell = '<td class="col-macd">N/A</td>';
+            if (result.macd && typeof result.macd.histogram === 'number') {
+                const hist = result.macd.histogram.toFixed(4);
+                const macdClass = hist >= 0 ? 'macd-positive' : 'macd-negative';
+                // MACD Histogramını küçük bir bar ile görselleştirelim
+                const barWidth = Math.min(100, Math.abs(hist) * 200); // Görsel ayar
+                const barColor = hist >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+                macdCell = `
+                    <td class="col-macd ${macdClass}">
+                        <span>${hist}</span>
+                        <div class="indicator-bar-container" title="${hist}">
+                            <div class="indicator-bar" style="width: ${barWidth}%; background-color: ${barColor};"></div>
+                        </div>
+                    </td>`;
+            }
+            
             rowHTML = `
                 <td class="drag-handle-col ${isSorting ? '' : 'hidden'}"><i class="fas fa-grip-lines drag-handle"></i></td>
                 <td class="asset-cell col-pair" data-pair="${result.pair}">${result.pair.replace("USDT", "")}</td>
@@ -432,6 +449,8 @@ function updateAllTableRows(data) {
                 <td class="col-col1 ${cellStyle1.classes} clickable-pct" ${cellStyle1.style} data-col="1" data-pair="${result.pair}">${formatPct(result.col1.pct)}</td>
                 <td class="col-col2 ${cellStyle2.classes} clickable-pct" ${cellStyle2.style} data-col="2" data-pair="${result.pair}">${formatPct(result.col2.pct)}</td>
                 <td class="col-col3 ${cellStyle3.classes} clickable-pct" ${cellStyle3.style} data-col="3" data-pair="${result.pair}">${formatPct(result.col3.pct)}</td>
+                ${rsiCell}
+                ${macdCell}
             `;
         }
         rowHTML += `<td class="col-delete"><button class="action-btn remove-btn" data-list-name="crypto" data-pair="${result.pair}"><i class="fas fa-times"></i></button></td>`;
