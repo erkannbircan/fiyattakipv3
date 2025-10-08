@@ -377,3 +377,14 @@ if (auto && 'featureOrder' in payload) delete payload.featureOrder;
   }
 }
 
+// GITHUB/public/js/api.js DOSYASININ SONUNA EKLENECEK
+async function fetchFearAndGreedIndex() {
+    try {
+        // Bu API anahtar gerektirmez ve CORS dostudur.
+        const response = await axios.get('https://api.alternative.me/fng/?limit=1');
+        return response.data.data[0];
+    } catch (error) {
+        console.error("Fear & Greed Index alınamadı:", error);
+        return null;
+    }
+}
