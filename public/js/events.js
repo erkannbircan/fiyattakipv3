@@ -1,6 +1,8 @@
 // ---- GLOBAL ÇATI ----
 window.App = window.App || { version: 'v3.0.0', loaded: {}, guards: {}, log: (...args) => console.log('[App]', ...args) };
 
+function setupAuthEventListeners() {
+
 // ---- FALLBACK FONKSİYONLAR (Güvenlik için kalıyor) ----
 if (typeof window.showLoading !== 'function') { window.showLoading = function (button) { if (!button) return; button.dataset.originalHtml = button.innerHTML; button.innerHTML = '<div class="loading"></div>'; button.disabled = true; }; }
 if (typeof window.hideLoading !== 'function') { window.hideLoading = function (button) { if (!button) return; if (button.dataset.originalHtml) { button.innerHTML = button.dataset.originalHtml; } button.disabled = false; }; }
