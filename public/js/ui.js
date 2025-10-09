@@ -164,6 +164,14 @@ function applySettingsToUI() {
     }
     const langSelect = document.getElementById('langSelect');
     if (langSelect) langSelect.value = state.settings.lang;
+
+    // --- EKLENECEK KOD BURASI ---
+    // İndikatör periyodu seçim kutusunun değerini state'deki değere eşitliyoruz.
+    const indicatorTimeframeSelect = document.getElementById('indicatorTimeframeSelect');
+    if (indicatorTimeframeSelect) {
+        indicatorTimeframeSelect.value = state.settings.indicatorTimeframe || '1d';
+    }
+
     const autoRefreshToggle = document.getElementById('autoRefreshToggle');
     if (autoRefreshToggle) autoRefreshToggle.checked = state.settings.autoRefresh;
     const refreshInterval = document.getElementById('refreshInterval');
@@ -354,7 +362,6 @@ function updateAllTableRows(data) {
     });
 }
 
-// GITHUB/public/js/ui.js -> showChart fonksiyonunun YENİ ve DOĞRU HALİ
 function showChart(pair) {
     const chartPanelTitle = document.getElementById('chartPanelTitle');
     const container = document.getElementById('chartContainer');
@@ -364,18 +371,15 @@ function showChart(pair) {
     }
 
     chartPanelTitle.textContent = pair.replace("USDT", "");
-    container.innerHTML = '<div class="loading" style="margin: auto;"></div>'; // Alanı temizle ve yükleme animasyonu koy
+    container.innerHTML = '<div class="loading" style="margin: auto;"></div>';
     showPanel('chartPanel');
     
-    // chartState, hem çizimleri hem de indikatörleri içeren tek bir objedir.
     const savedChartState = state.settings?.chartState?.[pair];
     
     try {
-        // NOT: Önceki widget'ı .remove() ile kaldırma işlemini sildik.
-        // container.innerHTML = '' satırı bu işi daha temiz yapıyor.
-        state.tradingViewWidget = null; // Referansı temizle
+        state.tradingViewWidget = null; // Önceki referansı temizle
 
-                const widgetOptions = {
+        new TradingView.widget({
             symbol: `BINANCE:${pair}`,
             interval: "1D",
             autosize: true,
@@ -395,22 +399,22 @@ function showChart(pair) {
             overrides: { "mainSeriesProperties.showPriceLine": true, "mainSeriesProperties.priceLineWidth": 2 },
             studies_overrides: { "volume.volume.color.0": "#ff6b6b", "volume.volume.color.1": "#4ecdc4", "volume.volume.transparency": 70 },
 
-            // --- DEĞİŞİKLİK BURADA ---
-            // onChartReady fonksiyonunu doğrudan ayarların içine ekliyoruz.
-            onChartReady: () => {
-                console.log('TradingView chart ready for:', pair);
-                // Widget'ın kendisine .subscribe() ile erişiyoruz.
-                if (state.tradingViewWidget && state.tradingViewWidget.subscribe) {
+            // --- ASIL DÜZELTME BURADA ---
+            // Grafik hazır olduğunda, .save() gibi metodları olan GERÇEK chart nesnesini
+            // state.tradingViewWidget'e atıyoruz.
+            onChartReady: function() {
+                // "this" artık widget'ın kendisidir. .activeChart() bize asıl kontrol nesnesini verir.
+                state.tradingViewWidget = this.activeChart();
+                console.log('TradingView chart nesnesi hazır ve state\'e atandı.');
+
+                // Otomatik kaydetme özelliğini burada bağlıyoruz.
+                if (state.tradingViewWidget && typeof state.tradingViewWidget.subscribe === 'function') {
                     state.tradingViewWidget.subscribe('onAutoSaveNeeded', () => {
                         if (typeof saveChartState === "function") saveChartState(pair);
                     });
                 }
             }
-        };
-
-        state.tradingViewWidget = new TradingView.widget(widgetOptions);
-
-        // Artık dışarıda onChartReady çağırmıyoruz, çünkü ayarların içinde.
+        });
 
     } catch (error) {
         console.error("TradingView widget hatası:", error);
