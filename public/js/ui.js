@@ -377,61 +377,54 @@ function showChart(pair) {
     saveBtn.disabled = true;
     showPanel('chartPanel');
     
-    const savedChartState = state.settings?.chartState?.[pair];
-
-    // Widget'ı oluşturan fonksiyonu tanımla
-    const createWidget = (chartData) => {
-        try {
-            new TradingView.widget({
-                symbol: `BINANCE:${pair}`,
-                interval: "1D",
-                autosize: true,
-                container_id: "chartContainer",
-                theme: "dark",
-                style: "1",
-                locale: "tr",
-                toolbar_bg: "#1e222d",
-                enable_publishing: false,
-                withdateranges: true,
-                hide_side_toolbar: false,
-                allow_symbol_change: true,
-                details: true,
-                disabled_features: ["use_localstorage_for_settings"],
-                loading_screen: { backgroundColor: "#1e222d" },
-                // --- DEĞİŞİKLİK BURADA: Fonksiyona gelen veriyi kullan ---
-                saved_data: chartData,
-                overrides: { "mainSeriesProperties.showPriceLine": true, "mainSeriesProperties.priceLineWidth": 2 },
-                studies_overrides: { "volume.volume.color.0": "#ff6b6b", "volume.volume.color.1": "#4ecdc4", "volume.volume.transparency": 70 },
-
-                onChartReady: function() {
-                    state.tradingViewWidget = this.activeChart();
-                    console.log('TradingView chart nesnesi hazır ve state\'e atandı.');
-                    saveBtn.disabled = false;
-
-                    if (state.tradingViewWidget && typeof state.tradingViewWidget.subscribe === 'function') {
-                        state.tradingViewWidget.subscribe('onAutoSaveNeeded', () => {
-                            if (typeof saveChartState === "function") saveChartState(pair);
-                        });
-                    }
-                }
-            });
-        } catch (error) {
-            console.error("TradingView widget hatası:", error);
-            container.innerHTML = `<p style="color:var(--accent-red); text-align:center; padding:20px;">Grafik yüklenemedi: ${error.message}</p>`;
-            saveBtn.disabled = true;
-        }
-    };
-
-    // --- YENİ MANTIK BURADA ---
-    // Önce kayıtlı (bozuk olabilecek) veriyle yüklemeyi dene
+    // --- EN ÖNEMLİ DEĞİŞİKLİK ---
+    // Eski, bozuk veriyi okuma satırını YORUM SATIRI haline getiriyoruz veya siliyoruz.
+    // const savedChartState = state.settings?.chartState?.[pair];
+    
     try {
-        console.log("Kayıtlı veriyle grafik yükleniyor...");
-        createWidget(savedChartState || null);
-    } catch (e) {
-        // Eğer kayıtlı veriyle yükleme başarısız olursa,
-        // bu hatayı yakala ve grafiği temiz bir şekilde yeniden başlat.
-        console.warn("Kayıtlı veriyle yükleme başarısız oldu. Grafik temiz olarak başlatılıyor.", e);
-        createWidget(null); // Temiz (boş) veriyle tekrar oluştur
+        state.tradingViewWidget = null;
+
+        new TradingView.widget({
+            symbol: `BINANCE:${pair}`,
+            interval: "1D",
+            autosize: true,
+            container_id: "chartContainer",
+            theme: "dark",
+            style: "1",
+            locale: "tr",
+            toolbar_bg: "#1e222d",
+            enable_publishing: false,
+            withdateranges: true,
+            hide_side_toolbar: false,
+            allow_symbol_change: true,
+            details: true,
+            disabled_features: ["use_localstorage_for_settings"],
+            loading_screen: { backgroundColor: "#1e222d" },
+
+            // --- İKİNCİ ÖNEMLİ DEĞİŞİKLİK ---
+            // Grafiğe her zaman BOŞ veri vererek temiz başlamasını sağlıyoruz.
+            saved_data: null,
+            
+            overrides: { "mainSeriesProperties.showPriceLine": true, "mainSeriesProperties.priceLineWidth": 2 },
+            studies_overrides: { "volume.volume.color.0": "#ff6b6b", "volume.volume.color.1": "#4ecdc4", "volume.volume.transparency": 70 },
+
+            onChartReady: function() {
+                state.tradingViewWidget = this.activeChart();
+                console.log('TradingView chart nesnesi hazır ve state\'e atandı.');
+                saveBtn.disabled = false;
+
+                if (state.tradingViewWidget && typeof state.tradingViewWidget.subscribe === 'function') {
+                    state.tradingViewWidget.subscribe('onAutoSaveNeeded', () => {
+                        if (typeof saveChartState === "function") saveChartState(pair);
+                    });
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error("TradingView widget hatası:", error);
+        container.innerHTML = `<p style="color:var(--accent-red); text-align:center; padding:20px;">Grafik yüklenemedi: ${error.message}</p>`;
+        saveBtn.disabled = true;
     }
 }
 
