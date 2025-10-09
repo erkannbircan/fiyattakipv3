@@ -17,11 +17,13 @@ async function fetchCryptoData(pair) {
     try {
         // Sunucudaki yeni fonksiyonumuzu çağırıyoruz
         const getCoinData = state.firebase.functions.httpsCallable('getCoinDataWithIndicators');
-      const payload = { 
+        // DEĞİŞİKLİK 1: payload'u oluşturuyoruz (bu zaten doğruydu)
+        const payload = { 
             pair: pair,
             interval: state.settings.indicatorTimeframe || '1d' 
         };
-        const result = await getCoinData({ pair });
+        // DEĞİŞİKLİK 2: Sunucuya sadece coin'i değil, TÜM payload'u gönderiyoruz.
+        const result = await getCoinData(payload);
 
         if (result.data.error) {
             throw new Error(`Sunucu ${pair} için veri alamadı.`);
