@@ -371,6 +371,10 @@ th {
     line-height: 1.4;
     border: 1px solid var(--border-color);
     pointer-events: none; /* Üzerine gelince titrememesi için */
+    /* --- EKLENECEK KOD BURASI --- */
+    /* Font ailesini ve ağırlığını zorla normal metin olarak ayarla */
+    font-family: 'Inter', sans-serif;
+    font-weight: normal;
 }
 
 th:hover .tooltip {
