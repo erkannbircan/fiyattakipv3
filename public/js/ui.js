@@ -373,32 +373,41 @@ function showChart(pair) {
     }
 
     chartPanelTitle.textContent = pair.replace("USDT", "");
-    container.innerHTML = ''; // Yükleme animasyonunu bile kaldırıyoruz, en sade haliyle.
+    container.innerHTML = ''; 
     saveBtn.disabled = true;
     showPanel('chartPanel');
     
     try {
         state.tradingViewWidget = null;
 
-        // --- SADECE EN TEMEL AYARLAR ---
         new TradingView.widget({
-            // Gerekli olanlar:
+            // Temel ayarlar
             symbol: `BINANCE:${pair}`,
             interval: "1D",
             autosize: true,
             container_id: "chartContainer",
 
-            // Şimdilik diğer tüm ayarları ve özellikleri devre dışı bırakıyoruz.
+            // --- SON DENEME: Agresif Engelleme Ayarları ---
+            // Widget'ın yerel depolama ile ilgili tüm özelliklerini kapatmayı deniyoruz.
+            disabled_features: [
+                "use_localstorage_for_settings",
+                "save_chart_properties_to_local_storage",
+                "header_saveload", // Kaydet/Yükle menüsünü de kapatalım
+                "header_chart_type" // Gerekirse bunları da kapatabiliriz
+            ],
+            // Bu parametre de önemlidir.
+            client_id: 'tradingview.com',
+            user_id: 'public_user_id',
             
             onChartReady: function() {
                 state.tradingViewWidget = this.activeChart();
-                console.log('>>> TEST BAŞARILI: Widget en basit haliyle yüklendi!');
+                console.log('>>> TEST BAŞARILI: Widget agresif sıfırlama ile yüklendi!');
                 saveBtn.disabled = false;
             }
         });
 
     } catch (error) {
-        console.error("TradingView widget'ı en basit halinde bile hata verdi:", error);
+        console.error("TradingView widget'ı agresif sıfırlamada bile hata verdi:", error);
         container.innerHTML = `<p style="color:var(--accent-red); text-align:center; padding:20px;">Grafik yüklenemedi: ${error.message}</p>`;
         saveBtn.disabled = true;
     }
