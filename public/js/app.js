@@ -367,24 +367,33 @@ async function handleDeletePortfolio() {
 }
 
 async function saveChartState(pair) {
-    // Fonksiyonu async yapıyoruz ve bir Promise döndürüyoruz
     return new Promise((resolve, reject) => {
         if (state.tradingViewWidget && typeof state.tradingViewWidget.save === 'function') {
             state.tradingViewWidget.save(async function(savedData) {
-                const updatePayload = { [`settings.chartState.${pair}`]: savedData };
-                if (state.userDocRef) {
-                    try {
+                try {
+                    // --- ÇÖZÜM BURADA ---
+                    // Adım 1: TradingView'den gelen karmaşık veriyi "temiz" ve "basit" hale getir.
+                    const plainSavedData = JSON.parse(JSON.stringify(savedData));
+
+                    // Adım 2: Firebase'e bu temiz veriyi gönder.
+                    const updatePayload = { [`settings.chartState.${pair}`]: plainSavedData };
+                    
+                    if (state.userDocRef) {
                         await state.userDocRef.update(updatePayload);
+                        
                         if (!state.settings.chartState) state.settings.chartState = {};
-                        state.settings.chartState[pair] = savedData;
+                        // Lokal state'i de temiz veriyle güncelle.
+                        state.settings.chartState[pair] = plainSavedData;
+                        
                         console.log(`Grafik durumu ${pair} için başarıyla kaydedildi.`);
-                        resolve(); // İşlem başarılı olunca Promise'i çöz
-                    } catch (error) {
-                        console.error("Grafik ayarları kaydedilirken hata:", error);
-                        reject(error); // Hata olursa Promise'i reddet
+                        resolve(); // İşlem başarılı.
+                    } else {
+                        reject(new Error("Kullanıcı referansı bulunamadı."));
                     }
-                } else {
-                    reject(new Error("Kullanıcı referansı bulunamadı."));
+                } catch (error) {
+                    // Hata genellikle burada, Firebase veriyi reddettiğinde oluşur.
+                    console.error("Grafik ayarları kaydedilirken hata:", error);
+                    reject(error); // Hata olursa Promise'i reddet.
                 }
             });
         } else {
