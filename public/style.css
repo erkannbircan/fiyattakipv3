@@ -373,7 +373,7 @@ th {
     pointer-events: none; /* Üzerine gelince titrememesi için */
 }
 
-.tooltip-trigger:hover + .tooltip {
+th:hover .tooltip {
     visibility: visible;
     opacity: 1;
 }
