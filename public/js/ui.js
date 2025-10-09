@@ -375,9 +375,9 @@ function showChart(pair) {
         // container.innerHTML = '' satırı bu işi daha temiz yapıyor.
         state.tradingViewWidget = null; // Referansı temizle
 
-        const widgetOptions = {
+                const widgetOptions = {
             symbol: `BINANCE:${pair}`,
-            interval: "1D", // "D" yerine "1D" daha standart bir kullanımdır
+            interval: "1D",
             autosize: true,
             container_id: "chartContainer",
             theme: "dark",
@@ -392,20 +392,25 @@ function showChart(pair) {
             disabled_features: ["use_localstorage_for_settings"],
             loading_screen: { backgroundColor: "#1e222d" },
             saved_data: savedChartState || null,
-            // onChartReady, widget'ın kendisine aittir, option değildir.
-            // Bu yüzden widget oluştuktan sonra çağıracağız.
             overrides: { "mainSeriesProperties.showPriceLine": true, "mainSeriesProperties.priceLineWidth": 2 },
-            studies_overrides: { "volume.volume.color.0": "#ff6b6b", "volume.volume.color.1": "#4ecdc4", "volume.volume.transparency": 70 }
+            studies_overrides: { "volume.volume.color.0": "#ff6b6b", "volume.volume.color.1": "#4ecdc4", "volume.volume.transparency": 70 },
+
+            // --- DEĞİŞİKLİK BURADA ---
+            // onChartReady fonksiyonunu doğrudan ayarların içine ekliyoruz.
+            onChartReady: () => {
+                console.log('TradingView chart ready for:', pair);
+                // Widget'ın kendisine .subscribe() ile erişiyoruz.
+                if (state.tradingViewWidget && state.tradingViewWidget.subscribe) {
+                    state.tradingViewWidget.subscribe('onAutoSaveNeeded', () => {
+                        if (typeof saveChartState === "function") saveChartState(pair);
+                    });
+                }
+            }
         };
 
         state.tradingViewWidget = new TradingView.widget(widgetOptions);
 
-        state.tradingViewWidget.onChartReady(() => {
-            console.log('TradingView chart ready for:', pair);
-            state.tradingViewWidget.subscribe('onAutoSaveNeeded', () => {
-                if (typeof saveChartState === "function") saveChartState(pair);
-            });
-        });
+        // Artık dışarıda onChartReady çağırmıyoruz, çünkü ayarların içinde.
 
     } catch (error) {
         console.error("TradingView widget hatası:", error);
@@ -415,8 +420,10 @@ function showChart(pair) {
 
 function showPriceDetailPopup(pair, colKey) {
     const coinData = state.allCryptoData.find(c => c.pair === pair);
-    if (!coinData || !coinData[colKey]) return;
-    const detailData = coinData[colKey];
+    // DEĞİŞİKLİK: colKey'in başına 'col' ekleyerek doğru veriyi buluyoruz (örn: "col1")
+    const dataKey = `col${colKey}`;
+    if (!coinData || !coinData[dataKey]) return;
+    const detailData = coinData[dataKey];
     const colName = state.settings.columns[colKey].name;
     const content = `<div class="status-table"><table><tbody>
         <tr><td>Coin</td><td>${pair.replace("USDT", "")}</td></tr>
