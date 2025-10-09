@@ -65,7 +65,7 @@ function setupGlobalEventListeners() {
 }
 
 function setupSharedEventListeners() {
-    document.body.addEventListener('click', (e) => {
+   document.body.addEventListener('click', async (e) => {
         if (e.target.closest('#refreshBtn')) { if (typeof fetchAllDataAndRender === 'function') fetchAllDataAndRender(); }
         if (e.target.closest('#settingsBtn')) { if (typeof togglePanel === 'function') togglePanel('settingsPanel'); }
         if (e.target.closest('.panel .close-btn') || e.target.id === 'modalOverlay') { if (typeof closeAllPanels === 'function') closeAllPanels(); }
