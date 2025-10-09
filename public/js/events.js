@@ -70,7 +70,19 @@ function setupSharedEventListeners() {
         if (e.target.closest('#settingsBtn')) { if (typeof togglePanel === 'function') togglePanel('settingsPanel'); }
         if (e.target.closest('.panel .close-btn') || e.target.id === 'modalOverlay') { if (typeof closeAllPanels === 'function') closeAllPanels(); }
         if (e.target.closest('#logoutBtn')) { state.firebase?.auth?.signOut(); }
-        if (e.target.closest('#saveChartStateBtn')) { if (state.activeChartPair && typeof saveChartState === 'function') { saveChartState(state.activeChartPair); showNotification('Grafik durumu kaydedildi.', true); } }
+        // --- DEĞİŞİKLİK BURADA ---
+        if (e.target.closest('#saveChartStateBtn')) {
+            if (state.activeChartPair && typeof saveChartState === 'function') {
+                try {
+                    // saveChartState'in bitmesini bekle (await)
+                    await saveChartState(state.activeChartPair);
+                    // Sadece işlem başarılı olursa bildirimi göster
+                    showNotification('Grafik durumu başarıyla kaydedildi.', true);
+                } catch (error) {
+                    showNotification(`Grafik kaydedilemedi: ${error.message}`, false);
+                }
+            }
+        }
         if (e.target.closest('#newPortfolioBtn')) { if (typeof showPortfolioModal === 'function') showPortfolioModal('new'); }
         if (e.target.closest('#renamePortfolioBtn')) { if (typeof showPortfolioModal === 'function') showPortfolioModal('rename'); }
         if (e.target.closest('#deletePortfolioBtn')) { if (typeof handleDeletePortfolio === 'function') handleDeletePortfolio(); }
