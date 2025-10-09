@@ -366,20 +366,31 @@ async function handleDeletePortfolio() {
     }
 }
 
-function saveChartState(pair) {
-    if (state.tradingViewWidget && typeof state.tradingViewWidget.save === 'function') {
-        state.tradingViewWidget.save(function(savedData) {
-            const updatePayload = { [`settings.chartState.${pair}`]: savedData };
-            if (state.userDocRef) {
-                state.userDocRef.update(updatePayload)
-                    .then(() => {
+async function saveChartState(pair) {
+    // Fonksiyonu async yapıyoruz ve bir Promise döndürüyoruz
+    return new Promise((resolve, reject) => {
+        if (state.tradingViewWidget && typeof state.tradingViewWidget.save === 'function') {
+            state.tradingViewWidget.save(async function(savedData) {
+                const updatePayload = { [`settings.chartState.${pair}`]: savedData };
+                if (state.userDocRef) {
+                    try {
+                        await state.userDocRef.update(updatePayload);
                         if (!state.settings.chartState) state.settings.chartState = {};
                         state.settings.chartState[pair] = savedData;
-                    })
-                    .catch(error => console.error("Grafik ayarları kaydedilirken hata:", error));
-            }
-        });
-    }
+                        console.log(`Grafik durumu ${pair} için başarıyla kaydedildi.`);
+                        resolve(); // İşlem başarılı olunca Promise'i çöz
+                    } catch (error) {
+                        console.error("Grafik ayarları kaydedilirken hata:", error);
+                        reject(error); // Hata olursa Promise'i reddet
+                    }
+                } else {
+                    reject(new Error("Kullanıcı referansı bulunamadı."));
+                }
+            });
+        } else {
+            reject(new Error("TradingView widget bulunamadı veya save fonksiyonu yok."));
+        }
+    });
 }
 
 state.sortableInstance = null;
