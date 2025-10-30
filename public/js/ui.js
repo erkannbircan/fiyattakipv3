@@ -362,7 +362,7 @@ function updateAllTableRows(data) {
     });
 }
 
-function showChart(pair) {
+async function showChart(pair) {
     const chartPanelTitle = document.getElementById('chartPanelTitle');
     const container = document.getElementById('chartContainer');
     const saveBtn = document.getElementById('saveChartStateBtn');
@@ -373,43 +373,73 @@ function showChart(pair) {
     }
 
     chartPanelTitle.textContent = pair.replace("USDT", "");
-    container.innerHTML = ''; 
-    saveBtn.disabled = true;
+    container.innerHTML = '<div class="loading" style="margin: auto;"></div>';
     showPanel('chartPanel');
-    
+    // Şimdilik kaydetme butonu bir işe yaramayacağı için pasif bırakalım.
+    saveBtn.style.display = 'none';
+
     try {
-        state.tradingViewWidget = null;
+        // 1. ADIM: Fiyat verilerini (malzemeleri) Binance'den al.
+        // `getKlines` fonksiyonu api.js içinde yer alıyor.
+        const klines = await getKlines(pair, '1d', 500); // 500 günlük veri çekiyoruz
 
-        new TradingView.widget({
-            // Temel ayarlar
-            symbol: `BINANCE:${pair}`,
-            interval: "1D",
-            autosize: true,
-            container_id: "chartContainer",
+        if (!klines || klines.length === 0) {
+            throw new Error("Grafik için fiyat verisi alınamadı.");
+        }
 
-            // --- SON DENEME: Agresif Engelleme Ayarları ---
-            // Widget'ın yerel depolama ile ilgili tüm özelliklerini kapatmayı deniyoruz.
-            disabled_features: [
-                "use_localstorage_for_settings",
-                "save_chart_properties_to_local_storage",
-                "header_saveload", // Kaydet/Yükle menüsünü de kapatalım
-                "header_chart_type" // Gerekirse bunları da kapatabiliriz
-            ],
-            // Bu parametre de önemlidir.
-            client_id: 'tradingview.com',
-            user_id: 'public_user_id',
-            
-            onChartReady: function() {
-                state.tradingViewWidget = this.activeChart();
-                console.log('>>> TEST BAŞARILI: Widget agresif sıfırlama ile yüklendi!');
-                saveBtn.disabled = false;
+        // 2. ADIM: Veriyi kütüphanenin anlayacağı formata dönüştür.
+        const formattedData = klines.map(k => ({
+            time: k[0] / 1000, // Zamanı saniye formatına çevir
+            open: parseFloat(k[1]),
+            high: parseFloat(k[2]),
+            low: parseFloat(k[3]),
+            close: parseFloat(k[4]),
+        }));
+
+        // Grafik oluşturulurken önceki grafiği temizle
+        container.innerHTML = '';
+
+        // 3. ADIM: Boş bir tuval (grafik) oluştur.
+        const chart = LightweightCharts.createChart(container, {
+            width: container.clientWidth,
+            height: container.clientHeight,
+            layout: {
+                backgroundColor: '#131722',
+                textColor: '#d1d4dc',
+            },
+            grid: {
+                vertLines: { color: '#2a2e39' },
+                horzLines: { color: '#2a2e39' },
+            },
+            timeScale: {
+                timeVisible: true,
+                secondsVisible: false,
             }
         });
 
+        // 4. ADIM: Mum grafiğini tuvale çiz ve verileri ekle.
+        const candleSeries = chart.addCandlestickSeries({
+            upColor: '#26a69a',
+            downColor: '#ef5350',
+            borderDownColor: '#ef5350',
+            borderUpColor: '#26a69a',
+            wickDownColor: '#ef5350',
+            wickUpColor: '#26a69a',
+        });
+        
+        candleSeries.setData(formattedData);
+        
+        // Grafiğin panel boyutuna göre yeniden ayarlanmasını sağla
+        new ResizeObserver(entries => {
+            if (entries.length === 0 || entries[0].target !== container) { return; }
+            const { width, height } = entries[0].contentRect;
+            chart.applyOptions({ width, height });
+        }).observe(container);
+
+
     } catch (error) {
-        console.error("TradingView widget'ı agresif sıfırlamada bile hata verdi:", error);
+        console.error("Lightweight Chart hatası:", error);
         container.innerHTML = `<p style="color:var(--accent-red); text-align:center; padding:20px;">Grafik yüklenemedi: ${error.message}</p>`;
-        saveBtn.disabled = true;
     }
 }
 
